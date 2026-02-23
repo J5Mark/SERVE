@@ -1,0 +1,6 @@
+services:
+  back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    image: cro/serve-back:latest

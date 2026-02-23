@@ -1,0 +1,24 @@
+[project]
+name = "back"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.13.2",
+    "alembic>=1.18.3",
+    "asyncpg>=0.30.0",
+    "authx>=1.5.0",
+    "bcrypt>=4.3.0",
+    "fastapi[standard]>=0.120.2",
+    "fluent-logger>=0.11.1",
+    "langdetect>=1.0.9",
+    "pwdlib[argon2]>=0.3.0",
+    "phonenumbers>=9.0.24",
+    "pydantic>=2.12.3",
+    "pydantic-extra-types>=2.11.0",
+    "requests>=2.32.5",
+    "sqlalchemy>=2.0.44",
+    "sqlmodel>=0.0.22",
+    "valkey>=6.1.1",
+]
