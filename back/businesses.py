@@ -23,8 +23,8 @@ async def create_business_ep(
     payload: TokenPayload = Depends(auth.access_token_required)
 ):
     user_id = int(payload.sub)
-    result = db.execute(select(User).where(User.id == user_id))
-    user = result().scalars().first() # Will later have to abstract it to use cache
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first() # Will later have to abstract it to use cache
 
     if user.entrep:
         await create_business(req, user_id, db)
@@ -53,7 +53,7 @@ async def edit_business_ep(
     payload: TokenPayload = Depends(auth.access_token_required)
 ):
     user_id = int(payload.sub)
-    await edit_business(req, user_id, db)
+    await edit_business(req, user_id, business_id, db)
     await db.commit()
     return {'business': 'edited'}
 

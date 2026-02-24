@@ -150,6 +150,8 @@ async def login(req: AuthRequest, db: AsyncSession = Depends(get_db)):
     if req.phone:
         query_conditions.append(UserAuth.phone == str(req.phone))
 
+    query_conditions.append(UserAuth.device_id == req.device_id)
+    
     if not query_conditions:
         raise HTTPException(
             status_code=400, detail="Username, email, or phone required"

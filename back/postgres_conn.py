@@ -81,6 +81,9 @@ class BusinessOperationsLink(SQLModel, table=True):
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
+    # __table_args__ = (
+    #     UniqueConstraint("device_id", "username", name='uq_business'), 
+    # )
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
 
@@ -119,7 +122,7 @@ class User(SQLModel, table=True):
         link_model=ParticipantsLink
     )
     
-    enterp: bool = Field(default=False, sa_column=Column(Boolean, default=False, nullable=False))
+    entrep: bool = Field(default=False, sa_column=Column(Boolean, default=False, nullable=False))
     suspended: bool = Field(default=False, sa_column=Column(Boolean, default=False, nullable=False))
 
 

@@ -102,14 +102,14 @@ async def delete_community(community_id: int, db: AsyncSession):
 
 async def create_business(req: CreateBusinessRequest, user_id: int, db: AsyncSession):
     try:
-        result = db.execute(select(Business).where(Business.user_id == user_id))
+        result = await db.execute(select(Business).where(Business.user_id == user_id))
         ex_business = result.scalars().all()
         if len(ex_business) > 5:
             raise HTTPException(status_code=401, detail='Too many businesses')
         
         communities = []
         for c in req.community_ids:
-            result = db.execute(select(Community).where(Community.id == c))
+            result = await db.execute(select(Community).where(Community.id == c))
             communities.append(result.scalars().first())
         
         business = Business(
@@ -145,10 +145,10 @@ async def delete_business(business_id: int, user_id: int, db: AsyncSession):
         raise HTTPException(status_code=500, detail=f'Could not delete business: {e}')
 
 
-async def edit_business(req: EditBusinessRequest, user_id: int, db: AsyncSession):
+async def edit_business(req: EditBusinessRequest, user_id: int, business_id: int, db: AsyncSession):
     try:
         result = await db.execute(select(Business).where(
-                                        Business.id == req.business_id,
+                                        Business.id == business_id,
                                         Business.user_id == user_id
                                     ).options(
                                       selectinload(Business.communities)
@@ -177,17 +177,19 @@ async def edit_business(req: EditBusinessRequest, user_id: int, db: AsyncSession
 
 async def get_business(business_id: int, user_id: int, db: AsyncSession):
     try:
-        result = await db.execute(select(Business).where(
-                                      Business.id      == business_id,
-                                      Business.User_id == user_id,
-                                  ).options(
-                                      selectinload(
-                                          Business.communities,
-                                          Business.verifications,
-                                      )
-                                  ))
+        result = await db.execute(
+            select(Business)
+            .where(
+                Business.id == business_id,
+                Business.user_id == user_id,
+            )
+            .options(
+                selectinload(Business.communities),
+                selectinload(Business.verifications),
+            )
+        )
+        
         business = result.scalars().first()
-
         if not business:
             raise HTTPException(status_code=404, detail=f'Business not found')
 

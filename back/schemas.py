@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 class AuthRequest(BaseModel):
+    device_id: str
     username: Optional[str]
     password: str
     email: Optional[EmailStr]
@@ -71,3 +72,6 @@ class EditBusinessRequest(BaseModel):
     bio: str | None = None
     community_ids: List[int] | None = None
 
+
+class CreatePostRequest(BaseModel):
+    pass
