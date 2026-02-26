@@ -11,6 +11,7 @@ class AuthRequest(BaseModel):
     email: Optional[EmailStr]
     phone: Optional[PhoneNumber]
 
+
 class DeviceLoginRequest(BaseModel):
     device_id: str
 
@@ -73,5 +74,22 @@ class EditBusinessRequest(BaseModel):
     community_ids: List[int] | None = None
 
 
+class VerifyBusinessRequest(BaseModel):
+    business_id: int
+    type: str = Field(max_length=5)
+
+
 class CreatePostRequest(BaseModel):
-    pass
+    name: str
+    content: str
+    community_id: int
+
+
+class EditPostRequest(BaseModel):
+    post_id: int
+    contents: str
+
+
+class VoteOnPostRequest(BaseModel):
+    post_id: int
+    would_pay: int

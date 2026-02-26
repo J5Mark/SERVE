@@ -94,6 +94,7 @@ class User(SQLModel, table=True):
     phone_number: Optional[str] = None
     email: Optional[str] = None
     admin: bool = Field(default=False)
+    balance: int = Field(default = 0)
 
     businesses: list["Business"] = Relationship(
         back_populates="user",
@@ -171,62 +172,65 @@ class Community(SQLModel, table=True):
 
 class Vote(SQLModel, table=True):
     __tablename__ = 'votes'
+    __table_args__ = (
+        UniqueConstraint("voter_id", "post_id", name='uq_vote'), 
+    )
     
     id: int = Field(primary_key=True, sa_type=BigInteger)
-#     post_id: int = Field(
-#     sa_column=Column(
-#         BigInteger,
-#         ForeignKey("posts.id", ondelete="CASCADE"),
-#         nullable=False
-#         )
-#     )
-#     post: "Post" = Relationship(back_populates='votes')
-#     would_pay: float = Field()
-#     voter_id: int = Field(
-#         sa_column=Column(
-#             BigInteger,
-#             ForeignKey("users.id", ondelete="CASCADE"),
-#             nullable=False
-#         )
-#     )
+    post_id: int = Field(
+    sa_column=Column(
+        BigInteger,
+        ForeignKey("posts.id", ondelete="CASCADE"),
+        nullable=False
+        )
+    )
+    post: "Post" = Relationship(back_populates='votes')
+    would_pay: float = Field()
+    voter_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False
+        )
+    )
 
 class Post(SQLModel, table=True):
     __tablename__ = 'posts'
     
     id: int = Field(primary_key=True, sa_type=BigInteger)
 
-#     name: str = Field()
-#     contents: str = Field()
+    name: str = Field()
+    contents: str = Field()
 
-#     votes: List[Vote] = Relationship(back_populates='post')
-#     created_at: datetime = Field(
-#         sa_column=Column(
-#             DateTime(timezone=True),
-#             server_default=func.now(),
-#             nullable=False,
-#         )
-#     )
+    votes: List[Vote] = Relationship(back_populates='post', default=[])
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True),
+            server_default=func.now(),
+            nullable=False,
+        )
+    )
 
-#     community_id: int = Field(
-#         sa_column=Column(
-#             BigInteger,
-#             ForeignKey("communities.id", ondelete="CASCADE"),
-#             nullable=False
-#         )
-#     )
-#     community: Community = Relationship(
-#         back_populates = 'posts'
-#     )
-#     user_id: int = Field(
-#         sa_column=Column(
-#             BigInteger,
-#             ForeignKey('users.id', ondelete='CASCADE'),
-#             nullable=False
-#         )
-#     )
-#     user: User = Relationship(
-#         back_populates='posts'
-#     )
+    community_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey("communities.id", ondelete="CASCADE"),
+            nullable=False
+        )
+    )
+    community: Community = Relationship(
+        back_populates = 'posts'
+    )
+    user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE'),
+            nullable=False
+        )
+    )
+    user: User = Relationship(
+        back_populates='posts'
+    )
 
 
 class Verification(SQLModel, table=True):

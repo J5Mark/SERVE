@@ -21,15 +21,21 @@ async def create_post_ep(
     db: AsyncSession = Depends(get_db),
     payload: TokenPayload = Depends(auth.access_token_required)
 ):
-    pass
+    user_id = int(payload.sub)
+    await create_post(req, user_id, db)
+    await db.commit()
+
+    return {'post': 'created'}
 
 
 @router.get('/{post_id}')
 async def get_post_ep(
     post_id: int,
     db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
 ):
-    pass
+    post = await get_post(post_id, db)
+    return post
 
 
 @router.delete('/{post_id}')
@@ -38,13 +44,43 @@ async def delete_post_ep(
     db: AsyncSession = Depends(get_db),
     payload: TokenPayload = Depends(auth.access_token_required)
 ):
-    pass
+    await delete_post(post_id, db)
+    await db.commit()
+    
+    return {'post': 'deleted'}
 
 
 @router.post('/edit/{post_id}')
 async def edit_post_ep(
     post_id: int,
     req: EditPostRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
+):
+    await edit_post(req, db)
+    await db.commit()
+
+    return {'post': 'edited'}
+
+
+@router.post('/vote/{post_id}')
+async def vote_on_post_ep(
+    post_id: int,
+    req: VoteOnPostRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
+):
+    user_id = int(payload.sub)
+    await vote_on_post(req, user_id, db)
+    await db.commit()
+
+    return {'vote': 'put'}
+    
+
+@router.get('/list')
+async def list_posts(
+    n: int,
+    offset: int,
     db: AsyncSession = Depends(get_db),
     payload: TokenPayload = Depends(auth.access_token_required)
 ):

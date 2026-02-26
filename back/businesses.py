@@ -67,3 +67,31 @@ async def get_business_ep(
     user_id = int(payload.sub)
     business = await get_business(business_id, user_id, db)
     return business
+
+
+@router.get('/newcomers')
+async def get_newcomers_ep(
+    n: int,
+    db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
+):
+    user_id = int(payload.sub)
+    communities_ids = await get_user_communities_ids(user_id, db)
+    if not comminities_ids:
+        newcomers = await get_newcomers_overall(n, db)
+        return newcomers
+        
+    newcomers = await get_newcomers(n, communities_ids, db)
+    return newcomers
+
+
+@router.post('/verify')
+async def veryfy_business_ep(
+    req: VerifyBusinessRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
+):
+    user_id = int(payload.sub)
+    await veriy_business(req, user_id, db)
+    await db.commit()
+    return {'business': 'verified'}

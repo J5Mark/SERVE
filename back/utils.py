@@ -196,4 +196,207 @@ async def get_business(business_id: int, user_id: int, db: AsyncSession):
         return business
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Could not get business')
+        raise HTTPException(status_code=500, detail=f'Could not get business: {e}')
+
+
+async def get_user_communities_ids(user_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(ParticipantsLink.community_id)
+            .where(
+                ParticipantsLink.user_id == user_id
+            )
+        )
+        communities_ids = result.scalars().all()
+        return communities_ids
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get communities ids: {e}')
+
+
+async def get_newcomers_overall(n: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(Business)
+            .options(
+                selectinload(Business.communities)
+            )
+            .order_by(desc(Business.created_at))
+            .limit(n)
+        )
+        businesses = result.scalars().all()        
+        return businesses
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get overall newcomers: {e}')
+
+
+async def get_newcomers(n: int, communities_ids: List[int], db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(BusinessOperationsLink.business_id)
+            .where(BusinessOperationsLink.community_id in communities_ids)
+        )
+        business_ids = result.scalars().all()
+
+        result = await db.execute(
+            select(Business)
+            .where(Business.id in business_ids)
+            .options(
+                selectinload(Business.communities)
+            )
+            .order_by(desc(Business.created_at))
+            .limit(n)
+        )
+        businesses = result.scalars().all()
+        return businesses
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get newcomers: {e}')
+
+
+async def verify_business(
+    req: VerifyBusinessRequest,
+    user_id: int,
+    db: AsyncSession
+):
+    try:
+        result = await db.execute(
+            select(Business)
+            .where(Business.id == req.business_id)
+        )
+        business = result.scalars().first()
+        if not business:
+            raise HTTPException(status_code=404, detail='Business does not exist')
+        
+        verification = Verification(
+            user_id     = user_id         ,
+            business_id = req.business_id ,
+            type        = req.type        ,
+        )
+
+        db.add(verification)
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f'Could not put verification on business: {e}')
+
+
+async def create_post(req: CreatePostRequest, user_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(Community)
+            .where(Community.id == req.community_id)
+        )
+        community = result.scalars().first()
+        if not community:
+            raise HTTPException(status_code=404, detail='Community not found')
+        
+        post = Post(
+            name         = req.name         ,
+            contents     = req.contents     ,
+            community_id = req.community_id ,
+        )
+        db.add(post)
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+
+
+async def get_post(post_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(Post)
+            .where(Post.id == post_id)
+            .options(
+                selectinload(Post.votes)
+            )
+        )
+        post = result.scalars().first()
+
+        if not post:
+            raise HTTPException(status_code=404, detail='Post not found')
+
+        would = [v.would_pay for v in post.votes]        
+        stats = {
+            'amount': len(post.votes),
+            'mean': float(np.mean(would), 2),
+            'median': float(np.median(would), 2),
+            'min': min(would),
+            'max': max(would)
+        }
+
+        return {'post': post, 'stats': stats}
+
+    except Exception as e:
+        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+
+
+
+async def delete_post(post_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(Post)
+            .where(Post.id == post_id)
+        )
+        post = result.scalars().first()
+
+        if not post:
+            raise HTTPException(status_code=404, detail='Post not found')
+
+        await db.delete(post)
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+
+
+async def edit_post(req: EditPostRequest, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(Post)
+            .where(Post.id == req.post_id)
+        )
+        post = result.scalars().first()
+
+        if not post:
+            raise HTTPException(status_code=404, detail='Post not found')
+
+        post.contents = req.contents
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+
+
+async def vote_on_post(req: VoteOnPostRequest, user_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(Post)
+            .where(Post.id == req.post_id)
+        )
+        post = result.scalar().first()
+
+        if not post:
+            raise HTTPException(status_code=404, detail='Post not found')
+
+        vote = Vote(
+            post_id   = req.post_id   ,
+            would_pay = req.would_pay ,
+            voter_id  = user_id       ,
+        )
+
+        db.add(vote)
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f'Could not vote on post: {e}')
+
+
+async def fetch_popular_posts(n: int, offset: int, db: AsyncSession):
+    pass
+
+
+async def fetch_n_posts_for_user(n: int, offset: int, db: AsyncSession):
+    pass
