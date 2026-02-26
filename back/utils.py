@@ -5,6 +5,7 @@ from sqlalchemy import select, func, update, desc
 from sqlalchemy.orm import selectinload
 from typing import List
 from langdetect import detect
+import numpy as np
 
 import logging
 from schemas import *

@@ -26,4 +26,5 @@ dependencies = [
     "sqlalchemy>=2.0.44",
     "sqlmodel>=0.0.22",
     "valkey>=6.1.1",
+    "numpy>=2.4.2",
 ]
