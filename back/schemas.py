@@ -51,18 +51,6 @@ class DeleteCommunityRequest(BaseModel):
     community_id: int
 
 
-class CreatePostRequest(BaseModel):
-    name: str
-    contents: str
-    creator_id: int
-    community_id: int
-    
-
-class EditPostRequest(BaseModel):
-    contents: str
-    post_id: int
-
-
 class CreateBusinessRequest(BaseModel):
     name: str = Field(max_length=20)
     bio: str
@@ -81,7 +69,7 @@ class VerifyBusinessRequest(BaseModel):
 
 class CreatePostRequest(BaseModel):
     name: str
-    content: str
+    contents: str
     community_id: int
 
 

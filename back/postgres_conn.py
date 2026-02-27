@@ -100,10 +100,10 @@ class User(SQLModel, table=True):
         back_populates="user",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
-    # posts: List["Post"] = Relationship(
-    #     back_populates="user",
-    #     sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    # )
+    posts: List["Post"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
     verifications: list["Verification"] = Relationship(
         back_populates="user",
@@ -161,9 +161,9 @@ class Community(SQLModel, table=True):
     )
     
 
-    # posts: List['Post'] = Relationship(
-    #     back_populates = 'community'
-    # )
+    posts: List['Post'] = Relationship(
+        back_populates = 'community'
+    )
     businesses: List['Business'] = Relationship(
         back_populates='communities',
         link_model=BusinessOperationsLink
@@ -202,7 +202,7 @@ class Post(SQLModel, table=True):
     name: str = Field()
     contents: str = Field()
 
-    votes: List[Vote] = Relationship(back_populates='post', default=[])
+    votes: List[Vote] = Relationship(back_populates='post')
     created_at: datetime = Field(
         sa_column=Column(
             DateTime(timezone=True),

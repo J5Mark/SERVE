@@ -297,12 +297,13 @@ async def create_post(req: CreatePostRequest, user_id: int, db: AsyncSession):
             name         = req.name         ,
             contents     = req.contents     ,
             community_id = req.community_id ,
+            user_id      = user_id          ,
         )
         db.add(post)
 
     except Exception as e:
         await db.rollback()
-        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not create post: {e}')
 
 
 async def get_post(post_id: int, db: AsyncSession):
@@ -319,19 +320,21 @@ async def get_post(post_id: int, db: AsyncSession):
         if not post:
             raise HTTPException(status_code=404, detail='Post not found')
 
-        would = [v.would_pay for v in post.votes]        
-        stats = {
-            'amount': len(post.votes),
-            'mean': float(np.mean(would), 2),
-            'median': float(np.median(would), 2),
-            'min': min(would),
-            'max': max(would)
-        }
+        would = [v.would_pay for v in post.votes]
+        stats = None
+        if would:      
+            stats = {
+                'amount': len(post.votes),
+                'mean': round(float(np.mean(would)), 2),
+                'median': round(float(np.median(would)), 2),
+                'min': min(would),
+                'max': max(would)
+            }
 
         return {'post': post, 'stats': stats}
 
     except Exception as e:
-        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not get post: {e}')
 
 
 
@@ -350,7 +353,7 @@ async def delete_post(post_id: int, db: AsyncSession):
         
     except Exception as e:
         await db.rollback()
-        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not delete post: {e}')
 
 
 async def edit_post(req: EditPostRequest, db: AsyncSession):
@@ -368,7 +371,7 @@ async def edit_post(req: EditPostRequest, db: AsyncSession):
 
     except Exception as e:
         await db.rollback()
-        raise HTTPException(staus_code=500, detail=f'Could not create post: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not edit post: {e}')
 
 
 async def vote_on_post(req: VoteOnPostRequest, user_id: int, db: AsyncSession):
@@ -377,7 +380,7 @@ async def vote_on_post(req: VoteOnPostRequest, user_id: int, db: AsyncSession):
             select(Post)
             .where(Post.id == req.post_id)
         )
-        post = result.scalar().first()
+        post = result.scalars().first()
 
         if not post:
             raise HTTPException(status_code=404, detail='Post not found')

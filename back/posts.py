@@ -50,9 +50,8 @@ async def delete_post_ep(
     return {'post': 'deleted'}
 
 
-@router.post('/edit/{post_id}')
+@router.post('/edit')
 async def edit_post_ep(
-    post_id: int,
     req: EditPostRequest,
     db: AsyncSession = Depends(get_db),
     payload: TokenPayload = Depends(auth.access_token_required)
@@ -63,9 +62,8 @@ async def edit_post_ep(
     return {'post': 'edited'}
 
 
-@router.post('/vote/{post_id}')
+@router.post('/vote')
 async def vote_on_post_ep(
-    post_id: int,
     req: VoteOnPostRequest,
     db: AsyncSession = Depends(get_db),
     payload: TokenPayload = Depends(auth.access_token_required)
