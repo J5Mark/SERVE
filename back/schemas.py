@@ -28,12 +28,12 @@ class RegisterRequest(BaseModel):
     entrep: bool = Field(default=False)
     admin: bool = False
 
-    
+
 class Profile(BaseModel):
     username: str
     first_name: str
     last_name: str
-    created_at: str 
+    created_at: str
     entrep: bool
     businesses: Optional[List]
     posts: Optional[List]
@@ -44,7 +44,7 @@ class CreateCommunityRequest(BaseModel):
     description: str = Field(min_length=10)
     reddit_link: Optional[str]
     creator_id: str
-    slug: str   
+    slug: str
 
 
 class DeleteCommunityRequest(BaseModel):
@@ -54,7 +54,7 @@ class DeleteCommunityRequest(BaseModel):
 class CreateBusinessRequest(BaseModel):
     name: str = Field(max_length=20)
     bio: str
-    community_ids: List[int]    
+    community_ids: List[int]
 
 
 class EditBusinessRequest(BaseModel):
@@ -81,3 +81,16 @@ class EditPostRequest(BaseModel):
 class VoteOnPostRequest(BaseModel):
     post_id: int
     would_pay: int
+
+
+class BusinessResponse(BaseModel):
+    id: int
+    name: str
+    bio: str
+    user_id: int
+    created_at: datetime
+    community_ids: List[int] = []
+    verifications: dict = {}
+
+    class Config:
+        from_attributes = True

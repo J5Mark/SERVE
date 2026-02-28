@@ -236,13 +236,13 @@ async def get_newcomers(n: int, communities_ids: List[int], db: AsyncSession):
     try:
         result = await db.execute(
             select(BusinessOperationsLink.business_id)
-            .where(BusinessOperationsLink.community_id in communities_ids)
+            .where(BusinessOperationsLink.community_id.in_(communities_ids))
         )
         business_ids = result.scalars().all()
 
         result = await db.execute(
             select(Business)
-            .where(Business.id in business_ids)
+            .where(Business.id.in_(business_ids))
             .options(
                 selectinload(Business.communities)
             )
