@@ -2,7 +2,7 @@ import os
 import logging
 from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from authx import AuthX, AuthXConfig
+from authx import AuthX, AuthXConfig, TokenPayload
 from pwdlib import PasswordHash
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -28,6 +28,25 @@ config = AuthXConfig(
 )
 
 auth = AuthX(config=config)
+
+
+async def get_user_id_from_token(
+    payload: TokenPayload = Depends(auth.access_token_required),
+    db: AsyncSession = Depends(get_db)
+) -> int:
+    """Get user_id from token, handling both authenticated and anonymous tokens."""
+    sub = payload.sub
+    
+    if sub.isdigit():
+        # Authenticated token - contains user_id
+        return int(sub)
+    else:
+        # Anonymous token - contains device_id, look up user
+        result = await db.execute(select(User).where(User.device_id == sub))
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user.id
 
 password_hasher = PasswordHash.recommended()
 
@@ -87,13 +106,16 @@ def create_tokens(user_id: int | None, device_id: str) -> dict[str, str]:
         "iat": now,
     }
 
+    # Use device_id for anonymous tokens (before registration)
+    token_uid = device_id
+    
     access_token = auth.create_access_token(
-        uid=device_id,
+        uid=token_uid,
         # data=common_claims,
     )
 
     refresh_token = auth.create_refresh_token(
-        uid=device_id,
+        uid=token_uid,
         # data=common_claims,
     )
 
@@ -101,6 +123,13 @@ def create_tokens(user_id: int | None, device_id: str) -> dict[str, str]:
         access_token,
         refresh_token,
     )
+
+
+def create_user_tokens(user_id: int) -> tuple[str, str]:
+    """Create authenticated tokens with user_id (after registration)"""
+    access_token = auth.create_access_token(uid=str(user_id))
+    refresh_token = auth.create_refresh_token(uid=str(user_id))
+    return (access_token, refresh_token)
 
 
 def validate_refresh() -> bool:
@@ -123,8 +152,10 @@ async def device_login(req: DeviceLoginRequest, db: AsyncSession = Depends(get_d
         try:
             ex_user = User(device_id=req.device_id)
             db.add(ex_user)
-            # probably set up a cronjob later that would delete 'empty' UserAuth-s
+            await db.flush()
+            # probably set up a cronjob later that would delete 'empty' User-s
             await db.commit()
+            await db.refresh(ex_user)
 
         except Exception as e:
             logging.error(f"Could not record new auth:\n\n{e}")

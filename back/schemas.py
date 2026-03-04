@@ -39,6 +39,25 @@ class Profile(BaseModel):
     posts: Optional[List]
 
 
+class UserResponse(BaseModel):
+    id: int
+    device_id: Optional[str] = None
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+    admin: bool = False
+    balance: int = 0
+    entrep: bool = False
+    suspended: bool = False
+    created_at: Optional[datetime] = None
+    communities: List = []
+
+    class Config:
+        from_attributes = True
+
+
 class CreateCommunityRequest(BaseModel):
     name: str = Field(min_length=4, max_length=25)
     description: str = Field(min_length=10)
@@ -80,7 +99,9 @@ class EditPostRequest(BaseModel):
 
 class VoteOnPostRequest(BaseModel):
     post_id: int
-    would_pay: int
+    would_pay: float
+    competition: str | None
+    problems: str | None
 
 
 class BusinessResponse(BaseModel):
@@ -94,3 +115,39 @@ class BusinessResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CommunityResponse(BaseModel):
+    community_id: int
+    participants: int
+    name: str
+    description: str
+    reddit_link: Optional[str]
+
+
+class BusinessContact(BaseModel):
+    user_id: int
+    username: str
+    phone_number: str | None = None
+
+    business_name: str
+    business_bio: str
+
+    cont_goal: str
+    reaction_time: int
+    verification_stats: dict | None = None  # seen_count | used_count | coop_count
+
+
+class GetContactsRequest(BaseModel):
+    n: int
+    community_id: int
+    post_id: int
+
+
+class SearchPostRequest(BaseModel):
+    query: str # no analogue for place_id since we want to look for posts in many communities
+    n: int
+    
+
+class ConnectRequest(BaseModel):
+    contact_ids: list[int]

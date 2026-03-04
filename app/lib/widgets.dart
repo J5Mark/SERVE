@@ -318,7 +318,7 @@ class ProfileWidget extends StatelessWidget {
                   radius: 28,
                   backgroundColor: AppColors.brightGreen,
                   child: Text(
-                    '${firstName[0]}${lastName[0]}',
+                    '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -332,7 +332,8 @@ class ProfileWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '$firstName $lastName',
+                        '${firstName.isNotEmpty ? firstName : ''} ${lastName.isNotEmpty ? lastName : ''}'
+                            .trim(),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

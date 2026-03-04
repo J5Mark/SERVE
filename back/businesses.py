@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 from fastapi import Depends, HTTPException, APIRouter
-from auth import auth
+from auth import auth, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -16,6 +16,7 @@ from schemas import (
 from typing import Optional
 from uuid import uuid4
 from utils import *
+from ranking import fetch_useful_businessmen
 from postgres_conn import User, UserAuth, get_db, Community, Post
 
 router = APIRouter(prefix="/business", tags=["businesses"])
@@ -25,9 +26,8 @@ router = APIRouter(prefix="/business", tags=["businesses"])
 async def create_business_ep(
     req: CreateBusinessRequest,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required),
+    user_id: int = Depends(get_user_id_from_token),
 ):
-    user_id = int(payload.sub)
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()  # Will later have to abstract it to use cache
 
@@ -43,9 +43,8 @@ async def create_business_ep(
 async def delete_business_ep(
     business_id: int,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required),
+    user_id: int = Depends(get_user_id_from_token),
 ):
-    user_id = int(payload.sub)
     await delete_business(business_id, user_id, db)
     await db.commit()
     return {"business": "deleted"}
@@ -56,9 +55,8 @@ async def edit_business_ep(
     business_id: int,
     req: EditBusinessRequest,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required),
+    user_id: int = Depends(get_user_id_from_token),
 ):
-    user_id = int(payload.sub)
     await edit_business(req, user_id, business_id, db)
     await db.commit()
     return {"business": "edited"}
@@ -68,9 +66,8 @@ async def edit_business_ep(
 async def get_business_ep(
     business_id: int,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required),
+    user_id: int = Depends(get_user_id_from_token),
 ):
-    user_id = int(payload.sub)
     business = await get_business(business_id, user_id, db)
     verifications_count = {}
     for v in business.verifications:
@@ -90,9 +87,8 @@ async def get_business_ep(
 async def get_newcomers_ep(
     n: int,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required),
+    user_id: int = Depends(get_user_id_from_token),
 ):
-    user_id = int(payload.sub)
     communities_ids = await get_user_communities_ids(user_id, db)
     logging.warning(f"Communities ids: {communities_ids}")
     # something's wrong here
@@ -108,9 +104,37 @@ async def get_newcomers_ep(
 async def veryfy_business_ep(
     req: VerifyBusinessRequest,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required),
+    user_id: int = Depends(get_user_id_from_token),
 ):
-    user_id = int(payload.sub)
     await verify_business(req, user_id, db)
     await db.commit()
     return {"business": "verified"}
+
+
+@router.post('/get_contacts')
+async def get_contacts(
+    req: GetContactsRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    contacts = await fetch_useful_businessmen(
+        req.n            ,
+        user_id          ,
+        req.community_id ,
+        req.post_id      ,
+        db               ,
+    )
+
+    return contacts
+
+
+@router.post('/connect')
+async def connect_ep(
+    req: ConnectRequest,
+    db: AsyncSession = Depends(get_db),
+    requester_id: int = Depends(get_user_id_from_token),
+):
+    await connect(requester_id, req.contact_ids, db)
+    await db.commit()
+
+    return {'connections': 'created'}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
 
@@ -9,26 +10,55 @@ class PostsScreen extends StatefulWidget {
   State<PostsScreen> createState() => _PostsScreenState();
 }
 
-class _PostsScreenState extends State<PostsScreen> {
-  List<dynamic> _posts = [];
+class _PostsScreenState extends State<PostsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  List<dynamic> _forYouPosts = [];
+  List<dynamic> _popularPosts = [];
   bool _isLoading = true;
   String? _error;
+  int _communityCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadPosts();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPosts() async {
     try {
-      final hasToken = await Api.hasToken();
-      final posts = hasToken
-          ? await Api.getPosts()
-          : await Api.getPopularPosts();
+      final deviceId = await Api.getDeviceId();
+      if (deviceId == null) {
+        final popular = await Api.getPopularPosts(20, 0);
+        if (mounted) {
+          setState(() {
+            _popularPosts = popular;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final user = await Api.getUser(deviceId);
+      final communities = user['communities'] as List? ?? [];
+      _communityCount = communities.length;
+
+      final results = await Future.wait([
+        _communityCount >= 5 ? Api.getPosts(20, 0) : Api.getPopularPosts(20, 0),
+        Api.getPopularPosts(20, 0),
+      ]);
+
       if (mounted) {
         setState(() {
-          _posts = posts;
+          _forYouPosts = results[0];
+          _popularPosts = results[1];
           _isLoading = false;
         });
       }
@@ -46,21 +76,36 @@ class _PostsScreenState extends State<PostsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Community Posts'),
+        title: const Text('Posts'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: _communityCount >= 5 ? 'For You' : 'Popular'),
+            const Tab(text: 'Popular'),
+          ],
+        ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push('/search'),
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Navigate to create post
-            },
+            onPressed: () => context.push('/create-post'),
           ),
         ],
       ),
-      body: _buildBody(),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildPostList(_communityCount >= 5 ? _forYouPosts : _popularPosts),
+          _buildPostList(_popularPosts),
+        ],
+      ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildPostList(List<dynamic> posts) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -78,7 +123,7 @@ class _PostsScreenState extends State<PostsScreen> {
       );
     }
 
-    if (_posts.isEmpty) {
+    if (posts.isEmpty) {
       return const Center(
         child: Text('No posts yet. Be the first to create one!'),
       );
@@ -88,23 +133,23 @@ class _PostsScreenState extends State<PostsScreen> {
       onRefresh: _loadPosts,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _posts.length,
+        itemCount: posts.length,
         itemBuilder: (context, index) {
-          final post = _posts[index];
+          final post = posts[index];
+          final postId = post['id'];
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: PostWidget(
-              title: post['title'] ?? '',
-              content: post['content'] ?? post['description'] ?? '',
-              average: (post['average'] ?? post['willingness_to_pay_avg'] ?? 0)
-                  .toDouble(),
-              median: (post['median'] ?? post['willingness_to_pay_median'] ?? 0)
-                  .toDouble(),
-              min: (post['min'] ?? post['willingness_to_pay_min'] ?? 0)
-                  .toDouble(),
-              max: (post['max'] ?? post['willingness_to_pay_max'] ?? 0)
-                  .toDouble(),
-              voteCount: post['votes'] ?? post['vote_count'] ?? 0,
+            child: InkWell(
+              onTap: () => context.push('/post/$postId'),
+              child: PostWidget(
+                title: post['name'] ?? '',
+                content: post['contents'] ?? '',
+                average: (post['stats']?['mean'] ?? 0).toDouble(),
+                median: (post['stats']?['median'] ?? 0).toDouble(),
+                min: (post['stats']?['min'] ?? 0).toDouble(),
+                max: (post['stats']?['max'] ?? 0).toDouble(),
+                voteCount: post['stats']?['amount'] ?? 0,
+              ),
             ),
           );
         },

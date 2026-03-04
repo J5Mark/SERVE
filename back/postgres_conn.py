@@ -185,7 +185,9 @@ class Vote(SQLModel, table=True):
         )
     )
     post: "Post" = Relationship(back_populates='votes')
-    would_pay: float = Field()
+    would_pay: float | None = Field(default=None, nullable=True)
+    competition: str | None = Field(default=None, nullable=True)
+    problems: str | None = Field(default=None, nullable=True)
     voter_id: int = Field(
         sa_column=Column(
             BigInteger,
@@ -232,6 +234,13 @@ class Post(SQLModel, table=True):
         back_populates='posts'
     )
 
+    language: str = Field(nullable=False, max_length=32, index=True, default="english")
+    search_vector: Optional[str] = Field(
+        sa_column=Column(
+            TSVECTOR
+        )
+    )
+
 
 class Verification(SQLModel, table=True):
     __tablename__ = "verifications"
@@ -271,6 +280,8 @@ class Business(SQLModel, table=True):
 
     name: str = Field(index=True)
     bio: str = Field()
+    cont_goal: str | None
+    reaction_time: int | None
 
     communities: List[Community] = Relationship(
         back_populates='businesses',
@@ -294,6 +305,29 @@ class Business(SQLModel, table=True):
     )
     verifications: List[Verification] = Relationship(
         back_populates='business'
+    )
+
+
+class Connection(SQLModel, table=True):
+    __tablename__ = 'connections'
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    requester_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE')
+        )
+    )
+    contact_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='SET NULL')
+        )
+    )
+
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
 
 ###
@@ -329,35 +363,55 @@ async def get_db():
 
 
 
-# def create_search_trigger(conn):
-#     conn.execute(text(
-#         "DROP TRIGGER IF EXISTS update_post_search_vector ON posts"
-#     ))
-#     conn.execute(text(
-#         "DROP FUNCTION IF EXISTS post_search_vector_trigger()"
-#     ))
+def create_post_search_trigger(conn):
+    conn.execute(text(
+        "DROP TRIGGER IF EXISTS update_post_search_vector ON posts"
+    ))
+    conn.execute(text(
+        "DROP FUNCTION IF EXISTS post_search_vector_trigger()"
+    ))
 
-#     conn.execute(text("""
-#         CREATE OR REPLACE FUNCTION post_search_vector_trigger()
-#         RETURNS TRIGGER AS $$
-#         BEGIN
-#             NEW.search_vector :=
-#                 to_tsvector(
-#                     COALESCE(NEW.language, 'english')::regconfig,
-#                     COALESCE(NEW.theme || ' ' || NEW.contents, '')
-#                 );
-#             RETURN NEW;
-#         END;
-#         $$ LANGUAGE plpgsql;
-#     """))
+    conn.execute(text("""
+        CREATE OR REPLACE FUNCTION post_search_vector_trigger()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.search_vector :=
+                to_tsvector(
+                    COALESCE(NEW.language, 'english')::regconfig,
+                    COALESCE(NEW.name || ' ' || NEW.contents, '')
+                );
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+    """))
 
-#     conn.execute(text("""
-#         CREATE TRIGGER update_post_search_vector
-#         BEFORE INSERT OR UPDATE OF theme, contents, language
-#         ON posts
-#         FOR EACH ROW
-#         EXECUTE FUNCTION post_search_vector_trigger()
-#     """))
+    conn.execute(text("""
+        CREATE TRIGGER update_post_search_vector
+        BEFORE INSERT OR UPDATE OF name, contents, language
+        ON posts
+        FOR EACH ROW
+        EXECUTE FUNCTION post_search_vector_trigger()
+    """))
+
+
+def create_community_search_trigger(conn):
+    conn.execute(text(
+                     "DROP TRIGGER IF EXISTS update_community_search_vector ON communities"
+                 ))
+    conn.execute(text(
+                     "DROP FUNCTION IF EXISTS community_search_vector_trigger()"
+                 ))
+
+    conn.execute(text("""
+        CREATE OR REPLACE FUNCTION commnity_search_vector_trigger()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.search_vector :=
+                    to_tsvector(
+                        COALESCE(NEW.language, 'english')::regconfig,
+                        COALESCE(NEW)
+                    )
+                 """)) 
 
 
 async def init_db():
@@ -365,7 +419,7 @@ async def init_db():
         # Drop all tables first to ensure clean schema
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
-        # await conn.run_sync(create_search_trigger)
+        await conn.run_sync(create_post_search_trigger)
         
         # Add performance indexes for post queries
         # await conn.execute(text("""

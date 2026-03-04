@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:app/screens/posts.dart';
 import 'package:app/screens/me.dart';
 import 'package:app/screens/settings.dart';
 import 'package:app/screens/init_screen.dart';
+import 'package:app/screens/register.dart';
+import 'package:app/screens/createpost.dart';
+import 'package:app/screens/createbusiness.dart';
+import 'package:app/screens/createcommunity.dart';
+import 'package:app/screens/newcomers.dart';
+import 'package:app/screens/searchpost.dart';
+import 'package:app/screens/postdetail.dart';
 import 'package:app/widgets.dart';
 
 void main() {
@@ -30,15 +38,30 @@ final GoRouter _router = GoRouter(
 
   redirect: (BuildContext context, GoRouterState state) async {
     final prefs = await SharedPreferences.getInstance();
-    final hasToken = prefs.getString('auth_token') != null;
+    final token = prefs.getString('auth_token');
 
     final isOnInit = state.matchedLocation == '/init';
 
-    if (!hasToken && !isOnInit) {
-      return '/init';
+    if (token == null) {
+      if (!isOnInit) return '/init';
+      return null;
     }
 
-    if (hasToken && isOnInit) {
+    bool isTokenValid = true;
+    try {
+      isTokenValid = !JwtDecoder.isExpired(token);
+    } catch (e) {
+      isTokenValid = false;
+    }
+
+    if (!isTokenValid) {
+      await prefs.remove('auth_token');
+      await prefs.remove('refresh_token');
+      if (!isOnInit) return '/init';
+      return null;
+    }
+
+    if (isOnInit) {
       return '/home';
     }
 
@@ -47,6 +70,37 @@ final GoRouter _router = GoRouter(
 
   routes: [
     GoRoute(path: '/init', builder: (context, state) => const InitScreen()),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/create-post',
+      builder: (context, state) => const CreatePostScreen(),
+    ),
+    GoRoute(
+      path: '/create-business',
+      builder: (context, state) => const CreateBusinessScreen(),
+    ),
+    GoRoute(
+      path: '/create-community',
+      builder: (context, state) => const CreateCommunityScreen(),
+    ),
+    GoRoute(
+      path: '/newcomers',
+      builder: (context, state) => const NewcomersScreen(),
+    ),
+    GoRoute(
+      path: '/search',
+      builder: (context, state) => const SearchPostScreen(),
+    ),
+    GoRoute(
+      path: '/post/:id',
+      builder: (context, state) {
+        final postId = int.parse(state.pathParameters['id']!);
+        return PostDetailScreen(postId: postId);
+      },
+    ),
 
     ShellRoute(
       builder: (context, state, child) {
