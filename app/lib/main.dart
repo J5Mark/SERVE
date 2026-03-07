@@ -13,6 +13,8 @@ import 'package:app/screens/createcommunity.dart';
 import 'package:app/screens/newcomers.dart';
 import 'package:app/screens/searchpost.dart';
 import 'package:app/screens/postdetail.dart';
+import 'package:app/screens/business_detail.dart';
+import 'package:app/screens/community_posts.dart';
 import 'package:app/widgets.dart';
 
 void main() {
@@ -99,6 +101,20 @@ final GoRouter _router = GoRouter(
       builder: (context, state) {
         final postId = int.parse(state.pathParameters['id']!);
         return PostDetailScreen(postId: postId);
+      },
+    ),
+    GoRoute(
+      path: '/business/:id',
+      builder: (context, state) {
+        final businessId = int.parse(state.pathParameters['id']!);
+        return BusinessDetailScreen(businessId: businessId);
+      },
+    ),
+    GoRoute(
+      path: '/community/:id',
+      builder: (context, state) {
+        final communityId = int.parse(state.pathParameters['id']!);
+        return CommunityPostsScreen(communityId: communityId);
       },
     ),
 

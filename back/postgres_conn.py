@@ -9,6 +9,9 @@ from enum import Enum
 
 from uuid import uuid4
 from os import environ as env
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class UserAuth(SQLModel, table=True):
@@ -46,6 +49,10 @@ class Moderator(SQLModel, table=True):
     )
 
 class ParticipantsLink(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint('community_id', 'user_id', name='uq_participant')    
+    )
+    
     community_id: int = Field(
         sa_column=Column(
             BigInteger,
@@ -81,9 +88,9 @@ class BusinessOperationsLink(SQLModel, table=True):
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
-    # __table_args__ = (
-    #     UniqueConstraint("device_id", "username", name='uq_business'), 
-    # )
+    __table_args__ = (
+        UniqueConstraint("device_id", "username", name='uq_business'), 
+    )
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
 

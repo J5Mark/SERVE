@@ -126,6 +126,43 @@ class Api {
     return [];
   }
 
+  static Future<List<dynamic>> discoverCommunities({
+    required int n,
+    required int offset,
+    required String sorting,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/comm/list_communities'),
+      body: jsonEncode({'n': n, 'offset': offset, 'sorting': sorting}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final response = jsonDecode(res.body);
+    if (response is List) return response;
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> joinCommunity(int communityId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/comm/join'),
+      body: jsonEncode({'community_id': communityId}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
+
   static Future<Map<String, dynamic>> createCommunity({
     required String name,
     required String description,
@@ -157,16 +194,18 @@ class Api {
     required String name,
     required String bio,
     required List<int> communityIds,
+    String? contGoal,
+    int? reactionTimeDays,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    final body = {'name': name, 'bio': bio, 'community_ids': communityIds};
+    if (contGoal != null) body['cont_goal'] = contGoal;
+    if (reactionTimeDays != null) body['reaction_time'] = reactionTimeDays;
+
     final res = await http.post(
       Uri.parse("$apiBase/business/create"),
-      body: jsonEncode({
-        'name': name,
-        'bio': bio,
-        'community_ids': communityIds,
-      }),
+      body: jsonEncode(body),
       headers: {
         'Content-Type': 'application/json',
         "Authorization": "Bearer $token",
@@ -175,6 +214,23 @@ class Api {
 
     final data = jsonDecode(res.body);
     return data;
+  }
+
+  static Future<List<dynamic>> getUserBusinesses() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/users/me'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to get user: ${res.statusCode} - ${res.body}');
+    }
+
+    final response = jsonDecode(res.body);
+    final businesses = response['businesses'] as List? ?? [];
+    return businesses;
   }
 
   static Future<Map<String, dynamic>> getBusiness(int businessId) async {
@@ -187,6 +243,34 @@ class Api {
 
     final response = jsonDecode(res.body);
     return response;
+  }
+
+  static Future<Map<String, dynamic>> editBusiness({
+    required int businessId,
+    String? bio,
+    List<int>? communityIds,
+    String? contGoal,
+    int? reactionTimeDays,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final body = <String, dynamic>{};
+    if (bio != null) body['bio'] = bio;
+    if (communityIds != null) body['community_ids'] = communityIds;
+    if (contGoal != null) body['cont_goal'] = contGoal;
+    if (reactionTimeDays != null) body['reaction_time'] = reactionTimeDays;
+
+    final res = await http.post(
+      Uri.parse("$apiBase/business/edit/$businessId"),
+      body: jsonEncode(body),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(res.body);
+    return data;
   }
 
   static Future<List<dynamic>> getNewcomerBusinesses(int n) async {
@@ -265,6 +349,7 @@ class Api {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    print('Vote token: $token');
     final res = await http.post(
       Uri.parse("$apiBase/post/vote"),
       body: jsonEncode({
@@ -278,6 +363,11 @@ class Api {
         "Authorization": "Bearer $token",
       },
     );
+    print('Vote response: ${res.statusCode} - ${res.body}');
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception('Vote failed: ${res.statusCode} - ${res.body}');
+    }
 
     final data = jsonDecode(res.body);
     return data;
@@ -292,6 +382,7 @@ class Api {
     );
 
     final response = jsonDecode(res.body);
+    print(response);
     if (response is List) return response;
     return response['posts'] ?? [];
   }
@@ -305,6 +396,7 @@ class Api {
     );
 
     final response = jsonDecode(res.body);
+    print(response);
     if (response is List) return response;
     return response['posts'] ?? [];
   }
@@ -402,6 +494,33 @@ class Api {
         'n': n,
         'community_id': communityId,
         'post_id': postId,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final response = jsonDecode(res.body);
+    if (response is List) return response;
+    return [];
+  }
+
+  static Future<List<dynamic>> getCommunityPosts({
+    required int communityId,
+    required int n,
+    required int offset,
+    required String sorting,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/post/community/posts'),
+      body: jsonEncode({
+        'community_id': communityId,
+        'n': n,
+        'offset': offset,
+        'sorting': sorting,
       }),
       headers: {
         'Content-Type': 'application/json',

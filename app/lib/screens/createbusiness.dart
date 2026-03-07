@@ -14,8 +14,10 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _bioController = TextEditingController();
+  final _contGoalController = TextEditingController();
   List<dynamic> _communities = [];
   List<int> _selectedCommunityIds = [];
+  int? _reactionTimeDays;
   bool _isLoading = false;
   bool _isLoadingCommunities = true;
   String? _error;
@@ -30,6 +32,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
   void dispose() {
     _nameController.dispose();
     _bioController.dispose();
+    _contGoalController.dispose();
     super.dispose();
   }
 
@@ -78,6 +81,10 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
         name: _nameController.text.trim(),
         bio: _bioController.text.trim(),
         communityIds: _selectedCommunityIds,
+        contGoal: _contGoalController.text.trim().isEmpty
+            ? null
+            : _contGoalController.text.trim(),
+        reactionTimeDays: _reactionTimeDays,
       );
 
       if (mounted) {
@@ -182,6 +189,54 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                           },
                           activeColor: AppColors.brightGreen,
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Contact Preferences (Optional)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _contGoalController,
+                        decoration: const InputDecoration(
+                          labelText: 'Contact Goal',
+                          prefixIcon: Icon(Icons.handshake),
+                          hintText: 'What kind of connections do you want?',
+                        ),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<int>(
+                        value: _reactionTimeDays,
+                        decoration: const InputDecoration(
+                          labelText: 'Response Time',
+                          prefixIcon: Icon(Icons.timer),
+                        ),
+                        dropdownColor: AppColors.darkGreen,
+                        hint: const Text(
+                          'How quickly can you respond?',
+                          style: TextStyle(color: AppColors.grey),
+                        ),
+                        items: [
+                          const DropdownMenuItem<int>(
+                            value: null,
+                            child: Text(
+                              'Not specified',
+                              style: TextStyle(color: AppColors.grey),
+                            ),
+                          ),
+                          ...List.generate(14, (i) => i + 1).map(
+                            (d) => DropdownMenuItem(
+                              value: d,
+                              child: Text('$d days'),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _reactionTimeDays = v),
                       ),
                       const SizedBox(height: 24),
                       if (_error != null) ...[

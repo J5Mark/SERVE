@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+String formatCurrency(double amount, {String currency = '\$'}) {
+  return '$currency${amount.toStringAsFixed(0)}';
+}
+
 class AppColors {
   static const Color primaryBlack = Color(0xFF1A1A1A);
   static const Color darkGreen = Color(0xFF1B4332);
@@ -413,25 +417,122 @@ class ProfileWidget extends StatelessWidget {
 class PostWidget extends StatelessWidget {
   final String title;
   final String content;
-  final double average;
   final double median;
-  final double min;
-  final double max;
   final int voteCount;
+  final VoidCallback? onVote;
+  final bool compact;
+  final String? communityName;
+  final double? average;
+  final double? min;
+  final double? max;
 
   const PostWidget({
     super.key,
     required this.title,
     required this.content,
-    required this.average,
-    required this.median,
-    required this.min,
-    required this.max,
-    required this.voteCount,
+    this.median = 0,
+    this.voteCount = 0,
+    this.onVote,
+    this.compact = false,
+    this.communityName,
+    this.average,
+    this.min,
+    this.max,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (communityName != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkGreen,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    communityName!,
+                    style: const TextStyle(
+                      color: AppColors.brightGreen,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                content,
+                style: TextStyle(color: AppColors.lightGrey, fontSize: 14),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.attach_money,
+                    size: 16,
+                    color: AppColors.yellowAccent,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Median: ${formatCurrency(median)}',
+                    style: TextStyle(
+                      color: AppColors.yellowAccent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (voteCount > 0) ...[
+                    Icon(Icons.how_to_vote, size: 14, color: AppColors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$voteCount',
+                      style: TextStyle(color: AppColors.grey, fontSize: 13),
+                    ),
+                  ],
+                  if (onVote != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.how_to_vote,
+                        color: AppColors.brightGreen,
+                        size: 20,
+                      ),
+                      onPressed: onVote,
+                      tooltip: 'Vote',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -454,12 +555,27 @@ class PostWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 16),
-            PaymentStatsRow(
-              average: average,
-              median: median,
-              min: min,
-              max: max,
-              voteCount: voteCount,
+            Row(
+              children: [
+                Expanded(
+                  child: PaymentStatsRow(
+                    average: average ?? 0,
+                    median: median,
+                    min: min ?? 0,
+                    max: max ?? 0,
+                    voteCount: voteCount,
+                  ),
+                ),
+                if (onVote != null)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.how_to_vote,
+                      color: AppColors.brightGreen,
+                    ),
+                    onPressed: onVote,
+                    tooltip: 'Vote',
+                  ),
+              ],
             ),
           ],
         ),

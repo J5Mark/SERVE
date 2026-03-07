@@ -151,3 +151,56 @@ class SearchPostRequest(BaseModel):
 
 class ConnectRequest(BaseModel):
     contact_ids: list[int]
+
+
+class GetCommunityPostsRequest(BaseModel):
+    community_id: int
+    n: int
+    offset: int
+    sorting: str    
+
+
+class EditCommunityRequest(BaseModel):
+    community_id: int
+    description: str
+    # mods: List[int] # TODO make some kind of an endpoint for updating mods
+    
+
+class ListCommunitiesRequest(BaseModel):
+    n: int
+    offset: int
+    sorting: str
+
+
+class SearchCommunitiesRequest(BaseModel):
+    query: str
+    n: int
+
+
+class JoinCommunityRequest(BaseModel):
+    community_id: int
+
+
+class RecordPaymentRequest(BaseModel):
+    pass
+
+
+class ChangebalanceRequest(BaseModel):
+    pass
+
+
+class PostPreview(BaseModel):
+    post_id: int
+    name: str
+    contents: str
+    n_votes: int
+    median: float
+    created_at: datetime
+    community_name: str
+    community_id: int
+    
+
+class ChangeModeratorsRequest(BaseModel):
+    community_id: int
+    add: int | None = None
+    remove: int | None = None

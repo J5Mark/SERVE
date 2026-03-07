@@ -15,6 +15,9 @@ class _MeScreenState extends State<MeScreen> {
   Map<String, dynamic>? _user;
   bool _isLoading = true;
   String? _error;
+  List<dynamic> _discoverCommunities = [];
+  bool _isLoadingDiscover = false;
+  String _discoverSorting = 'popular';
 
   @override
   void initState() {
@@ -48,6 +51,48 @@ class _MeScreenState extends State<MeScreen> {
           _error = e.toString();
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _loadDiscoverCommunities() async {
+    setState(() => _isLoadingDiscover = true);
+    try {
+      final communities = await Api.discoverCommunities(
+        n: 10,
+        offset: 0,
+        sorting: _discoverSorting,
+      );
+      if (mounted) {
+        setState(() {
+          _discoverCommunities = communities;
+          _isLoadingDiscover = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingDiscover = false);
+      }
+    }
+  }
+
+  Future<void> _joinCommunity(int communityId) async {
+    try {
+      await Api.joinCommunity(communityId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Joined community!'),
+            backgroundColor: AppColors.brightGreen,
+          ),
+        );
+        _loadUser();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -143,6 +188,7 @@ class _MeScreenState extends State<MeScreen> {
     final entrep = _user!['entrep'] ?? false;
     final createdAt = _user!['created_at'] ?? '';
     final communities = _user!['communities'] as List? ?? [];
+    final businesses = _user!['businesses'] as List? ?? [];
 
     List<String> roles = [];
     if (entrep) roles.add('Entrepreneur');
@@ -215,6 +261,110 @@ class _MeScreenState extends State<MeScreen> {
                       c['name'] ?? '',
                       style: const TextStyle(color: Colors.white),
                     ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.grey,
+                    ),
+                    onTap: () => context.push('/community/${c['id']}'),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Discover Communities',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _loadDiscoverCommunities();
+                    _showDiscoverCommunitiesSheet(context);
+                  },
+                  child: const Text('See All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Text(
+                      'Find new communities',
+                      style: TextStyle(color: AppColors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        _loadDiscoverCommunities();
+                        _showDiscoverCommunitiesSheet(context);
+                      },
+                      child: const Text('Discover'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Your Businesses',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (businesses.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        'No businesses yet',
+                        style: TextStyle(color: AppColors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => context.push('/create-business'),
+                        child: const Text('Create Business'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...businesses.map(
+                (b) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.business,
+                      color: AppColors.yellowAccent,
+                    ),
+                    title: Text(
+                      b['name'] ?? '',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    subtitle: Text(
+                      b['bio'] ?? '',
+                      style: TextStyle(color: AppColors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.grey,
+                    ),
+                    onTap: () => context.push('/business/${b['id']}'),
                   ),
                 ),
               ),
@@ -263,6 +413,125 @@ class _MeScreenState extends State<MeScreen> {
                 Navigator.pop(context);
                 context.push('/newcomers');
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDiscoverCommunitiesSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.primaryBlack,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.grey,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Text(
+                    'Discover Communities',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.grey),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'popular', label: Text('Popular')),
+                  ButtonSegment(value: 'new', label: Text('New')),
+                  ButtonSegment(value: 'relevant', label: Text('Relevant')),
+                ],
+                selected: {_discoverSorting},
+                onSelectionChanged: (selection) {
+                  setState(() => _discoverSorting = selection.first);
+                  _loadDiscoverCommunities();
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Divider(color: AppColors.grey, height: 1),
+            Expanded(
+              child: _isLoadingDiscover
+                  ? const Center(child: CircularProgressIndicator())
+                  : _discoverCommunities.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No communities found',
+                        style: TextStyle(color: AppColors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _discoverCommunities.length,
+                      itemBuilder: (context, index) {
+                        final community = _discoverCommunities[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.groups,
+                              color: AppColors.brightGreen,
+                            ),
+                            title: Text(
+                              community['name'] ?? '',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              community['description'] ?? '',
+                              style: TextStyle(color: AppColors.grey),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                _joinCommunity(community['id']);
+                                Navigator.pop(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.brightGreen,
+                              ),
+                              child: const Text('Join'),
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.push('/community/${community['id']}');
+                            },
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

@@ -13,7 +13,6 @@ from datetime import datetime, timezone
 from schemas import *
 from postgres_conn import User, UserAuth, get_db
 
-
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "qwertyuiop")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
@@ -222,3 +221,13 @@ async def refresh(req: RefreshRequest):
     except Exception as e:
         logging.error(f"Refresh token error: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+
+@router.post('/send_codes')
+async def send_2fa_codes():
+    pass
+
+
+@router.post('/check_codes')
+async def check_2fa_codes():
+    pass

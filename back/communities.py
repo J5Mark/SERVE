@@ -79,4 +79,62 @@ async def get_community_ep(community_id: int, db: AsyncSession = Depends(get_db)
     return resp
 
 
-# TODO community edit ep
+@router.post('/edit')
+async def edit_community_ep(
+    req: EditCommunityRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    edit_community(req, db, user_id)
+    await db.commit()
+    return {'community': 'edited'}
+
+
+@router.post('/change_moderators')
+async def change_moderators_ep(
+    req: ChangeModeratorsRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    change_moderators(req, db, user_id)
+    await db.commit()
+    return {'moderators': 'changed'}
+
+
+@router.post('/list_communities')
+async def list_communities_ep(
+    req: ListCommunitiesRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    communities = []
+    match req.sorting:
+        case 'popular':
+            pass
+
+        case 'new':
+            pass
+
+        case 'relevant':
+            pass # one of the latest to implement features honestly
+
+
+@router.post('/search')
+async def search_communities_ep(
+    req: SearchCommunitiesRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    pass
+
+
+@router.post('/join')
+async def join_community_ep(
+    req: JoinCommunityRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    await join_community(req, db, user_id)
+    await db.commit()
+
+    return {'community': 'joined'}

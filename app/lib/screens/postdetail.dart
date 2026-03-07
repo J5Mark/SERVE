@@ -14,6 +14,7 @@ class PostDetailScreen extends StatefulWidget {
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
   Map<String, dynamic>? _post;
+  Map<String, dynamic>? _stats;
   List<dynamic> _votes = [];
   bool _isLoading = true;
   String? _error;
@@ -33,6 +34,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       if (mounted) {
         setState(() {
           _post = postData['post'];
+          _stats = postData['stats'];
           _votes = postData['votes'] ?? [];
           _isLoading = false;
         });
@@ -220,7 +222,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
 
     final post = _post!;
-    final stats = post['stats'] as Map<String, dynamic>?;
+    final stats = _stats;
 
     return RefreshIndicator(
       onRefresh: _loadPost,
@@ -252,11 +254,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   if (stats != null) ...[
                     const SizedBox(height: 20),
                     PaymentStatsRow(
-                      average: (stats['mean'] ?? 0).toDouble(),
-                      median: (stats['median'] ?? 0).toDouble(),
-                      min: (stats['min'] ?? 0).toDouble(),
-                      max: (stats['max'] ?? 0).toDouble(),
-                      voteCount: stats['amount'] ?? 0,
+                      average: (stats['mean'] is num ? stats['mean'] : 0)
+                          .toDouble(),
+                      median: (stats['median'] is num ? stats['median'] : 0)
+                          .toDouble(),
+                      min: (stats['min'] is num ? stats['min'] : 0).toDouble(),
+                      max: (stats['max'] is num ? stats['max'] : 0).toDouble(),
+                      voteCount: stats['amount'] is int ? stats['amount'] : 0,
                     ),
                   ],
                 ],

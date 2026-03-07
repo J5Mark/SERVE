@@ -13,12 +13,19 @@ from postgres_conn import *
 from auth import hash_password
 
 
+LANG_MAP = {
+    "en": "english",
+    "ru": "russian",
+    "nl": "dutch",
+}
+
 def detect_language(name: str, contents: str) -> str:
     try:
-        lang = detect(f'{name} {contents}')
+        code = detect(f"{name} {contents}")
     except Exception:
-        lang = 'english'
+        return "english"
 
+    return LANG_MAP.get(code, "english")
 
 async def register_user(req: RegisterRequest, db: AsyncSession):
     try:
@@ -353,7 +360,6 @@ async def create_post(req: CreatePostRequest, user_id: int, db: AsyncSession):
 
         db.add(vote)
 
-
     except HTTPException:
         raise
     except Exception as e:
@@ -367,7 +373,8 @@ async def get_post(post_id: int, db: AsyncSession):
             select(Post)
             .where(Post.id == post_id)
             .options(
-                selectinload(Post.votes)
+                selectinload(Post.votes),
+                selectinload(Post.community)
             )
         )
         post = result.scalars().first()
@@ -461,7 +468,7 @@ async def vote_on_post(req: VoteOnPostRequest, user_id: int, db: AsyncSession):
             would_pay = req.would_pay     ,
             voter_id  = user_id           ,
             competition = req.competition ,
-            problems = req.competition    ,
+            problems = req.problems       ,
         )
 
         db.add(vote)
@@ -473,11 +480,15 @@ async def vote_on_post(req: VoteOnPostRequest, user_id: int, db: AsyncSession):
         raise HTTPException(status_code=500, detail=f'Could not vote on post: {e}')
 
 
-async def fetch_popular_posts(n: int, offset: int, db: AsyncSession):
+async def fetch_popular_posts(n: int, offset: int, db: AsyncSession) -> List[PostPreview]:
     try:
         result = await db.execute(
             select(Post)
             .outerjoin(Post.votes)
+            .options(
+                selectinload(Post.votes),
+                selectinload(Post.community)
+            )
             .group_by(Post.id)
             .order_by(func.count(Vote.id).desc())
             .offset(offset)
@@ -487,64 +498,110 @@ async def fetch_popular_posts(n: int, offset: int, db: AsyncSession):
 
         if not posts:
             raise HTTPException(status_code=404, detail='No posts found')
+
+        previews = []
+        for post in posts:
+            votes = [v.would_pay for v in post.votes if v.would_pay is not None]
+            med = float(np.median(votes)) if votes else 0.0
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                contents       = post.contents[:50]  ,
+                n_votes        = len(votes)          ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
         
-        return posts
-            
+        return previews
+                    
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Could not fetch popular posts: {e}')
     
 
-async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSession):
+async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSession) -> List[PostPreview]:
     try:
-        result = await db.execute(
-            select(ParticipantsLink.community_id)
-            .where(ParticipantsLink.user_id == user_id)
-        )
-        user_communities_ids = result.scalars().all()
-        
         result = await db.execute(
             select(Post)
             .join(ParticipantsLink, ParticipantsLink.community_id == Post.community_id)
-            .join(Vote, Vote.post_id == Post.id, isouter=True)
+            .outerjoin(Post.votes)
+            .options(
+                selectinload(Post.votes).load_only(Vote.would_pay),
+                selectinload(Post.community)
+            )
             .where(ParticipantsLink.user_id == user_id)
             .group_by(Post.id)
             .order_by(func.count(Vote.id).desc())
             .offset(offset)
             .limit(n)
         )
+        
         posts = result.scalars().all()
+        
+        previews = []
+        for post in posts:
+            votes = [v.would_pay for v in post.votes if v.would_pay is not None]
+            med = float(np.median(votes)) if votes else 0.0
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                contents       = post.contents[:50]  ,
+                n_votes        = len(votes)          ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
 
-        return posts
-
+        return previews
+        
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Could not fetch posts for user: {e}')
 
 
-async def search_posts(query: str, n: int, db: AsyncSession) -> List:
+async def search_posts(query: str, n: int, db: AsyncSession) -> List[Post]:
     try:
         language = detect_language('', query)
-    
-        ts_query = func.to_tsquery(language, query)
+
+        ts_query = func.plainto_tsquery(language, query)
+
         stmt = (
             select(Post)
             .options(
-                selectinload(Post.votes)
-            )
-            .where(
-                Post.search_vector.op('@@')(ts_query)
-            )
-            .order_by(
-                func.ts_rank_cd(Post.search_vector, ts_query).desc()
-            )
+                     selectinload(Post.votes),
+                     selectinload(Post.community),
+                 )
+            .where(Post.search_vector.op('@@')(ts_query))
+            .order_by(func.ts_rank_cd(Post.search_vector, ts_query).desc())
             .limit(n)
-        )    
-    
+        )
+
         result = await db.execute(stmt)
         posts = result.scalars().all()
+
+        previews = []
+        for post in posts:
+            votes = [v.would_pay for v in post.votes]
+            med = np.median(votes)
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                n_votes        = len(votes)          ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
+
+        return previews
 
     except HTTPException:
         raise
@@ -571,3 +628,122 @@ async def connect(requester_id: int, contact_ids: list[int], db: AsyncSession):
         raise
     except Exception as e:
         raise HTTPException(statius_code=500, detail=f'Could not add contacts: {e}')
+
+
+async def join_community(
+    req: JoinCommunityRequest,
+    db: AsyncSession,
+    user_id: int
+):
+    try:
+        community = await db.get(Community, req.community_id)
+        if not community:
+            raise HTTPException(404, "Community not found")
+        
+        link = ParticipantsLink(
+            user_id=user_id,
+            community_id=req.community_id
+        )
+        
+        db.add(link)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not join community')
+
+
+async def fetch_popular_communities():
+    pass
+
+
+async def fetch_new_communities():
+    pass
+
+
+async def edit_community(req: EditCommunityRequest, db: AsyncSession, user_id: int):
+    try:
+        result = await db.execute(
+            select(Community)
+            .options(
+                selectinload(Community.mods)
+            )
+            .where(Community.id == req.community_id)
+        )
+        community = result.scalars().first()
+
+        result = await db.execute(
+            select(ParticipantsLink)
+            .where(ParticipantsLink.user_id == user_id,
+                   ParticipantsLink.community_id == req.community_id)
+        )
+        participant = result.scalars().firat()
+    
+        if not participant:
+            raise HTTPException(status_code=401, detail="User in not in the community")    
+
+        if not community:
+            raise HTTPException(status_code=404, detail='Community not found')
+
+        if user_id not in [m.user_id for m in community.mods]:
+            raise HTTPException(status_code=401, detail='Forbidden')
+        
+        community.description = req.description
+        
+        await db.flush()
+        await db.ferfesh(community)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
+
+
+async def change_moderators(req: ChangeModeratorsRequest, db: AsyncSession, user_id: int):
+    try:
+        if req.add:
+            result = await db.execute(
+                select(Moderator)
+                .where(Moderator.user_id == req.add, Moderator.community_id == req.community_id)
+            )
+            mod = result.scalars().first()
+
+            if mod:
+                raise HTTPException(status_code=401, detail='Moderator already exists')
+            else:
+                mod = Moderator(
+                    community_id = req.community_id ,
+                    user_id      = user_id          ,
+                )
+                db.add(mod)
+            
+        if req.remove:
+            result = await db.execute(
+                select(Moderator)
+                .where(Moderator.user_id == req.remove, Moderator.community_id == req.community_id)
+            )
+            mod = result.scalars().first()
+
+            if not mod:
+                raise HTTPException(status_code=404, detail="User doesn't moderate community")
+            else:
+                await db.delete(mod)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
+
+
+async def list_new_communities():
+    try:
+        
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
+    
+
+async def list_popular_communities():
+    pass

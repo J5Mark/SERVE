@@ -14,4 +14,5 @@ RUN uv pip install --system .
 COPY . /app
 
 ENV PYTHONBUFFERED=1
+EXPOSE 3000
 CMD ["python", "-m", "main"]

@@ -3,62 +3,52 @@ import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
 
-class PostsScreen extends StatefulWidget {
-  const PostsScreen({super.key});
+class CommunityPostsScreen extends StatefulWidget {
+  final int communityId;
+
+  const CommunityPostsScreen({super.key, required this.communityId});
 
   @override
-  State<PostsScreen> createState() => _PostsScreenState();
+  State<CommunityPostsScreen> createState() => _CommunityPostsScreenState();
 }
 
-class _PostsScreenState extends State<PostsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  List<dynamic> _forYouPosts = [];
-  List<dynamic> _popularPosts = [];
+class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
+  Map<String, dynamic>? _community;
+  List<dynamic> _posts = [];
   bool _isLoading = true;
   String? _error;
-  int _communityCount = 0;
+  String _sorting = 'popular';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _loadCommunity();
     _loadPosts();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<void> _loadCommunity() async {
+    try {
+      final community = await Api.getCommunity(widget.communityId);
+      if (mounted) {
+        setState(() => _community = community);
+      }
+    } catch (e) {
+      // Community load error - not critical
+    }
   }
 
   Future<void> _loadPosts() async {
+    setState(() => _isLoading = true);
     try {
-      final deviceId = await Api.getDeviceId();
-      if (deviceId == null) {
-        final popular = await Api.getPopularPosts(20, 0);
-        if (mounted) {
-          setState(() {
-            _popularPosts = popular;
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-
-      final user = await Api.getUser(deviceId);
-      final communities = user['communities'] as List? ?? [];
-      _communityCount = communities.length;
-
-      final results = await Future.wait([
-        _communityCount >= 5 ? Api.getPosts(20, 0) : Api.getPopularPosts(20, 0),
-        Api.getPopularPosts(20, 0),
-      ]);
-
+      final posts = await Api.getCommunityPosts(
+        communityId: widget.communityId,
+        n: 20,
+        offset: 0,
+        sorting: _sorting,
+      );
       if (mounted) {
         setState(() {
-          _forYouPosts = results[0];
-          _popularPosts = results[1];
+          _posts = posts;
           _isLoading = false;
         });
       }
@@ -72,98 +62,25 @@ class _PostsScreenState extends State<PostsScreen>
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Posts'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: _communityCount >= 5 ? 'For You' : 'All'),
-            const Tab(text: 'Popular'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => context.push('/search'),
+  Future<void> _joinCommunity() async {
+    try {
+      await Api.joinCommunity(widget.communityId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Joined community!'),
+            backgroundColor: AppColors.brightGreen,
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push('/create-post'),
-          ),
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildPostList(_communityCount >= 5 ? _forYouPosts : _popularPosts),
-          _buildPostList(_popularPosts),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPostList(List<dynamic> posts) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+        );
+        _loadCommunity();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
-
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Error: $_error'),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadPosts, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    if (posts.isEmpty) {
-      return const Center(
-        child: Text('No posts yet. Be the first to create one!'),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadPosts,
-      displacement: 50,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: posts.length,
-        itemBuilder: (context, index) {
-          final post = posts[index];
-          // Handle both old format (id) and new format (post_id)
-          final postId = post['post_id'] ?? post['id'];
-          if (postId == null) return const SizedBox.shrink();
-          // Handle both old format (stats) and new format (median, n_votes)
-          final stats = post['stats'] as Map<String, dynamic>?;
-          final median = post['median'] != null
-              ? (post['median'] as num).toDouble()
-              : (stats?['median'] ?? 0).toDouble();
-          final voteCount = post['n_votes'] ?? stats?['amount'] ?? 0;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: InkWell(
-              onTap: () => context.push('/post/$postId'),
-              child: PostWidget(
-                title: post['name'] ?? '',
-                content: post['contents'] ?? '',
-                median: median,
-                voteCount: voteCount,
-                communityName: post['community_name'],
-                onVote: () => _showVoteSheet(postId),
-                compact: true,
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 
   void _showVoteSheet(int postId) {
@@ -281,6 +198,107 @@ class _PostsScreenState extends State<PostsScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_community?['name'] ?? 'Community'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.group_add),
+            onPressed: _joinCommunity,
+            tooltip: 'Join Community',
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push('/create-post'),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'popular', label: Text('Popular')),
+                ButtonSegment(value: 'new', label: Text('New')),
+                ButtonSegment(value: 'relevant', label: Text('Relevant')),
+              ],
+              selected: {_sorting},
+              onSelectionChanged: (selection) {
+                setState(() => _sorting = selection.first);
+                _loadPosts();
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.brightGreen;
+                  }
+                  return AppColors.darkGreen;
+                }),
+              ),
+            ),
+          ),
+          Expanded(child: _buildPostList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostList() {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error'),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadPosts, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+    if (_posts.isEmpty) {
+      return const Center(
+        child: Text('No posts yet. Be the first to create one!'),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadPosts,
+      displacement: 50,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _posts.length,
+        itemBuilder: (context, index) {
+          final post = _posts[index];
+          final postId = post['post_id'];
+          final median = (post['median'] ?? 0).toDouble();
+          final voteCount = post['n_votes'] ?? 0;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: InkWell(
+              onTap: () => context.push('/post/$postId'),
+              child: PostWidget(
+                title: post['name'] ?? '',
+                content: post['contents'] ?? '',
+                median: median,
+                voteCount: voteCount,
+                onVote: () => _showVoteSheet(postId),
+                compact: true,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

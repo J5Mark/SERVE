@@ -18,7 +18,9 @@ from communities import router as communities_router
 from businesses import router as business_router
 from posts import router as posts_router
 from postgres_conn import *
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app = FastAPI()
 
@@ -69,7 +71,7 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     try:
-        uvicorn.run("main:app", host="0.0.0.0", port=1000, reload=False)
+        uvicorn.run("main:app", host="0.0.0.0", port=1000, reload=False, proxy_headers=True)
 
     except Exception as e:
         event.Event("The app could not start", {"level": "error", "error": str(e)})

@@ -131,16 +131,16 @@ class _SearchPostScreenState extends State<SearchPostScreen> {
                     itemCount: _results.length,
                     itemBuilder: (context, index) {
                       final post = _results[index];
+                      final median = (post['median'] ?? 0).toDouble();
+                      final voteCount = post['n_votes'] ?? 0;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: PostWidget(
                           title: post['name'] ?? '',
                           content: post['contents'] ?? '',
-                          average: (post['stats']?['mean'] ?? 0).toDouble(),
-                          median: (post['stats']?['median'] ?? 0).toDouble(),
-                          min: (post['stats']?['min'] ?? 0).toDouble(),
-                          max: (post['stats']?['max'] ?? 0).toDouble(),
-                          voteCount: post['stats']?['amount'] ?? 0,
+                          median: median,
+                          voteCount: voteCount,
+                          compact: true,
                         ),
                       );
                     },

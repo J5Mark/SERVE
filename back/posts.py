@@ -98,3 +98,26 @@ async def search_posts_ep(
 ):
     found_posts = await search_posts(req.query, req.n, db)
     return found_posts
+
+
+@router.post('/community/posts')
+async def get_community_posts(
+    req: GetCommunityPostsRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    posts = []
+    match req.sorting:
+        case 'new':
+            pass
+
+        case 'popular':
+            pass
+
+        case 'med_asc':
+            pass
+
+        case 'med_desc':
+            pass
+
+    return posts
