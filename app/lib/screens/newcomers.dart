@@ -40,8 +40,39 @@ class _NewcomersScreenState extends State<NewcomersScreen> {
   }
 
   Future<void> _verifyBusiness(int businessId) async {
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkGreen,
+        title: const Text(
+          'Verify Business',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'How do you know this business?',
+          style: TextStyle(color: AppColors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'use'),
+            child: const Text('Used their services'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'coop'),
+            child: const Text('Want to cooperate'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'seen'),
+            child: const Text('Seen them work'),
+          ),
+        ],
+      ),
+    );
+
+    if (choice == null) return;
+
     try {
-      await Api.verifyBusiness(businessId, 'upvote');
+      await Api.verifyBusiness(businessId, choice);
       if (mounted) {
         ScaffoldMessenger.of(
           context,

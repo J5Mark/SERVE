@@ -109,6 +109,7 @@ class _MeScreenState extends State<MeScreen> {
       body: _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showActionSheet(context),
+        backgroundColor: AppColors.brightGreen,
         icon: const Icon(Icons.add),
         label: const Text('Create'),
       ),

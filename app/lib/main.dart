@@ -15,6 +15,8 @@ import 'package:app/screens/searchpost.dart';
 import 'package:app/screens/postdetail.dart';
 import 'package:app/screens/business_detail.dart';
 import 'package:app/screens/community_posts.dart';
+import 'package:app/screens/chats.dart';
+import 'package:app/screens/chat.dart';
 import 'package:app/widgets.dart';
 
 void main() {
@@ -89,8 +91,11 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const CreateCommunityScreen(),
     ),
     GoRoute(
-      path: '/newcomers',
-      builder: (context, state) => const NewcomersScreen(),
+      path: '/chat/:id',
+      builder: (context, state) {
+        final conversationId = int.parse(state.pathParameters['id']!);
+        return ChatScreen(conversationId: conversationId);
+      },
     ),
     GoRoute(
       path: '/search',
@@ -129,6 +134,14 @@ final GoRouter _router = GoRouter(
         ),
         GoRoute(path: '/me', builder: (context, state) => const MeScreen()),
         GoRoute(
+          path: '/newcomers',
+          builder: (context, state) => const NewcomersScreen(),
+        ),
+        GoRoute(
+          path: '/chats',
+          builder: (context, state) => const ChatsScreen(),
+        ),
+        GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
@@ -144,7 +157,9 @@ class MainLayout extends StatelessWidget {
 
   int _getIndex(String location) {
     if (location.startsWith('/me')) return 1;
-    if (location.startsWith('/settings')) return 2;
+    if (location.startsWith('/newcomers')) return 2;
+    if (location.startsWith('/chats')) return 3;
+    if (location.startsWith('/settings')) return 4;
     return 0;
   }
 
@@ -156,6 +171,9 @@ class MainLayout extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.yellowAccent,
+        unselectedItemColor: AppColors.grey,
         currentIndex: currentIndex,
         onTap: (index) {
           switch (index) {
@@ -166,6 +184,12 @@ class MainLayout extends StatelessWidget {
               context.go('/me');
               break;
             case 2:
+              context.go('/newcomers');
+              break;
+            case 3:
+              context.go('/chats');
+              break;
+            case 4:
               context.go('/settings');
               break;
           }
@@ -173,6 +197,8 @@ class MainLayout extends StatelessWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.business), label: "New"),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chats"),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: "Settings",

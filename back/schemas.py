@@ -228,3 +228,19 @@ class ChangeModeratorsRequest(BaseModel):
     community_id: int
     add: int | None = None
     remove: int | None = None
+
+
+class SendMessage(BaseModel):
+    content: str
+
+
+class MessageResponse(BaseModel):
+    id: int
+    content: str
+    author_id: int
+    author_username: str
+    created_at: datetime
+    me: bool
+
+    class Config:
+        from_attributes=True

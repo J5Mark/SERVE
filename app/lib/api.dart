@@ -624,4 +624,63 @@ class Api {
     final data = jsonDecode(res.body);
     return data;
   }
+
+  // Chat API methods
+  static Future<List<dynamic>> getConversations(int n, int offset) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/chats/?n=$n&offset=$offset'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    final response = jsonDecode(res.body);
+    if (response is List) return response;
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> getChat(int conversationId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/chats/$conversationId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> createConversation(
+    int targetUserId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/chats/$targetUserId/create'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> sendMessage(
+    int conversationId,
+    String content,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/chats/$conversationId'),
+      body: jsonEncode({'content': content}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
 }

@@ -1067,3 +1067,6 @@ async def fetch_median_descending_community_posts(community_id: int, n: int, db:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Could not fetch median descending community posts: {e}')
 
+
+async def get_user_conversations():
+    pass

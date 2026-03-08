@@ -141,7 +141,7 @@ async def search_communities_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):
-    communities = await search_communities(req.query, req.n, db)
+    communities = await search_communities(req.query, req.n, db, user_id)
     return communities
 
 

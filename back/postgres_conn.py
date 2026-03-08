@@ -86,6 +86,22 @@ class BusinessOperationsLink(SQLModel, table=True):
     )
 
 
+class ConversationParticipant(SQLModel, table=True):
+    conversation_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('conversations.id', ondelete='CASCADE'),
+            primary_key=True
+        )
+    )
+    user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE')
+        )
+    )
+
+
 class User(SQLModel, table=True):
     __tablename__ = "users"
     __table_args__ = (
@@ -132,6 +148,11 @@ class User(SQLModel, table=True):
     
     entrep: bool = Field(default=False, sa_column=Column(Boolean, default=False, nullable=False))
     suspended: bool = Field(default=False, sa_column=Column(Boolean, default=False, nullable=False))
+    conversations: List["Conversation"] = Relationship(
+        back_populates='participants',
+        link_model=ConversationParticipant
+    )
+    sent_messages: List["Message"] = Relationship(back_populates='author')
 
 
 class Community(SQLModel, table=True):
@@ -209,6 +230,7 @@ class Vote(SQLModel, table=True):
             nullable=False
         )
     )
+
 
 class Post(SQLModel, table=True):
     __tablename__ = 'posts'
@@ -354,8 +376,42 @@ class Conversation(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=False), server_default=func.now())
     )
 
-    # participants: List[User] = Relationship
+    participants: List[User] = Relationship(
+        back_populates='conversations',
+        link_model=ConversationParticipant
+    )
+    messages: List['Message'] = Relationship(
+        back_populates='conversation'
+    )
     
+
+class Message(SQLModel, table=True):
+    __tablename__='messages'
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+    content: str
+    conversation_id: int = Field(
+        sa_column = Column(
+            BigInteger,
+            ForeignKey('conversations.id', ondelete='CASCADE'),
+        )
+    )
+    author_id: int = Field(
+        sa_column = Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE')
+        )
+    )
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True),
+            server_default=func.now(),
+            nullable=False,
+        )
+    )
+    conversation: Conversation = Relationship(back_populates='messages')
+    author: User = Relationship(back_populates='sent_messages')
+
 ###
 
 def get_database_url():

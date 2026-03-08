@@ -157,14 +157,22 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Future<void> _connectContact(int userId) async {
     try {
       await Api.addContacts([userId]);
+
+      final conversation = await Api.createConversation(userId);
+      final conversationId =
+          conversation['conversation_id'] ?? conversation['id'];
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Contact added successfully'),
+            content: Text('Contact added! Starting chat...'),
             backgroundColor: AppColors.brightGreen,
           ),
         );
         Navigator.pop(context);
+        if (conversationId != null) {
+          context.push('/chat/$conversationId');
+        }
       }
     } catch (e) {
       if (mounted) {
