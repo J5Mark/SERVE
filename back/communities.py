@@ -57,16 +57,26 @@ async def delete_community_ep(
 
 
 @router.get("/{community_id}", response_model=CommunityResponse)
-async def get_community_ep(community_id: int, db: AsyncSession = Depends(get_db)):
+async def get_community_ep(
+    community_id: int,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
     result = await db.execute(
         select(Community)
         .where(Community.id == community_id)
-        .options(selectinload(Community.participants))
+        .options(
+            selectinload(Community.participants),
+            selectinload(Community.mods)
+        )
     )
     community = result.scalars().first()
 
     if not community:
         raise HTTPException(status_code=404, detail=f"Community not found")
+
+    mod_ids = [mod.user_id for mod in community.mods]
+    is_moderator = user_id in mod_ids
 
     resp = CommunityResponse(
         community_id=community_id,
@@ -74,6 +84,8 @@ async def get_community_ep(community_id: int, db: AsyncSession = Depends(get_db)
         name=community.name,
         description=community.description,
         reddit_link=community.reddit_link,
+        is_moderator=is_moderator,
+        mods=mod_ids,
     )
 
     return resp
@@ -107,17 +119,21 @@ async def list_communities_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):
-    communities = []
     match req.sorting:
         case 'popular':
-            pass
+            communities = await list_popular_communities(req.n, req.offset, db)
+            return communities
 
         case 'new':
-            pass
+            communities = await list_new_communities(req.n, req.offset, db)
+            return communities
 
         case 'relevant':
-            pass # one of the latest to implement features honestly
+            raise HTTPException(status_code=404, detail='Not implemented')
+            # one of the latest to implement features honestly
 
+        case _:
+            raise HTTPException(status_code=404, detail='Sorting does not exist')
 
 @router.post('/search')
 async def search_communities_ep(
@@ -125,7 +141,8 @@ async def search_communities_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):
-    pass
+    communities = await search_communities(req.query, req.n, db)
+    return communities
 
 
 @router.post('/join')

@@ -50,7 +50,7 @@ class Moderator(SQLModel, table=True):
 
 class ParticipantsLink(SQLModel, table=True):
     __table_args__ = (
-        UniqueConstraint('community_id', 'user_id', name='uq_participant')    
+        UniqueConstraint('community_id', 'user_id', name='uq_participant'),    
     )
     
     community_id: int = Field(
@@ -89,7 +89,7 @@ class BusinessOperationsLink(SQLModel, table=True):
 class User(SQLModel, table=True):
     __tablename__ = "users"
     __table_args__ = (
-        UniqueConstraint("device_id", "username", name='uq_business'), 
+        UniqueConstraint("device_id", "username", name='uq_user'), 
     )
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
@@ -175,6 +175,13 @@ class Community(SQLModel, table=True):
         back_populates='communities',
         link_model=BusinessOperationsLink
     )
+    language: str = Field(nullable=False, max_length=32, index=True, default="english")
+    search_vector: Optional[str] = Field(
+        sa_column=Column(
+            TSVECTOR
+        )
+    )
+
 
 
 class Vote(SQLModel, table=True):
@@ -337,6 +344,18 @@ class Connection(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
 
+
+class Conversation(SQLModel, table=True):
+    __tablename__ = 'conversations'
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    created_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=False), server_default=func.now())
+    )
+
+    # participants: List[User] = Relationship
+    
 ###
 
 def get_database_url():
@@ -410,15 +429,26 @@ def create_community_search_trigger(conn):
                  ))
 
     conn.execute(text("""
-        CREATE OR REPLACE FUNCTION commnity_search_vector_trigger()
+        CREATE OR REPLACE FUNCTION community_search_vector_trigger()
         RETURNS TRIGGER AS $$
         BEGIN
             NEW.search_vector :=
                     to_tsvector(
                         COALESCE(NEW.language, 'english')::regconfig,
-                        COALESCE(NEW)
-                    )
-                 """)) 
+                        COALESCE(NEW.name || ' ' || NEW.description, '')
+                    );
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        """))
+
+    conn.execute(text("""
+            CREATE TRIGGER update_community_search_vector
+            BEFORE INSERT OR UPDATE OF name, description, language
+            ON communities
+            FOR EACH ROW
+            EXECUTE FUNCTION community_search_vector_trigger()            
+        """))
 
 
 async def init_db():
@@ -427,6 +457,7 @@ async def init_db():
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
         await conn.run_sync(create_post_search_trigger)
+        await conn.run_sync(create_community_search_trigger)
         
         # Add performance indexes for post queries
         # await conn.execute(text("""

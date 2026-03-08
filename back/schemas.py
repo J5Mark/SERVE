@@ -29,6 +29,14 @@ class RegisterRequest(BaseModel):
     admin: bool = False
 
 
+class UpdateUserRequest(BaseModel):
+    username: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    phone_number: PhoneNumber | None = None
+    email: EmailStr | None = None
+
+
 class Profile(BaseModel):
     username: str
     first_name: str
@@ -74,6 +82,8 @@ class CreateBusinessRequest(BaseModel):
     name: str = Field(max_length=20)
     bio: str
     community_ids: List[int]
+    cont_goal: str | None = None
+    reaction_time: int | None = None
 
 
 class EditBusinessRequest(BaseModel):
@@ -123,6 +133,8 @@ class CommunityResponse(BaseModel):
     name: str
     description: str
     reddit_link: Optional[str]
+    is_moderator: bool = False
+    mods: List[int] = []
 
 
 class BusinessContact(BaseModel):
@@ -163,7 +175,6 @@ class GetCommunityPostsRequest(BaseModel):
 class EditCommunityRequest(BaseModel):
     community_id: int
     description: str
-    # mods: List[int] # TODO make some kind of an endpoint for updating mods
     
 
 class ListCommunitiesRequest(BaseModel):
@@ -199,6 +210,19 @@ class PostPreview(BaseModel):
     community_name: str
     community_id: int
     
+    model_config = {"from_attributes": True}
+
+
+class CommunityPreview(BaseModel):
+    id: int
+    name: str
+    description: str
+    participant_count: int
+    post_count: int
+    joined: bool = False
+    
+    model_config = {"from_attributes": True}
+
 
 class ChangeModeratorsRequest(BaseModel):
     community_id: int

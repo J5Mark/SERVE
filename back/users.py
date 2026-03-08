@@ -7,6 +7,7 @@ from auth import auth, create_user_tokens, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from schemas import *
 from typing import Optional
 from uuid import uuid4
@@ -103,4 +104,52 @@ async def get_user(
         communities=[{'id': c.id, 'name': c.name} for c in user.communities],
     )
 
-# TODO: add user patch ep
+
+@router.patch('/{user_id}', response_model=UserResponse)
+async def update_user(
+    user_id: int,
+    req: UpdateUserRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if req.username is not None:
+        user.username = req.username
+    if req.first_name is not None:
+        user.first_name = req.first_name
+    if req.last_name is not None:
+        user.last_name = req.last_name
+    if req.phone_number is not None:
+        user.phone_number = req.phone_number
+    if req.email is not None:
+        user.email = req.email
+    
+    await db.commit()
+    await db.refresh(user)
+    
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.communities))
+        .where(User.id == user_id)
+    )
+    user = result.scalars().first()
+    
+    return UserResponse(
+        id=user.id,
+        device_id=user.device_id,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone_number=user.phone_number,
+        email=user.email,
+        admin=user.admin,
+        balance=user.balance,
+        entrep=user.entrep,
+        suspended=user.suspended,
+        created_at=user.created_at,
+        communities=[{'id': c.id, 'name': c.name} for c in user.communities],
+    )

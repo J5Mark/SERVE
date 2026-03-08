@@ -5,10 +5,10 @@ String formatCurrency(double amount, {String currency = '\$'}) {
 }
 
 class AppColors {
-  static const Color primaryBlack = Color(0xFF1A1A1A);
-  static const Color darkGreen = Color(0xFF1B4332);
-  static const Color brightGreen = Color(0xFF40916C);
-  static const Color yellowAccent = Color(0xFFD4D700);
+  static const Color primaryBlack = Color(0xFF000007);
+  static const Color darkGreen = Color(0xFF121717);
+  static const Color brightGreen = Color(0xFF3A3AFF);
+  static const Color yellowAccent = Color(0xFF52E8FF);
   static const Color lightYellow = Color(0xFFF0F3BD);
   static const Color grey = Color(0xFF6C757D);
   static const Color lightGrey = Color(0xFFE9ECEF);
@@ -297,6 +297,7 @@ class ProfileWidget extends StatelessWidget {
   final List<String> roles;
   final String memberSince;
   final List<Map<String, dynamic>> posts;
+  final bool editable;
 
   const ProfileWidget({
     super.key,
@@ -306,6 +307,7 @@ class ProfileWidget extends StatelessWidget {
     required this.roles,
     required this.memberSince,
     required this.posts,
+    this.editable = false,
   });
 
   @override
@@ -414,12 +416,126 @@ class ProfileWidget extends StatelessWidget {
   }
 }
 
+class CommunityPreviewWidget extends StatelessWidget {
+  final int id;
+  final String name;
+  final String description;
+  final int participantCount;
+  final int postCount;
+  final bool joined;
+  final VoidCallback? onTap;
+  final VoidCallback? onJoin;
+
+  const CommunityPreviewWidget({
+    super.key,
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.participantCount,
+    required this.postCount,
+    this.joined = false,
+    this.onTap,
+    this.onJoin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  if (joined)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.brightGreen.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.brightGreen),
+                      ),
+                      child: const Text(
+                        'Joined',
+                        style: TextStyle(
+                          color: AppColors.brightGreen,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: const TextStyle(color: AppColors.grey, fontSize: 13),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.people, size: 16, color: AppColors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$participantCount',
+                    style: const TextStyle(color: AppColors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(Icons.article, size: 16, color: AppColors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$postCount',
+                    style: const TextStyle(color: AppColors.grey, fontSize: 12),
+                  ),
+                  const Spacer(),
+                  if (!joined && onJoin != null)
+                    ElevatedButton(
+                      onPressed: onJoin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brightGreen,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: const Text('Join'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class PostWidget extends StatelessWidget {
   final String title;
   final String content;
   final double median;
   final int voteCount;
   final VoidCallback? onVote;
+  final VoidCallback? onTap;
   final bool compact;
   final String? communityName;
   final double? average;
@@ -433,6 +549,7 @@ class PostWidget extends StatelessWidget {
     this.median = 0,
     this.voteCount = 0,
     this.onVote,
+    this.onTap,
     this.compact = false,
     this.communityName,
     this.average,
@@ -443,7 +560,7 @@ class PostWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compact) {
-      return Card(
+      Widget card = Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -462,7 +579,7 @@ class PostWidget extends StatelessWidget {
                   child: Text(
                     communityName!,
                     style: const TextStyle(
-                      color: AppColors.brightGreen,
+                      color: AppColors.yellowAccent,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -531,6 +648,14 @@ class PostWidget extends StatelessWidget {
           ),
         ),
       );
+      if (onTap != null) {
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: card,
+        );
+      }
+      return card;
     }
 
     return Card(

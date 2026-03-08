@@ -203,6 +203,8 @@ class _MeScreenState extends State<MeScreen> {
       }
     }
 
+    final userId = _user!['id'] as int;
+
     return RefreshIndicator(
       onRefresh: _loadUser,
       child: SingleChildScrollView(
@@ -211,13 +213,17 @@ class _MeScreenState extends State<MeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProfileWidget(
-              firstName: firstName,
-              lastName: lastName,
-              username: username,
-              roles: roles,
-              memberSince: memberSince,
-              posts: [],
+            GestureDetector(
+              onTap: () => _showEditProfileDialog(userId),
+              child: ProfileWidget(
+                firstName: firstName,
+                lastName: lastName,
+                username: username,
+                roles: roles,
+                memberSince: memberSince,
+                posts: [],
+                editable: true,
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -535,6 +541,156 @@ class _MeScreenState extends State<MeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(int userId) {
+    final usernameController = TextEditingController(
+      text: _user!['username'] ?? '',
+    );
+    final firstNameController = TextEditingController(
+      text: _user!['first_name'] ?? '',
+    );
+    final lastNameController = TextEditingController(
+      text: _user!['last_name'] ?? '',
+    );
+    final emailController = TextEditingController(text: _user!['email'] ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.primaryBlack,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          bool isLoading = false;
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.grey),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: firstNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'First Name',
+                    prefixIcon: Icon(Icons.badge),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: lastNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Last Name',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setSheetState(() => isLoading = true);
+                          try {
+                            await Api.updateUser(
+                              userId,
+                              username: usernameController.text.isEmpty
+                                  ? null
+                                  : usernameController.text,
+                              firstName: firstNameController.text.isEmpty
+                                  ? null
+                                  : firstNameController.text,
+                              lastName: lastNameController.text.isEmpty
+                                  ? null
+                                  : lastNameController.text,
+                              email: emailController.text.isEmpty
+                                  ? null
+                                  : emailController.text,
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              _loadUser();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Profile updated!'),
+                                  backgroundColor: AppColors.brightGreen,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (context.mounted) {
+                              setSheetState(() => isLoading = false);
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brightGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Save'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

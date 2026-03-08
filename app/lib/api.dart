@@ -143,6 +143,7 @@ class Api {
     );
 
     final response = jsonDecode(res.body);
+    print(response);
     if (response is List) return response;
     return [];
   }
@@ -373,6 +374,22 @@ class Api {
     return data;
   }
 
+  static Future<Map<String, dynamic>> deletePost(int postId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.delete(
+      Uri.parse('$apiBase/post/d/$postId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to delete post: ${res.statusCode} - ${res.body}');
+    }
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
+
   static Future<List<dynamic>> getPosts(int n, int offset) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
@@ -467,6 +484,12 @@ class Api {
   static Future<List<dynamic>> searchPosts(String query, int n) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+
+    if (query.startsWith('c:')) {
+      final communityQuery = query.substring(2).trim();
+      return searchCommunities(communityQuery, n);
+    }
+
     final res = await http.post(
       Uri.parse('$apiBase/post/search'),
       body: jsonEncode({'query': query, 'n': n}),
@@ -477,8 +500,61 @@ class Api {
     );
 
     final response = jsonDecode(res.body);
+    print(response);
     if (response is List) return response;
     return [];
+  }
+
+  static Future<List<dynamic>> searchCommunities(String query, int n) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/comm/search'),
+      body: jsonEncode({'query': query, 'n': n}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final response = jsonDecode(res.body);
+    if (response is List) return response;
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> updateUser(
+    int userId, {
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    String? email,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final body = <String, dynamic>{};
+    if (username != null) body['username'] = username;
+    if (firstName != null) body['first_name'] = firstName;
+    if (lastName != null) body['last_name'] = lastName;
+    if (phoneNumber != null) body['phone_number'] = phoneNumber;
+    if (email != null) body['email'] = email;
+
+    final res = await http.patch(
+      Uri.parse('$apiBase/users/$userId'),
+      body: jsonEncode(body),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to update user: ${res.statusCode} - ${res.body}');
+    }
+
+    final data = jsonDecode(res.body);
+    return data;
   }
 
   static Future<List<dynamic>> getContacts(

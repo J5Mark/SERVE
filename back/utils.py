@@ -148,11 +148,13 @@ async def create_business(req: CreateBusinessRequest, user_id: int, db: AsyncSes
             communities.append(result.scalars().first())
         
         business = Business(
-            name          = req.name    ,
-            bio           = req.bio     ,
-            communities   = communities ,
-            user_id       = user_id     ,
-            verifications = []          ,
+            name          = req.name          ,
+            bio           = req.bio           ,
+            communities   = communities       ,
+            user_id       = user_id           ,
+            verifications = []                ,
+            cont_goal     = req.cont_goal     ,
+            reaction_time = req.reaction_time ,
         )
 
         db.add(business)
@@ -568,41 +570,52 @@ async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSes
 
 async def search_posts(query: str, n: int, db: AsyncSession) -> List[Post]:
     try:
-        language = detect_language('', query)
-
+        if not query.strip():
+            return []
+        
+        language = detect_language(query, '')  # Фикс аргумента
         ts_query = func.plainto_tsquery(language, query)
-
-        stmt = (
-            select(Post)
-            .options(
-                     selectinload(Post.votes),
-                     selectinload(Post.community),
-                 )
-            .where(Post.search_vector.op('@@')(ts_query))
-            .order_by(func.ts_rank_cd(Post.search_vector, ts_query).desc())
-            .limit(n)
-        )
-
+    
+        vote_subq = select(Vote.post_id, func.count(Vote.id).label('n_votes')) \
+            .group_by(Vote.post_id).subquery()
+    
+        stmt = select(
+            Post.id, 
+            Post.name, 
+            Post.created_at, 
+            Post.community_id,
+            Post.contents,
+            Community.name.label('community_name'),
+            vote_subq.c.n_votes,
+            func.percentile_cont(0.5).within_group(Vote.would_pay).label('median')
+        ).select_from(Post) \
+         .join(Community, Post.community_id == Community.id) \
+         .outerjoin(vote_subq, Post.id == vote_subq.c.post_id) \
+         .outerjoin(Vote, Post.id == Vote.post_id) \
+         .where(Post.search_vector.op('@@')(ts_query)) \
+         .group_by(
+             Post.id, Post.name, Post.created_at, Post.community_id, 
+             Community.name, vote_subq.c.n_votes
+         ) \
+         .order_by(func.ts_rank_cd(Post.search_vector, ts_query).desc()) \
+         .limit(n)        
         result = await db.execute(stmt)
-        posts = result.scalars().all()
-
-        previews = []
-        for post in posts:
-            votes = [v.would_pay for v in post.votes]
-            med = np.median(votes)
-            preview = PostPreview(
-                post_id        = post.id             ,
-                name           = post.name           ,
-                n_votes        = len(votes)          ,
-                median         = med                 ,
-                created_at     = post.created_at     ,
-                community_name = post.community.name ,
-                community_id   = post.community_id   ,
+        rows = result.all()
+        
+        return [
+            PostPreview(
+                post_id=row[0],
+                name=row[1],
+                created_at=row[2], 
+                community_id=row[3],
+                community_name=row[4] or "Unknown",
+                contents=row[5],
+                n_votes=row[6] or 0,
+                median=float(row[7]) if row[7] else 0.0,
             )
-            previews.append(preview)
-
-        return previews
-
+            for row in rows
+        ]
+            
     except HTTPException:
         raise
     except Exception as e:
@@ -735,9 +748,17 @@ async def change_moderators(req: ChangeModeratorsRequest, db: AsyncSession, user
         raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
 
 
-async def list_new_communities():
+async def list_new_communities(n: int, offset: int, db: AsyncSession):
     try:
-        
+        result = await db.execute(
+            select(Community)
+            .order_by(Community.created_at.desc())
+            .limit(n)
+            .offset(offset)
+        )
+        communities = result.scalars().all()
+
+        return communities
 
     except HTTPException:
         raise
@@ -745,5 +766,304 @@ async def list_new_communities():
         raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
     
 
-async def list_popular_communities():
-    pass
+async def list_popular_communities(n: int, offset: int, db: AsyncSession):
+    try:
+        subq = select(
+            ParticipantsLink.community_id,
+            func.count().label('participant_count')
+        ).group_by(ParticipantsLink.community_id).subquery()
+        
+        result = await db.execute(
+            select(Community)
+            .outerjoin(subq, Community.id == subq.c.community_id)
+            .order_by(
+                subq.c.participant_count.desc(),
+                Community.id.desc()
+            )
+            .limit(n)
+            .offset(offset)
+        )
+        communities = result.scalars().all()
+
+        return communities
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
+
+
+async def search_communities(query: str, n: int, db: AsyncSession, user_id: int | None = None) -> List[CommunityPreview]:
+    try:
+        language = detect_language('', query)
+
+        ts_query = func.plainto_tsquery(language, query)
+
+        participants_subq = (
+            select(ParticipantsLink.community_id, func.count(ParticipantsLink.user_id).label('participant_count'))
+            .group_by(ParticipantsLink.community_id)
+            .subquery()
+        )
+
+        posts_subq = (
+            select(Post.community_id, func.count(Post.id).label('post_count'))
+            .group_by(Post.community_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Community, participants_subq.c.participant_count, posts_subq.c.post_count)
+            .outerjoin(participants_subq, Community.id == participants_subq.c.community_id)
+            .outerjoin(posts_subq, Community.id == posts_subq.c.community_id)
+            .where(Community.search_vector.op('@@')(ts_query))
+            .order_by(func.ts_rank_cd(Community.search_vector, ts_query).desc())
+            .limit(n)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        joined_ids = set()
+        if user_id:
+            joined_result = await db.execute(
+                select(ParticipantsLink.community_id).where(ParticipantsLink.user_id == user_id)
+            )
+            joined_ids = {r[0] for r in joined_result.fetchall()}
+
+        previews = []
+        for row in rows:
+            community = row[0]
+            participant_count = row[1] or 0
+            post_count = row[2] or 0
+            
+            preview = CommunityPreview(
+                id=community.id,
+                name=community.name,
+                description=community.description,
+                participant_count=participant_count,
+                post_count=post_count,
+                joined=community.id in joined_ids,
+            )
+            previews.append(preview)
+
+        return previews
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not search communities: {e}')
+    
+
+async def fetch_new_community_posts(community_id: int, n: int, db: AsyncSession) -> List[PostPreview]:
+    try:
+        vote_subq = (
+            select(Vote.post_id, func.count(Vote.id).label('n_votes'))
+            .group_by(Vote.post_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Post, vote_subq.c.n_votes)
+            .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
+            .options(selectinload(Post.community))
+            .where(Post.community_id == community_id)
+            .order_by(Post.created_at.desc())
+            .limit(n)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        previews = []
+        for row in rows:
+            post = row[0]
+            n_votes = row[1] or 0
+            
+            votes_result = await db.execute(
+                select(Vote.would_pay).where(Vote.post_id == post.id)
+            )
+            votes = [v[0] for v in votes_result.fetchall() if v[0] is not None]
+            med = float(np.median(votes)) if votes else 0.0
+            
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                contents       = post.contents       ,
+                n_votes        = n_votes             ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
+
+        return previews
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not fetch new community posts: {e}')
+
+
+async def fetch_popular_community_posts(community_id: int, n: int, db: AsyncSession) -> List[PostPreview]:
+    try:
+        vote_subq = (
+            select(Vote.post_id, func.count(Vote.id).label('n_votes'))
+            .group_by(Vote.post_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Post, vote_subq.c.n_votes)
+            .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
+            .options(selectinload(Post.community))
+            .where(Post.community_id == community_id)
+            .order_by(vote_subq.c.n_votes.desc().nullslast())
+            .limit(n)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        previews = []
+        for row in rows:
+            post = row[0]
+            n_votes = row[1] or 0
+            
+            votes_result = await db.execute(
+                select(Vote.would_pay).where(Vote.post_id == post.id)
+            )
+            votes = [v[0] for v in votes_result.fetchall() if v[0] is not None]
+            med = float(np.median(votes)) if votes else 0.0
+            
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                contents       = post.contents       ,
+                n_votes        = n_votes             ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
+
+        return previews
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not fetch popular community posts: {e}')
+
+
+async def fetch_median_ascending_community_posts(community_id: int, n: int, db: AsyncSession) -> List[PostPreview]:
+    try:
+        vote_subq = (
+            select(Vote.post_id, func.count(Vote.id).label('n_votes'))
+            .group_by(Vote.post_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Post, vote_subq.c.n_votes)
+            .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
+            .options(selectinload(Post.community))
+            .where(Post.community_id == community_id)
+            .limit(n)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        post_with_median = []
+        for row in rows:
+            post = row[0]
+            n_votes = row[1] or 0
+            
+            votes_result = await db.execute(
+                select(Vote.would_pay).where(Vote.post_id == post.id)
+            )
+            votes = [v[0] for v in votes_result.fetchall() if v[0] is not None]
+            med = float(np.median(votes)) if votes else 0.0
+            
+            post_with_median.append((post, n_votes, med))
+
+        post_with_median.sort(key=lambda x: x[2])
+
+        previews = []
+        for post, n_votes, med in post_with_median[:n]:
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                contents       = post.contents       ,
+                n_votes        = n_votes             ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
+
+        return previews
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not fetch median ascending community posts: {e}')
+
+
+async def fetch_median_descending_community_posts(community_id: int, n: int, db: AsyncSession) -> List[PostPreview]:
+    try:
+        vote_subq = (
+            select(Vote.post_id, func.count(Vote.id).label('n_votes'))
+            .group_by(Vote.post_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Post, vote_subq.c.n_votes)
+            .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
+            .options(selectinload(Post.community))
+            .where(Post.community_id == community_id)
+            .limit(n)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        post_with_median = []
+        for row in rows:
+            post = row[0]
+            n_votes = row[1] or 0
+            
+            votes_result = await db.execute(
+                select(Vote.would_pay).where(Vote.post_id == post.id)
+            )
+            votes = [v[0] for v in votes_result.fetchall() if v[0] is not None]
+            med = float(np.median(votes)) if votes else 0.0
+            
+            post_with_median.append((post, n_votes, med))
+
+        post_with_median.sort(key=lambda x: x[2], reverse=True)
+
+        previews = []
+        for post, n_votes, med in post_with_median[:n]:
+            preview = PostPreview(
+                post_id        = post.id             ,
+                name           = post.name           ,
+                contents       = post.contents       ,
+                n_votes        = n_votes             ,
+                median         = med                 ,
+                created_at     = post.created_at     ,
+                community_name = post.community.name ,
+                community_id   = post.community_id   ,
+            )
+            previews.append(preview)
+
+        return previews
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not fetch median descending community posts: {e}')
+

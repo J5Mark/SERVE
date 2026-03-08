@@ -106,18 +106,20 @@ async def get_community_posts(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
-    posts = []
     match req.sorting:
         case 'new':
-            pass
+            posts = await fetch_new_community_posts(req.community_id, req.n, db)
 
         case 'popular':
-            pass
+            posts = await fetch_popular_community_posts(req.community_id, req.n, db)
 
         case 'med_asc':
-            pass
+            posts = await fetch_median_ascending_community_posts(req.community_id, req.n, db)
 
         case 'med_desc':
-            pass
+            posts = await fetch_median_descending_community_posts(req.community_id, req.n, db)
+
+        case _:
+            posts = []
 
     return posts

@@ -42,112 +42,92 @@ async def fetch_useful_businessmen(
         .where(User.id == bus_user_id)
     )
     bus_user = result.scalars().first()
-
-    if not bus_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if not bus_user.entrep:
-        return []
+    
+    if not bus_user or not bus_user.entrep:
+        raise HTTPException(status_code=401, detail='User unable to request contacts')
 
     initiator_bios = [b.bio for b in bus_user.businesses if b.bio]
-    initiator_bio_combined = " ".join(initiator_bios)
-
+    initiator_bio = " ".join(initiator_bios)
+    
     if post_id:
         post = await db.get(Post, post_id)
-        if post:
-            initiator_bio_combined += f" {post.contents or ''}"
-        else:
-            pass
+        if post and post.contents:
+            initiator_bio += f" {post.contents}"
 
     result = await db.execute(
         select(Business)
-        .options(selectinload(Business.communities), selectinload(Business.user))
-        .where(Business.cont_goal.isnot(None))
-        .where(Business.reaction_time.isnot(None))
-        .where(Business.user_id != bus_user_id)
+        .options(
+            selectinload(Business.user),
+            selectinload(Business.communities),
+        )
+        .where(
+            Business.cont_goal.isnot(None),
+            Business.reaction_time.isnot(None),
+            Business.user_id != bus_user_id,
+        )
     )
     candidates = result.scalars().all()
 
     if not candidates:
-        return []
-
-    ranked = rank_entities(initiator_bio_combined, candidates)
+        raise HTTPException(status_code=404, detail='No candidate businesses found')
 
     result = await db.execute(
-        select(Connection.contact_id).where(Connection.requester_id == bus_user_id)
+        select(Connection.contact_id)
+        .where(Connection.requester_id == bus_user_id)
     )
-    already_connected_ids = set(result.scalars().all())
+    already_connected = set(result.scalars().all())
 
-    community_boost = 1.3
+    ranked = rank_entities(initiator_bio, candidates)
+
+    verif_stats = {}
+    result = await db.execute(
+        select(
+            Verification.business_id,
+            Verification.type,
+            func.count(Verification.id)
+        )
+        .where(Verification.type.in_(['seen', 'used', 'coop']))
+        .group_by(Verification.business_id, Verification.type)
+    )
+    for bus_id, vtype, count in result.all():
+        if bus_id not in verif_stats:
+            verif_stats[bus_id] = {'seen': 0, 'used': 0, 'coop': 0}
+        verif_stats[bus_id][vtype] = count
 
     scored = []
     for item in ranked:
         bus = item["bus"]
-
-        if bus.user_id in already_connected_ids:
+        
+        if bus.user_id in already_connected:
             continue
-
-        result = await db.execute(
-            select(func.count(Verification.id))
-            .where(Verification.business_id == bus.id)
-            .where(Verification.type == "seen")
-        )
-        seen_count = result.scalar() or 0
-
-        result = await db.execute(
-            select(func.count(Verification.id))
-            .where(Verification.business_id == bus.id)
-            .where(Verification.type == "used")
-        )
-        used_count = result.scalar() or 0
-
-        result = await db.execute(
-            select(func.count(Verification.id))
-            .where(Verification.business_id == bus.id)
-            .where(Verification.type == "coop")
-        )
-        coop_count = result.scalar() or 0
-
-        verif_score = (coop_count * 3) + (used_count * 2) + (seen_count * 1)
-
-        keyword_score = item["score"]
-
-        is_same_community = any(c.id == community_id for c in bus.communities)
-        final_score = keyword_score * (community_boost if is_same_community else 1)
-
-        final_score += verif_score * 0.1
-
-        scored.append(
-            {
-                "bus": bus,
-                "score": final_score,
-                "verification_stats": {
-                    "seen_count": seen_count,
-                    "used_count": used_count,
-                    "coop_count": coop_count,
-                },
-            }
-        )
+            
+        stats = verif_stats.get(bus.id, {'seen': 0, 'used': 0, 'coop': 0})
+        verif_score = (stats['coop'] * 3) + (stats['used'] * 2) + stats['seen']
+        
+        community_boost = 1.3 if any(c.id == community_id for c in bus.communities) else 1
+        final_score = item["score"] * community_boost + verif_score * 0.1
+        
+        scored.append({
+            "bus": bus,
+            "score": final_score,
+            "verification_stats": stats,
+        })
 
     scored.sort(key=lambda x: x["score"], reverse=True)
-    top_businesses = scored[:n]
+    top_n = scored[:n]
 
-    contacts = []
-    for item in top_businesses:
-        bus = item["bus"]
-        user = bus.user
-
-        contacts.append(
-            BusinessContact(
-                user_id=bus.user_id,
-                username=user.username or "",
-                phone_number=user.phone_number,
-                business_name=bus.name,
-                business_bio=bus.bio,
-                cont_goal=bus.cont_goal,
-                reaction_time=bus.reaction_time,
-                verification_stats=item["verification_stats"],
-            )
+    contacts = [
+        BusinessContact(
+            user_id=item["bus"].user_id,
+            username=item["bus"].user.username or "",
+            phone_number=item["bus"].user.phone_number or "",
+            business_name=item["bus"].name,
+            business_bio=item["bus"].bio or "",
+            cont_goal=item["bus"].cont_goal,
+            reaction_time=item["bus"].reaction_time,
+            verification_stats=item["verification_stats"],
         )
-
+        for item in top_n
+    ]
+    
     return contacts

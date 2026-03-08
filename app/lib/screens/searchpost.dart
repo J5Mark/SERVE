@@ -10,12 +10,37 @@ class SearchPostScreen extends StatefulWidget {
   State<SearchPostScreen> createState() => _SearchPostScreenState();
 }
 
-class _SearchPostScreenState extends State<SearchPostScreen> {
+class _SearchPostScreenState extends State<SearchPostScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  List<dynamic> _results = [];
+  List<dynamic> _postResults = [];
+  List<dynamic> _communityResults = [];
   bool _isLoading = false;
   bool _hasSearched = false;
   String? _error;
+  late TabController _tabController;
+  bool _searchCommunities = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _searchCommunities = _tabController.index == 1;
+      });
+      if (_hasSearched) {
+        _search();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
 
   Future<void> _search() async {
     final query = _searchController.text.trim();
@@ -28,12 +53,22 @@ class _SearchPostScreenState extends State<SearchPostScreen> {
     });
 
     try {
-      final results = await Api.searchPosts(query, 20);
-      if (mounted) {
-        setState(() {
-          _results = results;
-          _isLoading = false;
-        });
+      if (_searchCommunities) {
+        final results = await Api.searchCommunities(query, 20);
+        if (mounted) {
+          setState(() {
+            _communityResults = results;
+            _isLoading = false;
+          });
+        }
+      } else {
+        final results = await Api.searchPosts(query, 20);
+        if (mounted) {
+          setState(() {
+            _postResults = results;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -45,109 +80,238 @@ class _SearchPostScreenState extends State<SearchPostScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  void _toggleCommunitySearch() {
+    setState(() {
+      _searchCommunities = !_searchCommunities;
+      _tabController.index = _searchCommunities ? 1 : 0;
+    });
+    if (_hasSearched) {
+      _search();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Posts'),
+        title: const Text('Search'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Posts'),
+            Tab(text: 'Communities'),
+          ],
+          indicatorColor: AppColors.brightGreen,
+          labelColor: AppColors.brightGreen,
+          unselectedLabelColor: AppColors.grey,
         ),
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search for posts...',
-                hintStyle: const TextStyle(color: AppColors.grey),
-                prefixIcon: const Icon(Icons.search, color: AppColors.grey),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear, color: AppColors.grey),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _results = [];
-                      _hasSearched = false;
-                    });
-                  },
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: _searchCommunities
+                          ? 'Search communities...'
+                          : 'Search posts...',
+                      hintStyle: const TextStyle(color: AppColors.grey),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.grey,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear, color: AppColors.grey),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _postResults = [];
+                            _communityResults = [];
+                            _hasSearched = false;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: AppColors.darkGreen,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (_) => _search(),
+                  ),
                 ),
-                filled: true,
-                fillColor: AppColors.darkGreen,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _toggleCommunitySearch,
+                  icon: Icon(
+                    _searchCommunities ? Icons.groups : Icons.article,
+                    color: _searchCommunities
+                        ? AppColors.brightGreen
+                        : AppColors.grey,
+                  ),
+                  tooltip: _searchCommunities
+                      ? 'Search Posts'
+                      : 'Search Communities',
                 ),
-              ),
-              onSubmitted: (_) => _search(),
+              ],
             ),
           ),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Error: $_error',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _search,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  )
-                : !_hasSearched
-                ? const Center(
-                    child: Text(
-                      'Enter a search query to find posts',
-                      style: TextStyle(color: AppColors.grey),
-                    ),
-                  )
-                : _results.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No posts found',
-                      style: TextStyle(color: AppColors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _results.length,
-                    itemBuilder: (context, index) {
-                      final post = _results[index];
-                      final median = (post['median'] ?? 0).toDouble();
-                      final voteCount = post['n_votes'] ?? 0;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: PostWidget(
-                          title: post['name'] ?? '',
-                          content: post['contents'] ?? '',
-                          median: median,
-                          voteCount: voteCount,
-                          compact: true,
-                        ),
-                      );
-                    },
-                  ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [_buildPostsTab(), _buildCommunitiesTab()],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPostsTab() {
+    if (_isLoading && !_searchCommunities) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null && !_searchCommunities) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error', style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _search, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (!_hasSearched) {
+      return const Center(
+        child: Text(
+          'Enter a search query to find posts',
+          style: TextStyle(color: AppColors.grey),
+        ),
+      );
+    }
+
+    if (_postResults.isEmpty) {
+      return const Center(
+        child: Text('No posts found', style: TextStyle(color: AppColors.grey)),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _postResults.length,
+      itemBuilder: (context, index) {
+        final post = _postResults[index];
+        final median = (post['median'] ?? 0).toDouble();
+        final voteCount = post['n_votes'] ?? 0;
+        final postId = post['post_id'];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: PostWidget(
+            title: post['name'] ?? '',
+            content: post['contents'] ?? '',
+            median: median,
+            voteCount: voteCount,
+            onTap: () => context.push('/post/$postId'),
+            compact: true,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCommunitiesTab() {
+    if (_isLoading && _searchCommunities) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null && _searchCommunities) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error', style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _search, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (!_hasSearched) {
+      return const Center(
+        child: Text(
+          'Enter a search query to find communities',
+          style: TextStyle(color: AppColors.grey),
+        ),
+      );
+    }
+
+    if (_communityResults.isEmpty) {
+      return const Center(
+        child: Text(
+          'No communities found',
+          style: TextStyle(color: AppColors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _communityResults.length,
+      itemBuilder: (context, index) {
+        final community = _communityResults[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: CommunityPreviewWidget(
+            id: community['id'] ?? 0,
+            name: community['name'] ?? '',
+            description: community['description'] ?? '',
+            participantCount: community['participant_count'] ?? 0,
+            postCount: community['post_count'] ?? 0,
+            joined: community['joined'] ?? false,
+            onTap: () => context.push('/community/${community['id']}'),
+            onJoin: community['joined'] == true
+                ? null
+                : () async {
+                    try {
+                      await Api.joinCommunity(community['id']);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Joined community!'),
+                            backgroundColor: AppColors.brightGreen,
+                          ),
+                        );
+                        _search();
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+          ),
+        );
+      },
     );
   }
 }
