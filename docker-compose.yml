@@ -4,3 +4,9 @@ services:
       context: ./back
       dockerfile: Dockerfile
     image: cro/serve-back:latest
+
+  integrations:
+    build:
+      context: ./integrations-service
+      dockerfile: Dockerfile
+    image: cro/serve-integrations:latest

@@ -1224,3 +1224,28 @@ async def save_message(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f'Could not add message: {e}')
+
+
+async def delete_user(
+    db: AsyncSession,
+    user_id: int,
+):
+    try:
+        user = await db.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail='User not found')
+        
+        result = await db.execute(
+            select(UserAuth)
+            .where(UserAuth.user_id == user_id)
+        )
+        user_auth = result.scalars().first()
+    
+        await db.delete(user_auth)
+        await db.delete(user)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f'Could not delete user: {e}')

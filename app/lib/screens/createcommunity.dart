@@ -39,7 +39,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     });
 
     try {
-      await Api.createCommunity(
+      final resp = await Api.createCommunity(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         redditLink: _redditLinkController.text.trim().isEmpty
@@ -48,8 +48,22 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
         slug: _generateSlug(_nameController.text.trim()),
       );
 
+      if (resp.containsKey('subreddit') &&
+          resp['subreddit'] == 'doesnt exist') {
+        setState(() {
+          _error =
+              'Reddit community does not exist. Please check the link and try again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       if (mounted) {
-        context.pop();
+        if (_redditLinkController.text.trim().isNotEmpty) {
+          _showRedditTemplateDialog();
+        } else {
+          context.pop();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -59,6 +73,107 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
         });
       }
     }
+  }
+
+  void _showRedditTemplateDialog() {
+    final redditLink = _redditLinkController.text.trim();
+
+    final templatePost = '''Hey $redditLink! 👋
+
+I've created a mirror community for us on Serve - a platform where we can connect, share opportunities, and grow together!
+
+Check it out here: {community_link}
+
+Why join?
+- Connect with fellow entrepreneurs
+- Share and discover business opportunities
+- Build your network
+
+Looking forward to seeing you there!
+
+#Community #Entrepreneurs''';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkGreen,
+        shape: const RoundedRectangleBorder(
+          side: BorderSide(color: AppColors.grey),
+        ),
+        title: const Text(
+          'Community Created!',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your community has been created. Would you like to share it on Reddit?',
+              style: TextStyle(color: AppColors.lightGrey),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Copy and paste this template to your Reddit community:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryBlack,
+                border: Border(
+                  left: BorderSide(color: AppColors.brightGreen, width: 3),
+                ),
+              ),
+              child: SelectableText(
+                templatePost,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.lightGrey,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('Reddit: ', style: TextStyle(color: AppColors.grey)),
+                Text(
+                  redditLink,
+                  style: const TextStyle(
+                    color: AppColors.brightGreen,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.pop();
+            },
+            child: const Text('Skip', style: TextStyle(color: AppColors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.pop();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brightGreen,
+            ),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

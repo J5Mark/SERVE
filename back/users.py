@@ -163,3 +163,14 @@ async def update_user(
         created_at=user.created_at,
         communities=[{'id': c.id, 'name': c.name} for c in user.communities],
     )
+
+
+@router.delete('/me')
+async def delete_user_ep(
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    await delete_user(db, user_id)
+    await db.commit()
+
+    return {'user': 'deleted'}

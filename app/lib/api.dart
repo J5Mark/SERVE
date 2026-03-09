@@ -172,13 +172,27 @@ class Api {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    if (redditLink != null) {
+      final subExistsRes = await http.get(
+        Uri.parse("$apiBase/integrations/reddit/check-community/$redditLink"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': "Bearer $token",
+        },
+      );
+
+      final subExistsData = jsonDecode(subExistsRes.body);
+
+      if (subExistsData['subreddit'] != true) {
+        return {'subreddit': 'doesnt exist'};
+      }
+    }
     final res = await http.post(
       Uri.parse("$apiBase/comm/create"),
       body: jsonEncode({
         'name': name,
         'description': description,
         'reddit_link': redditLink,
-        'creator_id': '',
         'slug': slug,
       }),
       headers: {
@@ -679,6 +693,24 @@ class Api {
         "Authorization": "Bearer $token",
       },
     );
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> deleteProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.delete(
+      Uri.parse('$apiBase/users/me'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(
+        'Failed to delete profile: ${res.statusCode} - ${res.body}',
+      );
+    }
 
     final data = jsonDecode(res.body);
     return data;

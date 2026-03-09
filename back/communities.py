@@ -17,20 +17,12 @@ from postgres_conn import User, UserAuth, get_db, Community
 router = APIRouter(prefix="/comm", tags=["communities"])
 
 
-async def check_reddit_community(name: str) -> bool:
-    pass
-
-
 @router.post("/create")
 async def create_community_ep(
     req: CreateCommunityRequest,
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
-    # if req.reddit_link:
-    #     reddit_exists = await check_reddit_community(req.reddit_link)
-    #     if not reddit_exists:
-    #         raise HTTPException(status_code=404, detail=f'Community {req.reddit_link} does not exist on reddit')
 
     await create_community(req, user_id, db)
     await db.commit()

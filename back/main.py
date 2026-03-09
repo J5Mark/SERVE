@@ -18,6 +18,7 @@ from communities import router as communities_router
 from businesses import router as business_router
 from posts import router as posts_router
 from chats import router as chats_router
+from integrations import router as integrations_router
 from postgres_conn import *
 from dotenv import load_dotenv
 
@@ -39,6 +40,7 @@ app.include_router(communities_router, dependencies=[Depends(security)])
 app.include_router(business_router, dependencies=[Depends(security)])
 app.include_router(posts_router, dependencies=[Depends(security)])
 app.include_router(chats_router, dependencies=[Depends(security)])
+app.include_router(integrations_router)
 auth_.handle_errors(app)
 
 ### ENDPOINTS

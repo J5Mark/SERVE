@@ -72,7 +72,6 @@ class CreateCommunityRequest(BaseModel):
     name: str = Field(min_length=4, max_length=25)
     description: str = Field(min_length=10)
     reddit_link: Optional[str]
-    creator_id: str
     slug: str
 
 
@@ -248,3 +247,4 @@ class MessageResponse(BaseModel):
 
     class Config:
         from_attributes=True
+
