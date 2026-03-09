@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship, Column, Integer, String, JSO
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.dialects.postgresql import TSVECTOR
-from sqlalchemy import DateTime, event, text, Index
+from sqlalchemy import DateTime, event, text, Index, PrimaryKeyConstraint
 from datetime import datetime
 from typing import List, Optional
 from enum import Enum
@@ -87,17 +87,20 @@ class BusinessOperationsLink(SQLModel, table=True):
 
 
 class ConversationParticipant(SQLModel, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('conversation_id', 'user_id'),
+    )
     conversation_id: int = Field(
         sa_column=Column(
             BigInteger,
             ForeignKey('conversations.id', ondelete='CASCADE'),
-            primary_key=True
         )
     )
     user_id: int = Field(
         sa_column=Column(
             BigInteger,
-            ForeignKey('users.id', ondelete='CASCADE')
+            ForeignKey('users.id', ondelete='CASCADE'),
+            primary_key=True
         )
     )
 

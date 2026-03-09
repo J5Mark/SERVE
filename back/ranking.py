@@ -22,9 +22,16 @@ def rank_entities(initiator_bio: str, businesses: list) -> list[dict]:
     ranked = []
     for bus in businesses:
         bus_keywords = extract_keywords(bus.bio)
-        matches = len(initiator_keywords & bus_keywords)
-        score = matches / len(initiator_keywords & bus_keywords)
-        score = matches / len(initiator_keywords) if initiator_keywords else 0
+        intersection = initiator_keywords & bus_keywords
+        matches = len(intersection)
+        
+        if matches == 0:
+            score = 0
+        elif not initiator_keywords:
+            score = 0
+        else:
+            score = matches / len(intersection) * matches / len(initiator_keywords)
+        
         ranked.append({"bus": bus, "score": score})
     return sorted(ranked, key=lambda x: x["score"], reverse=True)
 

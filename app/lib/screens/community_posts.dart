@@ -236,10 +236,10 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
             padding: const EdgeInsets.all(16),
             child: SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'popular', label: Text('Popular')),
+                ButtonSegment(value: 'popular', label: Text('!!')),
                 ButtonSegment(value: 'new', label: Text('New')),
-                ButtonSegment(value: 'med_asc', label: Text('Median ↑')),
-                ButtonSegment(value: 'med_desc', label: Text('Median ↓')),
+                ButtonSegment(value: 'med_asc', label: Text('Med ↑')),
+                ButtonSegment(value: 'med_desc', label: Text('Med ↓')),
               ],
               selected: {_sorting},
               onSelectionChanged: (selection) {

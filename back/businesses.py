@@ -80,6 +80,8 @@ async def get_business_ep(
         created_at=business.created_at,
         community_ids=[c.id for c in business.communities],
         verifications=verifications_count,
+        cont_goal=business.cont_goal,
+        reaction_time=business.cont_goal,
     )
 
 

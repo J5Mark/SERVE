@@ -37,8 +37,9 @@ class _ChatScreenState extends State<ChatScreen> {
       final data = await Api.getChat(widget.conversationId);
       if (mounted) {
         setState(() {
-          _messages = data['messages'] ?? [];
-          _otherUser = data['other_user'];
+          if (data is List) {
+            _messages = data;
+          }
           _isLoading = false;
         });
       }

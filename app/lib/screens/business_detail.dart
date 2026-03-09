@@ -472,17 +472,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _showVerifySheet,
-            icon: const Icon(Icons.verified),
-            label: const Text('Verify This Business'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brightGreen,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-          const SizedBox(height: 80),
         ],
       ),
     );

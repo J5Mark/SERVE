@@ -47,13 +47,21 @@ async def get_current_user(
         # Authenticated token - contains user_id
         user_id = int(sub)
         result = await db.execute(select(User)
-                                  .options(selectinload(User.communities))
+                                  .options(
+                                           selectinload(User.communities),
+                                           selectinload(User.businesses),
+                                           selectinload(User.posts),
+                                       )
                                   .where(User.id == user_id))
     else:
         # Anonymous token - contains device_id
         device_id = sub
         result = await db.execute(select(User)
-                                  .options(selectinload(User.communities))
+                                  .options(
+                                           selectinload(User.communities),
+                                           selectinload(User.businesses),
+                                           selectinload(User.posts),
+                                       )
                                   .where(User.device_id == device_id))
     
     user = result.scalars().first()
@@ -73,6 +81,8 @@ async def get_current_user(
         suspended=user.suspended,
         created_at=user.created_at,
         communities=[{'id': c.id, 'name': c.name} for c in user.communities],
+        businesses=[{'id': b.id, 'name': b.name} for b in user.businesses],
+        posts=[{'id': p.id, 'name': p.name} for p in user.posts],
     )
 
 

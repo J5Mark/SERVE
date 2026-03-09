@@ -144,7 +144,6 @@ class _NewcomersScreenState extends State<NewcomersScreen> {
               seenCount: seenCount,
               usedCount: usedCount,
               onVerify: () => _verifyBusiness(business['id']),
-              onDismiss: () {},
             ),
           );
         },

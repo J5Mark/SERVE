@@ -278,7 +278,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           if (_votes.isNotEmpty) ...[
             const SizedBox(height: 24),
             const Text(
-              'What people think',
+              'Competition Analysis',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,

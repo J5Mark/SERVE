@@ -1,5 +1,95 @@
 import 'package:flutter/material.dart';
 
+class DottedGridBackground extends StatelessWidget {
+  final Widget child;
+  final Color? dotColor;
+  final double dotSpacing;
+  final double dotRadius;
+  final bool showGradient;
+  final List<Color>? gradientColors;
+
+  const DottedGridBackground({
+    super.key,
+    required this.child,
+    this.dotColor,
+    this.dotSpacing = 30,
+    this.dotRadius = 2.0,
+    this.showGradient = true,
+    this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        if (showGradient || gradientColors != null)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: gradientColors != null
+                    ? LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: gradientColors!,
+                      )
+                    : LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.darkGreen.withValues(alpha: 0.5),
+                          AppColors.primaryBlack.withValues(alpha: 0.7),
+                          AppColors.darkGreen.withValues(alpha: 0.4),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+              ),
+            ),
+          ),
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _DottedGridPainter(
+              dotColor: (dotColor ?? AppColors.yellowAccent).withValues(
+                alpha: 0.15,
+              ),
+              dotSpacing: dotSpacing,
+              dotRadius: dotRadius,
+            ),
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+}
+
+class _DottedGridPainter extends CustomPainter {
+  final Color dotColor;
+  final double dotSpacing;
+  final double dotRadius;
+
+  _DottedGridPainter({
+    required this.dotColor,
+    required this.dotSpacing,
+    required this.dotRadius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = dotColor
+      ..style = PaintingStyle.fill;
+
+    for (double x = 0; x < size.width; x += dotSpacing) {
+      for (double y = 0; y < size.height; y += dotSpacing) {
+        canvas.drawCircle(Offset(x, y), dotRadius, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 String formatCurrency(double amount, {String currency = '\$'}) {
   return '$currency${amount.toStringAsFixed(0)}';
 }
@@ -29,12 +119,58 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.darkGreen,
         elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.lightGrey.withValues(alpha: 0.2),
         labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.brightGreen,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.darkGreen,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide(color: AppColors.grey.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: const BorderSide(color: AppColors.yellowAccent),
+        ),
+        labelStyle: const TextStyle(color: AppColors.grey),
+        hintStyle: const TextStyle(color: AppColors.grey),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.primaryBlack,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.darkGreen,
+        selectedItemColor: AppColors.yellowAccent,
+        unselectedItemColor: AppColors.grey,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.brightGreen,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
     );
   }
@@ -419,6 +555,127 @@ class ProfileWidget extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ProfileWidgetLight extends StatelessWidget {
+  final String firstName;
+  final String lastName;
+  final String username;
+  final List<String> roles;
+  final String memberSince;
+  final bool editable;
+
+  const ProfileWidgetLight({
+    super.key,
+    required this.firstName,
+    required this.lastName,
+    required this.username,
+    required this.roles,
+    required this.memberSince,
+    this.editable = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(
+          color: AppColors.yellowAccent.withValues(alpha: 0.5),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: AppColors.brightGreen,
+                child: Text(
+                  '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${firstName.isNotEmpty ? firstName : ''} ${lastName.isNotEmpty ? lastName : ''}'
+                                .trim(),
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                        if (editable)
+                          const Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: Colors.black54,
+                          ),
+                      ],
+                    ),
+                    Text(
+                      '@$username',
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (roles.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.yellowAccent.withValues(alpha: 0.2),
+                    border: Border.all(color: AppColors.yellowAccent),
+                  ),
+                  child: Text(
+                    roles.first,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                'Member since $memberSince',
+                style: const TextStyle(color: Colors.black54, fontSize: 13),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -971,7 +1228,6 @@ class NewcomerWidget extends StatelessWidget {
   final int seenCount;
   final int usedCount;
   final VoidCallback? onVerify;
-  final VoidCallback? onDismiss;
 
   const NewcomerWidget({
     super.key,
@@ -980,7 +1236,6 @@ class NewcomerWidget extends StatelessWidget {
     required this.seenCount,
     required this.usedCount,
     this.onVerify,
-    this.onDismiss,
   });
 
   @override
@@ -1036,17 +1291,6 @@ class NewcomerWidget extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onDismiss,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.grey,
-                      side: const BorderSide(color: AppColors.grey),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: const Text('Dismiss'),
-                  ),
-                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(

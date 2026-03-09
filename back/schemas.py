@@ -61,6 +61,8 @@ class UserResponse(BaseModel):
     suspended: bool = False
     created_at: Optional[datetime] = None
     communities: List = []
+    businesses: List = []
+    posts: List = []
 
     class Config:
         from_attributes = True
@@ -122,6 +124,8 @@ class BusinessResponse(BaseModel):
     created_at: datetime
     community_ids: List[int] = []
     verifications: dict = {}
+    cont_goal: str | None = None
+    response_time: int | None = None
 
     class Config:
         from_attributes = True

@@ -190,6 +190,7 @@ class _MeScreenState extends State<MeScreen> {
     final createdAt = _user!['created_at'] ?? '';
     final communities = _user!['communities'] as List? ?? [];
     final businesses = _user!['businesses'] as List? ?? [];
+    final posts = _user!['posts'] as List? ?? [];
 
     List<String> roles = [];
     if (entrep) roles.add('Entrepreneur');
@@ -216,13 +217,12 @@ class _MeScreenState extends State<MeScreen> {
           children: [
             GestureDetector(
               onTap: () => _showEditProfileDialog(userId),
-              child: ProfileWidget(
+              child: ProfileWidgetLight(
                 firstName: firstName,
                 lastName: lastName,
                 username: username,
                 roles: roles,
                 memberSince: memberSince,
-                posts: [],
                 editable: true,
               ),
             ),
@@ -355,7 +355,7 @@ class _MeScreenState extends State<MeScreen> {
                   child: ListTile(
                     leading: const Icon(
                       Icons.business,
-                      color: AppColors.yellowAccent,
+                      color: AppColors.brightGreen,
                     ),
                     title: Text(
                       b['name'] ?? '',
@@ -372,6 +372,56 @@ class _MeScreenState extends State<MeScreen> {
                       color: AppColors.grey,
                     ),
                     onTap: () => context.push('/business/${b['id']}'),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 24),
+            const Text(
+              'Your Posts',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (posts.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        'No posts yet',
+                        style: TextStyle(color: AppColors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => context.push('/create-post'),
+                        child: const Text('Create Post'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...posts.map(
+                (p) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.article,
+                      color: AppColors.brightGreen,
+                    ),
+                    title: Text(
+                      p['name'] ?? '',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.grey,
+                    ),
+                    onTap: () => context.push('/post/${p['id']}'),
                   ),
                 ),
               ),
@@ -411,14 +461,6 @@ class _MeScreenState extends State<MeScreen> {
               onTap: () {
                 Navigator.pop(context);
                 context.push('/create-community');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('View Newcomers'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/newcomers');
               },
             ),
           ],

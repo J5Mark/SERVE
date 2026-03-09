@@ -1068,5 +1068,159 @@ async def fetch_median_descending_community_posts(community_id: int, n: int, db:
         raise HTTPException(status_code=500, detail=f'Could not fetch median descending community posts: {e}')
 
 
-async def get_user_conversations():
-    pass
+async def get_user_conversations(
+    n: int,
+    offset: int,
+    db: AsyncSession,
+    user_id: int
+):
+    try:
+        result = await db.execute(
+            select(Conversation)
+            .join(ConversationParticipant)
+            .options(
+                selectinload(Conversation.participants),
+            )
+            .where(ConversationParticipant.user_id == user_id)
+            .order_by(Conversation.created_at.desc())
+            .limit(n)
+            .offset(offset)
+        )
+        conversations = result.scalars().all()
+    
+        formatted = []
+        for conv in conversations:
+            participants = conv.participants
+            other_user = None
+            for p in participants:
+                if p.id != user_id:
+                    other_user = {"id": p.id, "username": p.username}
+                    break
+            
+            last_msg_result = await db.execute(
+                select(Message)
+                .where(Message.conversation_id == conv.id)
+                .order_by(Message.created_at.desc())
+                .limit(1)
+            )
+            last_msg = last_msg_result.scalars().first()
+            
+            last_message = None
+            if last_msg:
+                last_message = {
+                    "id": last_msg.id,
+                    "content": last_msg.content,
+                    "created_at": last_msg.created_at.isoformat() if last_msg.created_at else None
+                }
+            formatted.append({
+                "id": conv.id,
+                "other_user": other_user,
+                "last_message": last_message,
+            })
+        return formatted
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get conversations: {e}')
+
+
+async def create_conversation(
+    target_user_id: int,
+    db: AsyncSession,
+    current_user_id: int
+):
+    try:
+        if target_user_id == current_user_id:
+            raise HTTPException(status_code=400, detail="Cannot create conversation with yourself")
+    
+        stmt = (
+            select(Conversation)
+            .join(ConversationParticipant)
+            .where(ConversationParticipant.user_id == current_user_id)
+        )
+        result = await db.execute(stmt)
+        conversations = result.scalars().all()
+        
+        for conv in conversations:
+            result = await db.execute(
+                select(ConversationParticipant)
+                .where(ConversationParticipant.conversation_id == conv.id)
+            )
+            participants = result.scalars().all()
+            participant_ids = [p.user_id for p in participants]
+            if target_user_id in participant_ids and current_user_id in participant_ids:
+                return conv
+    
+        new_conv = Conversation()
+        db.add(new_conv)
+        await db.flush()
+    
+        p1 = ConversationParticipant(conversation_id=new_conv.id, user_id=current_user_id)
+        db.add(p1)
+        await db.flush()
+        
+        p2 = ConversationParticipant(conversation_id=new_conv.id, user_id=target_user_id)
+        db.add(p2)
+        
+        return new_conv
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not create conversation: {e}')
+
+
+async def get_messages(
+    conversation_id: int,
+    n: int,
+    offset: int,
+    db: AsyncSession,
+    user_id: int,
+):
+    try:
+        result = await db.execute(
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .order_by(Message.created_at.asc())
+            .limit(n)
+            .offset(offset)
+        )
+        messages = result.scalars().all()
+
+        formatted = []
+        for msg in messages:
+            formatted.append({
+                "id": msg.id,
+                "content": msg.content,
+                "author_id": msg.author_id,
+                "is_me": msg.author_id == user_id,
+                "created_at": msg.created_at.isoformat() if msg.created_at else None,
+            })
+
+        return formatted
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get messages: {e}')
+
+
+async def save_message(
+    conversation_id: int,
+    content: str,
+    db: AsyncSession,
+    user_id: int,
+):
+    try:
+        new_msg = Message(
+            content=content,
+            conversation_id=conversation_id,
+            author_id=user_id
+        )
+        db.add(new_msg)
+        return new_msg
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f'Could not add message: {e}')

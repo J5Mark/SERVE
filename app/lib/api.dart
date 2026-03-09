@@ -639,11 +639,11 @@ class Api {
     return [];
   }
 
-  static Future<Map<String, dynamic>> getChat(int conversationId) async {
+  static Future<dynamic> getChat(int conversationId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     final res = await http.get(
-      Uri.parse('$apiBase/chats/$conversationId'),
+      Uri.parse('$apiBase/chats/$conversationId/20/0'),
       headers: {"Authorization": "Bearer $token"},
     );
 
