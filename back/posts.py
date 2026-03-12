@@ -3,6 +3,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 from fastapi import Depends, HTTPException, APIRouter
+from fastapi.responses import HTMLResponse
 from auth import auth, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,6 +35,77 @@ async def get_post_ep(
 ):
     post = await get_post(post_id, db)
     return post
+
+
+@router.get('/share/{post_id}', response_class=HTMLResponse)
+async def share_post_ep(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+
+    result = await db.execute(
+        select(Post)
+        .where(Post.id == post_id)
+        .options(
+            selectinload(Post.community)
+        )
+    )
+    post = result.scalars().first()
+
+    if not post:
+        raise HTTPException(status_code=404, detail='Post not found')
+
+    community_name = post.community.name if post.community else "Community"
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta property="og:title" content="{post.name}">
+        <meta property="og:description" content="{post.contents[:150]}">
+        <meta property="og:url" content="https://serve-back.ftp.sh/post/g/{post.id}">
+        <title>{post.name} | Serve App</title>
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; color: white; margin: 0; padding: 20px; text-align: center; }}
+            .container {{ max-width: 500px; margin: 50px auto; }}
+            h1 {{ font-size: 24px; margin-bottom: 10px; }}
+            .community {{ color: #4ade80; margin-bottom: 20px; }}
+            .content {{ background: #2a2a2a; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: left; }}
+            .btn {{ display: inline-block; background: #4ade80; color: #000; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 5px; }}
+            .btn-secondary {{ background: #444; color: white; }}
+            .footer {{ margin-top: 30px; color: #888; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>{post.name}</h1>
+            <div class="community">📁 {community_name}</div>
+            <div class="content">{post.contents[:200]}{'...' if len(post.contents) > 200 else ''}</div>
+            
+            <a href="https://serve-back.ftp.sh/auth/deeplink/post/{post.id}" class="btn">Open in App</a>
+            <a href="https://serve-back.ftp.sh/post/g/{post.id}" class="btn btn-secondary">View on Web</a>
+            
+            <div class="footer">
+                <p>Redirecting in <span id="countdown">3</span> seconds...</p>
+            </div>
+        </div>
+        <script>
+            let count = 3;
+            const interval = setInterval(() => {{
+                count--;
+                document.getElementById('countdown').textContent = count;
+                if (count <= 0) {{
+                    clearInterval(interval);
+                    window.location.href = 'https://serve-back.ftp.sh/post/g/{post.id}';
+                }}
+            }}, 1000);
+        </script>
+    </body>
+    </html>
+    """
+
+    return html
 
 
 @router.delete('/d/{post_id}')

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-final apiBase = 'https://my-back.loca.lt';
+final apiBase = 'https://serve-back.ftp.sh';
 
 class Api {
   static Future<Map<String, dynamic>> deviceLogin(String deviceId) async {

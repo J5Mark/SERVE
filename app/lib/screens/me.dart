@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MeScreen extends StatefulWidget {
   const MeScreen({super.key});
@@ -18,11 +19,54 @@ class _MeScreenState extends State<MeScreen> {
   List<dynamic> _discoverCommunities = [];
   bool _isLoadingDiscover = false;
   String _discoverSorting = 'popular';
+  bool _hasGoogleIntegration = false;
 
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _checkGoogleIntegration();
+  }
+
+  Future<void> _checkGoogleIntegration() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token == null) return;
+
+      final user = await Api.getUser(token);
+      final integrations = user['integrations'] as List? ?? [];
+      final hasGoogle = integrations.any((i) => i['provider'] == 'google');
+      if (mounted) {
+        setState(() {
+          _hasGoogleIntegration = hasGoogle;
+        });
+      }
+    } catch (e) {
+      print('Error checking Google integration: $e');
+    }
+  }
+
+  Future<void> _linkGoogleAccount() async {
+    try {
+      final url = Uri.parse('https://serve-back.ftp.sh/auth/google/start');
+      // Use in-app webview for better UX, falls back to external browser
+      final result = await launchUrl(url, mode: LaunchMode.platformDefault);
+      if (!result && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not launch Google OAuth'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _loadUser() async {
@@ -175,12 +219,33 @@ class _MeScreenState extends State<MeScreen> {
               style: TextStyle(color: AppColors.grey),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.push('/register'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brightGreen,
-              ),
-              child: const Text('Complete Profile'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => context.push('/register'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brightGreen,
+                    ),
+                    child: const Text('Register'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _linkGoogleAccount(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                    ),
+                    icon: Icon(Icons.g_mobiledata, color: Colors.black),
+                    label: Text(
+                      'Google',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -224,6 +289,31 @@ class _MeScreenState extends State<MeScreen> {
                 roles: roles,
                 memberSince: memberSince,
                 editable: true,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.drive_file_move,
+                  color: AppColors.brightGreen,
+                ),
+                title: Text(
+                  _hasGoogleIntegration
+                      ? 'Google Connected'
+                      : 'Link Google Account',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  _hasGoogleIntegration
+                      ? 'Your Google account is connected'
+                      : 'Connect for Drive access',
+                  style: TextStyle(color: AppColors.grey),
+                ),
+                trailing: _hasGoogleIntegration
+                    ? Icon(Icons.check_circle, color: AppColors.brightGreen)
+                    : Icon(Icons.chevron_right, color: AppColors.grey),
+                onTap: () => _linkGoogleAccount(),
               ),
             ),
             const SizedBox(height: 24),

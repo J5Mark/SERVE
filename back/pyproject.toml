@@ -29,4 +29,7 @@ dependencies = [
     "numpy>=2.4.2",
     "polar-sdk>=0.29.0",
     "python-dotenv>=1.2.1",
+    "authlib>=1.6.9",
+    "httpx>=0.28.1",
+    "pgvector>=0.4.2",
 ]

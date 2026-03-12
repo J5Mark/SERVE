@@ -83,6 +83,20 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
     }
   }
 
+  String _getSubredditName(String redditLink) {
+    // Handle various reddit link formats: reddit.com/r/name, r/name, reddit.com/r/name/
+    if (redditLink.contains('reddit.com/r/')) {
+      final parts = redditLink.split('reddit.com/r/');
+      if (parts.length > 1) {
+        return parts[1].replaceAll('/', '');
+      }
+    }
+    if (redditLink.startsWith('r/')) {
+      return redditLink.substring(2);
+    }
+    return redditLink;
+  }
+
   void _showVoteSheet(int postId) {
     final wouldPayController = TextEditingController();
     final competitionController = TextEditingController();
@@ -205,9 +219,15 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
   @override
   Widget build(BuildContext context) {
     final isModerator = _community?['is_moderator'] ?? false;
+    final communityName = _community?['name'] ?? 'Community';
+    final redditLink = _community?['reddit_link'] as String?;
+    final title = redditLink != null && redditLink.isNotEmpty
+        ? '$communityName (r/${_getSubredditName(redditLink)})'
+        : communityName;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_community?['name'] ?? 'Community'),
+        title: Text(title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -453,7 +473,7 @@ class _PostCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
+                    child: SelectableText(
                       post['name'] ?? '',
                       style: const TextStyle(
                         color: Colors.white,

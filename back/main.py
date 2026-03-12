@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 import asyncio, uuid, json, aiohttp, logging
 from datetime import datetime
 from collections import defaultdict
@@ -21,10 +23,48 @@ from chats import router as chats_router
 from integrations import router as integrations_router
 from postgres_conn import *
 from dotenv import load_dotenv
+from os import environ as env
 
 load_dotenv()
 
 app = FastAPI()
+
+
+# App Links - Android assetlinks.json
+@app.get("/.well-known/assetlinks.json")
+async def assetlinks():
+    return [
+        {
+            "relation": ["delegate_permission/common.handle_all_links"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.serve.app",
+                "sha256_cert_fingerprints": []
+            }
+        }
+    ]
+
+
+# App Links - iOS apple-app-site-association
+@app.get("/.well-known/apple-app-site-association")
+async def apple_app_site_association():
+    return {
+        "applinks": {
+            "apps": [],
+            "details": [
+                {
+                    "appID": "com.serve.app",
+                    "paths": ["/auth*", "/post/*", "/community/*"]
+                }
+            ]
+        }
+    }
+
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=env.get('SESSION_SECRET', 'qwertyuiop'),
+)
 
 app.add_middleware(
     CORSMiddleware,

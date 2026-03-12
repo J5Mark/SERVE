@@ -248,7 +248,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
+                        child: SelectableText(
                           business['name'] ?? '',
                           style: const TextStyle(
                             color: Colors.white,
@@ -271,7 +271,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                       maxLines: 3,
                     ),
                   ] else ...[
-                    Text(
+                    SelectableText(
                       business['bio'] ?? '',
                       style: const TextStyle(
                         color: AppColors.lightGrey,

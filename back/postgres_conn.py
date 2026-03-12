@@ -113,12 +113,12 @@ class User(SQLModel, table=True):
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
 
-    device_id: str = Field(index=True)
+    device_id: Optional[str] = Field(index=True, default=None)
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    phone_number: Optional[str] = None
-    email: Optional[str] = None
+    phone_number: Optional[str] = Field(index=True, unique=True)
+    email: Optional[str] = Field(index=True, unique=True)
     admin: bool = Field(default=False)
     balance: int = Field(default = 0)
 
@@ -134,6 +134,11 @@ class User(SQLModel, table=True):
     verifications: list["Verification"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+
+    integrations: List["Integration"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
     )
 
     created_at: datetime = Field(
@@ -156,6 +161,10 @@ class User(SQLModel, table=True):
         link_model=ConversationParticipant
     )
     sent_messages: List["Message"] = Relationship(back_populates='author')
+
+    embedding: List[float] = Field(
+        sa_column=Column(Vector(300)) # TODO - check actual embedding size
+    )
 
 
 class Community(SQLModel, table=True):
@@ -415,6 +424,45 @@ class Message(SQLModel, table=True):
     conversation: Conversation = Relationship(back_populates='messages')
     author: User = Relationship(back_populates='sent_messages')
 
+
+class Integration(SQLModel, table=True):
+    __tablename__ = 'integrations'
+    __table_args__ = (
+        UniqueConstraint(
+            "provider",
+            "account_id",
+            name="uq_provider_account"
+        ),
+    )
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    user_id: int = Field(default=None, primary_key=True)
+
+    provider: str = Field(index=True)
+    account_id: str = Field(index=True)
+
+    access_token: str
+    refresh_token: Optional[str] = None
+
+    expires_at: Optional[datetime] = None
+    scope: Optional[str] = None
+
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=func.now(),
+            nullable=False
+        )
+    )
+
+    user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE')
+        )
+    )
+    user: Optional["User"] = Relationship(back_populates="integrations")
 ###
 
 def get_database_url():
@@ -510,10 +558,22 @@ def create_community_search_trigger(conn):
         """))
 
 
+async def install_pgvector(conn):
+    result = conn.execute(text(
+                     "SELECT extname FROM pg_extension WHERE extname = 'vector';"
+                 ))
+    extension_exists = result.first()
+
+    if not extension_exists:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        conn.commit()
+
+
 async def init_db():
     async with engine.begin() as conn:
         # Drop all tables first to ensure clean schema
         await conn.run_sync(SQLModel.metadata.drop_all)
+        await conn.run_sync(install_pgvector)
         await conn.run_sync(SQLModel.metadata.create_all)
         await conn.run_sync(create_post_search_trigger)
         await conn.run_sync(create_community_search_trigger)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final int postId;
@@ -47,6 +48,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         });
       }
     }
+  }
+
+  Future<void> _sharePost() async {
+    final postName = _post?['name'] ?? 'Check out this post';
+    final webUrl = 'https://serve-back.ftp.sh/post/g/${widget.postId}';
+
+    await Share.share('$postName\n\n$webUrl', subject: postName);
   }
 
   Future<void> _loadContacts() async {
@@ -195,6 +203,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () => _sharePost(),
+            tooltip: 'Share Post',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -243,7 +258,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  SelectableText(
                     post['name'] ?? '',
                     style: const TextStyle(
                       color: Colors.white,
@@ -252,7 +267,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
+                  SelectableText(
                     post['contents'] ?? '',
                     style: const TextStyle(
                       color: AppColors.lightGrey,
