@@ -15,7 +15,7 @@ from schemas import *
 from postgres_conn import User, UserAuth, get_db, Integration
 from authlib.integrations.starlette_client import OAuth
 import httpx
-from utils import *
+# from utils import *
 
 
 oauth = OAuth()

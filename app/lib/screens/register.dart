@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = e is ApiException ? e.displayMessage : e.toString();
           _isLoading = false;
         });
       }

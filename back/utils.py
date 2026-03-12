@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from typing import List
 from langdetect import detect
 import numpy as np
+import traceback
 
 import logging
 from schemas import *
@@ -13,6 +14,7 @@ from postgres_conn import *
 from vecutils import sentiment_check
 from auth import hash_password
 from red_flags import RED_FLAGS
+import re
 
 
 LANG_MAP = {
@@ -42,13 +44,25 @@ def red_flags_check(message: str) -> bool:
     return False
 
 
-async def moderate(*args):
-    if not red_flags_check(' '.join(args)):
-        raise HTTPException(status_code=403, detail='Moderation not passed')
-    sentiment = await sentiment_check(args)
-    if not sentiment:
-        raise HTTPException(status_code=403, detail='Moderation not passed')
+async def moderate(db: AsyncSession, *args):
+    try:
+        if not red_flags_check(' '.join(args)):
+            raise HTTPException(status_code=403, detail='Moderation not passed')
+        
+        async for mod_db in get_db():
+            try:
+                sentiment = await sentiment_check(mod_db, args)
+            finally:
+                await mod_db.close()
+        
+        if not sentiment:
+            raise HTTPException(status_code=403, detail='Moderation not passed')
 
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f'Could not moderate: {e}')
+        raise
 
 def detect_language(name: str, contents: str) -> str:
     try:
@@ -114,6 +128,7 @@ async def register_user(req: RegisterRequest, db: AsyncSession):
 
 async def create_community(req: CreateCommunityRequest, user_id: int, db: AsyncSession):
     try:
+        
         result = await db.execute(select(Community).where(Community.name == req.name))
         ex_community = result.scalars().first()
     
@@ -124,20 +139,19 @@ async def create_community(req: CreateCommunityRequest, user_id: int, db: AsyncS
         result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalars().first()
 
-        mod = Moderator(
-            user_id = user.id,
-        )
+        mod = Moderator(user_id=user.id)
     
         community = Community(
             name         = req.name        ,
             description  = req.description ,
             reddit_link  = req.reddit_link ,
             creator_id   = user_id         ,
-            slug         = req.slug        ,
             mods         = [mod]           ,
             participants = [user]          ,
         )
+        
         db.add(community)
+        
         await db.flush()
 
         mod.moderates = community

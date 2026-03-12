@@ -61,6 +61,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
+  String _getErrorMessage(dynamic e) {
+    return e is ApiException ? e.displayMessage : e.toString();
+  }
+
   Future<void> _createPost() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCommunityId == null) {
@@ -86,7 +90,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = _getErrorMessage(e);
           _isLoading = false;
         });
       }

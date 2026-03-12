@@ -22,6 +22,7 @@ from posts import router as posts_router
 from chats import router as chats_router
 from integrations import router as integrations_router
 from postgres_conn import *
+from vecutils import *
 from dotenv import load_dotenv
 from os import environ as env
 
@@ -93,15 +94,23 @@ async def health():
 
 ### STARTUP AND SHUTDOWN EVENTS
 
+async def insert_init(db: AsyncSession):
+    await insert_redflag_intentions(db)
+    await db.commit()
 
 @app.on_event("startup")
 async def startup_event():
+    logging.info("Starting up: initializing database...")
     try:
         await init_db()
-        print("startup event over")
+        logging.info("Database initialized, inserting redflag intentions...")
+        async for db in get_db():
+            await insert_redflag_intentions(db)
+            await db.commit()
+        logging.info("Startup event completed successfully")
 
     except Exception as err:
-        print(f"Could not init db. Error:\n\n{err}")
+        logging.error(f"Could not init db. Error:\n\n{err}")
 
 
 @app.on_event("shutdown")

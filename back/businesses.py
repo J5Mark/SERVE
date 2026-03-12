@@ -34,7 +34,7 @@ async def create_business_ep(
 
     if user.entrep:
             
-        await moderate(req.name, req.bio, req.cont_goal)
+        await moderate(db, req.name, req.bio, req.cont_goal)
         
         await create_business(req, user_id, db)
         await db.commit()
@@ -61,7 +61,7 @@ async def edit_business_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
-    await moderate(req.bio, req.cont_goal)
+    await moderate(db, req.bio, req.cont_goal)
     
     await edit_business(req, user_id, business_id, db)
     await db.commit()

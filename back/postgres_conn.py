@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship, Column, Integer, String, JSO
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.dialects.postgresql import TSVECTOR
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, event, text, Index, PrimaryKeyConstraint
 from datetime import datetime
 from typing import List, Optional
@@ -162,9 +163,9 @@ class User(SQLModel, table=True):
     )
     sent_messages: List["Message"] = Relationship(back_populates='author')
 
-    embedding: List[float] = Field(
-        sa_column=Column(Vector(300)) # TODO - check actual embedding size
-    )
+    # embedding: List[float] = Field(
+    #     sa_column=Column(Vector(300)) # TODO - check actual embedding size
+    # )
 
 
 class Community(SQLModel, table=True):
@@ -182,7 +183,6 @@ class Community(SQLModel, table=True):
             nullable=False
         )
     )    
-    slug: str = Field(index=True)
 
     mods: List[Moderator] = Relationship(
         back_populates = 'moderates'
@@ -463,6 +463,15 @@ class Integration(SQLModel, table=True):
         )
     )
     user: Optional["User"] = Relationship(back_populates="integrations")
+
+
+class RedFlagIntent(SQLModel, table=True):
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    label: str
+    embedding: List[float] = Field(sa_column=Column(Vector(768)))
+
+    
 ###
 
 def get_database_url():
@@ -558,7 +567,7 @@ def create_community_search_trigger(conn):
         """))
 
 
-async def install_pgvector(conn):
+def install_pgvector(conn):
     result = conn.execute(text(
                      "SELECT extname FROM pg_extension WHERE extname = 'vector';"
                  ))

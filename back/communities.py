@@ -23,7 +23,7 @@ async def create_community_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
-    await moderate(req.description, req.name)
+    await moderate(db, req.description, req.name)
 
     await create_community(req, user_id, db)
     await db.commit()
@@ -90,7 +90,7 @@ async def edit_community_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):
-    await moderate(req.description)
+    await moderate(db, req.description)
     
     edit_community(req, db, user_id)
     await db.commit()

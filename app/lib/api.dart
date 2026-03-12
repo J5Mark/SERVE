@@ -5,7 +5,47 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 
 final apiBase = 'https://serve-back.ftp.sh';
 
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+  final dynamic detail;
+
+  ApiException(this.message, {this.statusCode, this.detail});
+
+  @override
+  String toString() => 'ApiException: $message (status: $statusCode)';
+
+  String get displayMessage {
+    if (detail != null && detail is Map && detail.containsKey('detail')) {
+      return detail['detail'].toString();
+    }
+    return message;
+  }
+}
+
 class Api {
+  static Map<String, dynamic> _handleResponse(http.Response res) {
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (res.body.isEmpty) return {};
+      return jsonDecode(res.body);
+    }
+
+    dynamic detail;
+    try {
+      if (res.body.isNotEmpty) {
+        detail = jsonDecode(res.body);
+      }
+    } catch (_) {
+      detail = res.body;
+    }
+
+    throw ApiException(
+      'Request failed',
+      statusCode: res.statusCode,
+      detail: detail,
+    );
+  }
+
   static Future<Map<String, dynamic>> deviceLogin(String deviceId) async {
     final res = await http.post(
       Uri.parse("$apiBase/auth/devicelogin"),
@@ -13,14 +53,7 @@ class Api {
       headers: {'Content-Type': 'application/json'},
     );
 
-    if (res.statusCode != 200) {
-      print('Error in devicelogin');
-      print(res.body);
-      throw Exception('Device login failed: ${res.statusCode} - ${res.body}');
-    }
-    print(res.body);
-    final data = jsonDecode(res.body);
-    return data;
+    return _handleResponse(res);
   }
 
   static Future<Map<String, dynamic>> register({
@@ -49,14 +82,7 @@ class Api {
       headers: {'Content-Type': 'application/json'},
     );
 
-    print('Register response: ${res.statusCode} - ${res.body}');
-
-    if (res.statusCode != 200 && res.statusCode != 201) {
-      throw Exception('Registration failed: ${res.statusCode} - ${res.body}');
-    }
-
-    final data = jsonDecode(res.body);
-    return data;
+    return _handleResponse(res);
   }
 
   static Future<Map<String, dynamic>> login({
@@ -78,8 +104,7 @@ class Api {
       headers: {'Content-Type': 'application/json'},
     );
 
-    final data = jsonDecode(res.body);
-    return data;
+    return _handleResponse(res);
   }
 
   static Future<Map<String, dynamic>> getUser(String deviceId) async {
@@ -181,7 +206,7 @@ class Api {
         },
       );
 
-      final subExistsData = jsonDecode(subExistsRes.body);
+      final subExistsData = _handleResponse(subExistsRes);
 
       if (subExistsData['subreddit'] != true) {
         return {'subreddit': 'doesnt exist'};
@@ -201,8 +226,7 @@ class Api {
       },
     );
 
-    final data = jsonDecode(res.body);
-    return data;
+    return _handleResponse(res);
   }
 
   static Future<Map<String, dynamic>> createBusiness({
@@ -227,8 +251,7 @@ class Api {
       },
     );
 
-    final data = jsonDecode(res.body);
-    return data;
+    return _handleResponse(res);
   }
 
   static Future<List<dynamic>> getUserBusinesses() async {
@@ -340,8 +363,7 @@ class Api {
       },
     );
 
-    final data = jsonDecode(res.body);
-    return data;
+    return _handleResponse(res);
   }
 
   static Future<Map<String, dynamic>> getPost(int postId) async {

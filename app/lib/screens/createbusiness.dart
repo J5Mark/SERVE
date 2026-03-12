@@ -64,6 +64,10 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
     }
   }
 
+  String _getErrorMessage(dynamic e) {
+    return e is ApiException ? e.displayMessage : e.toString();
+  }
+
   Future<void> _createBusiness() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCommunityIds.isEmpty) {
@@ -93,7 +97,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = _getErrorMessage(e);
           _isLoading = false;
         });
       }

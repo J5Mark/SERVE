@@ -49,9 +49,10 @@ class _InitScreenState extends State<InitScreen> {
     } catch (e) {
       print('Device login error: $e');
       if (!mounted) return;
+      final message = e is api.ApiException ? e.displayMessage : e.toString();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Login error: $e')));
+      ).showSnackBar(SnackBar(content: Text('Login error: $message')));
     }
   }
 
