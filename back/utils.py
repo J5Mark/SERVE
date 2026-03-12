@@ -10,7 +10,9 @@ import numpy as np
 import logging
 from schemas import *
 from postgres_conn import *
+from vecutils import sentiment_check
 from auth import hash_password
+from red_flags import RED_FLAGS
 
 
 LANG_MAP = {
@@ -18,6 +20,35 @@ LANG_MAP = {
     "ru": "russian",
     "nl": "dutch",
 }
+
+_ESCAPED_FLAGS = [re.escape(flag.lower()) for flag in RED_FLAGS]
+_RED_FLAGS_REGEX = re.compile('|'.join(_ESCAPED_FLAGS))
+
+def red_flags_check(message: str) -> bool:
+    message_lower = message.lower()
+    matches = _RED_FLAGS_REGEX.finditer(message_lower)
+    found = []
+    seen = set()
+    for match in matches:
+        matched_text = match.group(0)
+        # Находим оригинальный флаг по совпадению
+        original = next(flag for flag in RED_FLAGS if flag.lower() == matched_text)
+        if original not in seen:
+            found.append(original)
+            seen.add(original)
+    
+    if not found:
+        return True
+    return False
+
+
+async def moderate(*args):
+    if not red_flags_check(' '.join(args)):
+        raise HTTPException(status_code=403, detail='Moderation not passed')
+    sentiment = await sentiment_check(args)
+    if not sentiment:
+        raise HTTPException(status_code=403, detail='Moderation not passed')
+
 
 def detect_language(name: str, contents: str) -> str:
     try:

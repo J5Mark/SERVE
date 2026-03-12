@@ -22,6 +22,8 @@ async def create_post_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
+    await moderate(req.contents, req.name)
+    
     await create_post(req, user_id, db)
     await db.commit()
 
@@ -124,6 +126,8 @@ async def edit_post_ep(
     req: EditPostRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    await moderate(req.contents)
+    
     await edit_post(req, db)
     await db.commit()
 
@@ -136,6 +140,8 @@ async def vote_on_post_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
+    await moderate(req.competition, req.problems)
+    
     await vote_on_post(req, user_id, db)
     await db.commit()
 

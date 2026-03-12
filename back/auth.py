@@ -15,6 +15,7 @@ from schemas import *
 from postgres_conn import User, UserAuth, get_db, Integration
 from authlib.integrations.starlette_client import OAuth
 import httpx
+from utils import *
 
 
 oauth = OAuth()
@@ -207,6 +208,12 @@ async def login(req: AuthRequest, db: AsyncSession = Depends(get_db)):
     if not query_conditions:
         raise HTTPException(
             status_code=400, detail="Username, email, or phone required"
+        )
+
+    # validate
+    if not red_flags_check(f'{req.email} {req.username}'):
+        raise HTTPException(
+            status_code=401, detail='Moderation not passed'
         )
 
     result = await db.execute(select(UserAuth).where(*query_conditions))

@@ -72,7 +72,6 @@ class CreateCommunityRequest(BaseModel):
     name: str = Field(min_length=4, max_length=25)
     description: str = Field(min_length=10)
     reddit_link: Optional[str]
-    slug: str
 
 
 class DeleteCommunityRequest(BaseModel):
@@ -90,6 +89,8 @@ class CreateBusinessRequest(BaseModel):
 class EditBusinessRequest(BaseModel):
     bio: str | None = None
     community_ids: List[int] | None = None
+    cont_goal: str | None = None
+    reaction_time: int | None = None
 
 
 class VerifyBusinessRequest(BaseModel):

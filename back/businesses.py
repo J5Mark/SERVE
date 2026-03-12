@@ -16,6 +16,7 @@ from schemas import (
 from typing import Optional
 from uuid import uuid4
 from utils import *
+from vecutils import *
 from ranking import fetch_useful_businessmen
 from postgres_conn import User, UserAuth, get_db, Community, Post
 
@@ -32,6 +33,9 @@ async def create_business_ep(
     user = result.scalars().first()  # Will later have to abstract it to use cache
 
     if user.entrep:
+            
+        await moderate(req.name, req.bio, req.cont_goal)
+        
         await create_business(req, user_id, db)
         await db.commit()
         return {"business": "created"}
@@ -57,6 +61,8 @@ async def edit_business_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
+    await moderate(req.bio, req.cont_goal)
+    
     await edit_business(req, user_id, business_id, db)
     await db.commit()
     return {"business": "edited"}
