@@ -87,10 +87,12 @@ async def search_sentiment(query_vector: List, limit: int, db: AsyncSession):
     similarity_threshold = 0.5
     
     try:
+        distance = RedFlagIntent.embedding.cosine_distance(query_vector)
+
         result = await db.execute(
             select(RedFlagIntent.label)
-            .where(RedFlagIntent.embedding.cosine_distance(query_vector) < (1 - similarity_threshold))
-            .order_by(RedFlagIntent.embedding.cosine_distance(query_vector))
+            .where(distance < (1 - similarity_threshold))
+            .order_by(distance)
             .limit(limit)
         )
 
