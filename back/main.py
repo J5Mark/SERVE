@@ -21,8 +21,11 @@ from businesses import router as business_router
 from posts import router as posts_router
 from chats import router as chats_router
 from integrations import router as integrations_router
-from postgres_conn import *
-from vecutils import *
+from payments import router as payments_router
+from utils import *
+from postgres_conn import get_db, init_db
+from vecutils import insert_redflag_intentions, run_embedding_worker
+from valkey_conn import init_valkey, close_valkey
 from dotenv import load_dotenv
 from os import environ as env
 
@@ -102,6 +105,10 @@ async def insert_init(db: AsyncSession):
 async def startup_event():
     logging.info("Starting up: initializing database...")
     try:
+        logging.info("Starting up: connecting to valkey...")
+        await init_valkey()
+        logging.info("Starting up: launching embedding worker...")
+        asyncio.create_task(run_embedding_worker())
         await init_db()
         logging.info("Database initialized, inserting redflag intentions...")
         async for db in get_db():
@@ -116,7 +123,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     try:
-        pass
+        await close_valkey()
 
     except Exception as err:
         pass

@@ -8,13 +8,14 @@ from auth import auth, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload, defer
 from schemas import *
 from typing import Optional
 from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db, Community, Post
 
-router = APIRouter(prefix='/post', tags=['posts'])
+router = APIRouter(prefix='/api/post', tags=['posts'])
 
 @router.post('/c')
 async def create_post_ep(
@@ -49,7 +50,8 @@ async def share_post_ep(
         select(Post)
         .where(Post.id == post_id)
         .options(
-            selectinload(Post.community)
+            selectinload(Post.community),
+            defer(Post.embedding),
         )
     )
     post = result.scalars().first()
@@ -66,7 +68,7 @@ async def share_post_ep(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta property="og:title" content="{post.name}">
         <meta property="og:description" content="{post.contents[:150]}">
-        <meta property="og:url" content="https://serve-back.ftp.sh/post/g/{post.id}">
+        <meta property="og:url" content="https://serveyourcommunity.ftp.sh/post/g/{post.id}">
         <title>{post.name} | Serve App</title>
         <style>
             body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; color: white; margin: 0; padding: 20px; text-align: center; }}
@@ -85,8 +87,8 @@ async def share_post_ep(
             <div class="community">📁 {community_name}</div>
             <div class="content">{post.contents[:200]}{'...' if len(post.contents) > 200 else ''}</div>
             
-            <a href="https://serve-back.ftp.sh/auth/deeplink/post/{post.id}" class="btn">Open in App</a>
-            <a href="https://serve-back.ftp.sh/post/g/{post.id}" class="btn btn-secondary">View on Web</a>
+            <a href="https://serveyourcommunity.ftp.sh/#/home" class="btn">Open in App</a>
+            <a href="https://serveyourcommunity.ftp.sh/#/post/{post.id}" class="btn btn-secondary">View on Web</a>
             
             <div class="footer">
                 <p>Redirecting in <span id="countdown">3</span> seconds...</p>
@@ -99,7 +101,7 @@ async def share_post_ep(
                 document.getElementById('countdown').textContent = count;
                 if (count <= 0) {{
                     clearInterval(interval);
-                    window.location.href = 'https://serve-back.ftp.sh/post/g/{post.id}';
+                    window.location.href = 'https://serveyourcommunity.ftp.sh/#/post/{post.id}';
                 }}
             }}, 1000);
         </script>

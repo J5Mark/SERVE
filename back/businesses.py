@@ -20,7 +20,7 @@ from vecutils import *
 from ranking import fetch_useful_businessmen
 from postgres_conn import User, UserAuth, get_db, Community, Post
 
-router = APIRouter(prefix="/business", tags=["businesses"])
+router = APIRouter(prefix="/api/business", tags=["businesses"])
 
 
 @router.post("/create")

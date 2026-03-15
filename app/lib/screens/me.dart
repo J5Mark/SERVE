@@ -49,7 +49,13 @@ class _MeScreenState extends State<MeScreen> {
 
   Future<void> _linkGoogleAccount() async {
     try {
-      final url = Uri.parse('https://serve-back.ftp.sh/auth/google/start');
+      // Get device_id to pass to OAuth for linking to existing anonymous user
+      final prefs = await SharedPreferences.getInstance();
+      final deviceId = prefs.getString('device_id') ?? '';
+
+      final url = Uri.parse(
+        'https://serveyourcommunity.ftp.sh/api/auth/google/start?device_id=$deviceId',
+      );
       // Use in-app webview for better UX, falls back to external browser
       final result = await launchUrl(url, mode: LaunchMode.platformDefault);
       if (!result && mounted) {
@@ -165,6 +171,57 @@ class _MeScreenState extends State<MeScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    // If user is not registered (404), show complete profile options
+    if (_user == null) {
+      print(
+        'ME_SCREEN: _user is null, error = $_error, showing complete profile screen',
+      );
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.person_outline, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              'Complete your profile',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text('Register or sign in with Google'),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => context.push('/register'),
+              icon: const Icon(Icons.email),
+              label: const Text('Register'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brightGreen,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _linkGoogleAccount,
+              icon: const Icon(Icons.g_mobiledata, size: 24),
+              label: const Text('Continue with Google'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show actual errors for other cases
     if (_error != null) {
       return Center(
         child: Column(
@@ -173,22 +230,6 @@ class _MeScreenState extends State<MeScreen> {
             Text('Error: $_error'),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _loadUser, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    if (_user == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Not registered'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.push('/register'),
-              child: const Text('Register'),
-            ),
           ],
         ),
       );

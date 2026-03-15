@@ -1,7 +1,7 @@
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:app/auth_provider.dart';
 import 'package:app/screens/posts.dart';
 import 'package:app/screens/me.dart';
 import 'package:app/screens/settings.dart';
@@ -19,12 +19,72 @@ import 'package:app/screens/chats.dart';
 import 'package:app/screens/chat.dart';
 import 'package:app/widgets.dart';
 
+AuthStateNotifier? authState;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Handle deep link on startup
-  // This will be handled by the router after initialization
+  print('MAIN: Starting app...');
+  print('MAIN: Current URL = ${Uri.base}');
+  print('MAIN: Current URL query = ${Uri.base.query}');
+  print('MAIN: Current URL fragment = ${Uri.base.fragment}');
+  print('MAIN: Window location href = ${html.window.location.href}');
+  print('MAIN: Window location search = ${html.window.location.search}');
+  print('MAIN: Window location hash = ${html.window.location.hash}');
+  print('MAIN: Query params = ${Uri.base.queryParameters}');
+
+  // Check for OAuth tokens in the URL BEFORE initializing app
+  final currentUri = Uri.base;
+  final accessToken = currentUri.queryParameters['access_token'];
+  final refreshToken = currentUri.queryParameters['refresh_token'];
+  final userId = currentUri.queryParameters['user_id'];
+
+  print(
+    'MAIN: OAuth tokens in URL? access=${accessToken != null}, refresh=${refreshToken != null}',
+  );
+
+  if (accessToken != null && refreshToken != null) {
+    print('MAIN: Found OAuth tokens in URL, saving them...');
+    print(
+      'MAIN: access_token (first 50 chars) = ${accessToken.substring(0, 50)}...',
+    );
+    print('MAIN: user_id = $userId');
+    // Initialize auth state
+    final authNotifier = AuthStateNotifier();
+    await authNotifier.initialize();
+    authState = authNotifier;
+
+    // Save the tokens immediately
+    await authNotifier.saveTokensFromUrl(accessToken, refreshToken, userId);
+    print('MAIN: OAuth tokens saved from URL!');
+  } else {
+    print('MAIN: No OAuth tokens found, doing normal init');
+    final authNotifier = AuthStateNotifier();
+    await authNotifier.initialize();
+    authState = authNotifier;
+  }
+
   runApp(const MyApp());
+}
+
+Future<void> _handleOAuthCallback() async {
+  // This is a simple check - in practice we'd use platform channels
+  // For now, the router redirect will handle tokens
+}
+
+Future<void> saveOAuthTokens(
+  String accessToken,
+  String refreshToken,
+  String? userId,
+) async {
+  print('saveOAuthTokens: START');
+  if (authState != null) {
+    print('saveOAuthTokens: authState exists, calling saveTokensFromUrl');
+    await authState!.saveTokensFromUrl(accessToken, refreshToken, userId);
+    print('saveOAuthTokens: DONE');
+  } else {
+    print('saveOAuthTokens: ABORTED - authState is null!');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -43,60 +103,25 @@ class MyApp extends StatelessWidget {
 
 final GoRouter _router = GoRouter(
   initialLocation: '/init',
+  initialExtra: null,
 
   redirect: (BuildContext context, GoRouterState state) async {
-    // Handle deep links
-    final uriString = state.uri.toString();
-
-    // Handle custom scheme: serve-app://auth?token=xxx
-    if (uriString.startsWith('serve-app://')) {
-      String path = uriString.substring('serve-app://'.length);
-      if (!path.startsWith('/')) {
-        path = '/$path';
-      }
-      return path;
+    // Wait for auth to initialize
+    if (authState == null || authState!.state == AuthState.initial) {
+      return null;
     }
-
-    // Handle Universal Links: https://serve-back.ftp.sh/auth?token=xxx
-    if (uriString.contains('serve-back.ftp.sh')) {
-      // Extract path and query from full URL
-      final uri = Uri.parse(uriString);
-      String path = uri.path;
-      if (uri.queryParameters.isNotEmpty) {
-        path +=
-            '?' +
-            uri.queryParameters.entries
-                .map((e) => '${e.key}=${e.value}')
-                .join('&');
-      }
-      return path;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
 
     final isOnInit = state.matchedLocation == '/init';
 
-    if (token == null) {
+    if (authState!.isUnauthenticated) {
       if (!isOnInit) return '/init';
       return null;
     }
 
-    bool isTokenValid = true;
-    try {
-      isTokenValid = !JwtDecoder.isExpired(token);
-    } catch (e) {
-      isTokenValid = false;
-    }
-
-    if (!isTokenValid) {
-      await prefs.remove('auth_token');
-      await prefs.remove('refresh_token');
-      if (!isOnInit) return '/init';
-      return null;
-    }
-
-    if (isOnInit) {
+    print(
+      'DEBUG: authState.isAuthenticated = ${authState!.isAuthenticated}, isOnInit = $isOnInit',
+    );
+    if (authState!.isAuthenticated && isOnInit) {
       return '/home';
     }
 
@@ -107,18 +132,30 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/auth',
       builder: (context, state) {
-        // Handle deep link from Google OAuth: https://serve-back.ftp.sh/auth?access_token=xxx&refresh_token=xxx&user_id=xxx
+        // Handle deep link from Google OAuth: https://serveyourcommunity.ftp.sh/auth?access_token=xxx&refresh_token=xxx&user_id=xxx
         final uri = state.uri;
         final accessToken = uri.queryParameters['access_token'];
         final refreshToken = uri.queryParameters['refresh_token'];
         final userId = uri.queryParameters['user_id'];
 
+        print(
+          'ROUTE /auth: access_token=${accessToken != null ? 'found' : 'null'}',
+        );
+        print(
+          'ROUTE /auth: refreshToken=${refreshToken != null ? 'found' : 'null'}',
+        );
+        print('ROUTE /auth: userId=$userId');
+
         if (accessToken != null && refreshToken != null) {
+          print('ROUTE /auth: Saving tokens and redirecting to /home');
           // Save tokens and redirect to home
-          _saveOAuthTokens(accessToken, refreshToken, userId);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          _saveOAuthTokens(accessToken, refreshToken, userId).then((_) {
+            print('ROUTE /auth: Tokens saved, redirecting to /home');
             context.go('/home');
           });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
@@ -133,10 +170,12 @@ final GoRouter _router = GoRouter(
         final userId = uri.queryParameters['user_id'];
 
         if (accessToken != null && refreshToken != null) {
-          _saveOAuthTokens(accessToken, refreshToken, userId);
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          _saveOAuthTokens(accessToken, refreshToken, userId).then((_) {
             context.go('/home');
           });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
@@ -208,17 +247,52 @@ final GoRouter _router = GoRouter(
       },
       routes: [
         GoRoute(
-          path: '/home',
-          builder: (context, state) => const PostsScreen(),
+          path: '/auth',
+          builder: (context, state) {
+            // Handle deep link from Google OAuth
+            // Extract tokens from state.uri which should have query params
+            final uri = state.uri;
+            final accessToken = uri.queryParameters['access_token'];
+            final refreshToken = uri.queryParameters['refresh_token'];
+            final userId = uri.queryParameters['user_id'];
+
+            print(
+              'ROUTE /auth: access_token=${accessToken != null ? 'found' : 'null'}',
+            );
+            print(
+              'ROUTE /auth: refreshToken=${refreshToken != null ? 'found' : 'null'}',
+            );
+            print('ROUTE /auth: userId=$userId');
+            print('ROUTE /auth: state.uri=$uri');
+            print('ROUTE /auth: Uri.base=${Uri.base}');
+
+            if (accessToken != null && refreshToken != null) {
+              print('ROUTE /auth: Saving tokens and redirecting to /home');
+              // Save tokens and redirect to home
+              _saveOAuthTokens(accessToken, refreshToken, userId).then((_) {
+                print('ROUTE /auth: Tokens saved, redirecting to /home');
+                context.go('/home');
+              });
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            print('ROUTE /auth: No tokens found, showing loading screen');
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          },
         ),
         GoRoute(path: '/me', builder: (context, state) => const MeScreen()),
         GoRoute(
           path: '/newcomers',
           builder: (context, state) => const NewcomersScreen(),
         ),
+        GoRoute(path: '/', builder: (context, state) => const PostsScreen()),
         GoRoute(
-          path: '/chats',
-          builder: (context, state) => const ChatsScreen(),
+          path: '/home',
+          builder: (context, state) => const PostsScreen(),
         ),
         GoRoute(
           path: '/settings',
@@ -234,12 +308,7 @@ Future<void> _saveOAuthTokens(
   String refreshToken,
   String? userId,
 ) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('auth_token', accessToken);
-  await prefs.setString('refresh_token', refreshToken);
-  if (userId != null) {
-    await prefs.setString('device_id', userId);
-  }
+  await authState?.setAuthenticated(accessToken, refreshToken, userId: userId);
 }
 
 class MainLayout extends StatelessWidget {

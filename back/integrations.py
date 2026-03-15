@@ -16,7 +16,7 @@ from os import environ as env
 
 load_dotenv()
 
-router = APIRouter(prefix='/integrations', tags=['integrations'])
+router = APIRouter(prefix='/api/integrations', tags=['integrations'])
 
 INTEGRATIONS_BASE = env.get('INTEGRATIONS_BASE', 'http://integrations:3000')
 

@@ -13,6 +13,9 @@ from schemas import *
 from postgres_conn import *
 from os import environ as env
 from red_flags import REDFLAG_TEXTS
+from valkey_conn import valkey_client
+import asyncio
+import json
 
 
 # place for all the LLM-powered utils
@@ -48,7 +51,7 @@ async def embed_text(text: str | List[str]) -> List:
 # TODO : make a batching worker that would get tasks from different places in the app and return them in proper places after processing
 
 # Wrapper for embed_text + the worker when it comes
-async def get_embeddings(texts: List[str], toworker: bool = False):
+async def get_embeddings(texts: List[str], toworker: bool = True):
     logging.warning(f"get_embeddings: received texts type={type(texts)}, len={len(texts) if texts else 0}")
     logging.warning(f"get_embeddings: texts={texts}")
     try:
@@ -56,12 +59,76 @@ async def get_embeddings(texts: List[str], toworker: bool = False):
             emb = await embed_text(texts)
             return emb
         else:
-            raise NotImplementedError
+            task_ids = await valkey_client.enqueue_embedding_batch(texts)
+            results = []
+            for task_id in task_ids:
+                for attempt in range(2):
+                    for _ in range(50):
+                        result = await valkey_client.get_task_result(task_id)
+                        if result:
+                            break
+                        await asyncio.sleep(0.1)
+                    else:
+                        result = None
+                    
+                    if result and result.get("status") == "done":
+                        results.append(result["embedding"])
+                        break
+                    if attempt == 0 and result and result.get("status") == "failed":
+                        logging.warning(f"get_embeddings: task {task_id} failed, retrying...")
+                        await valkey_client.enqueue_embedding_task(texts[task_ids.index(task_id)])
+                    else:
+                        raise HTTPException(status_code=500, detail=f"Embedding computation failed for task {task_id}")
+            return results
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Could not get embedding: {e}')
+
+
+async def run_embedding_worker():
+    await valkey_client.connect()
+    logging.info("Embedding worker started, waiting for tasks...")
+    
+    while True:
+        try:
+            tasks = await valkey_client.pop_tasks_with_timeout(timeout=1.0)
+            
+            if not tasks:
+                await asyncio.sleep(0.5)
+                continue
+            
+            logging.info(f"Worker: got {len(tasks)} tasks, processing batch")
+            
+            texts = [task["text"] for task in tasks]
+            task_ids = [task["id"] for task in tasks]
+            
+            try:
+                embeddings = await embed_text(texts)
+                for task_id, embedding in zip(task_ids, embeddings):
+                    await valkey_client.set_task_result(task_id, embedding)
+                logging.info(f"Worker: completed {len(embeddings)} embeddings")
+                
+            except Exception as e:
+                logging.error(f"Worker: batch failed, retrying one by one: {e}")
+                for task_id, text in zip(task_ids, texts):
+                    for attempt in range(2):
+                        try:
+                            embedding = (await embed_text([text]))[0]
+                            await valkey_client.set_task_result(task_id, embedding)
+                            break
+                        except Exception as inner_e:
+                            if attempt == 1:
+                                await valkey_client.set_task_result(task_id, [], error=str(inner_e))
+                                logging.error(f"Worker: task {task_id} failed after 2 attempts: {inner_e}")
+        
+        except asyncio.CancelledError:
+            logging.info("Worker: shutting down")
+            break
+        except Exception as e:
+            logging.error(f"Worker: error: {e}")
+            await asyncio.sleep(1)
 
 
 async def insert_redflag_intentions(db: AsyncSession):
@@ -120,3 +187,8 @@ async def sentiment_check(db: AsyncSession, *args) -> bool:
             return False
 
     return True
+
+
+if __name__ == "__main__":
+    import uvicorn
+    asyncio.run(run_embedding_worker())

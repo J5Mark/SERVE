@@ -72,7 +72,7 @@ async def get_user_id_from_token(
 
 password_hasher = PasswordHash.recommended()
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
 
 
@@ -119,32 +119,25 @@ class RefreshRequest(BaseModel):
 #         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
-def create_tokens(user_id: int | None, device_id: str) -> dict[str, str]:
-    now = datetime.now(timezone.utc)
-
-    common_claims = {
-        "uid": user_id,
-        "device_id": device_id,
-        "iat": now,
-    }
-
-    # Use device_id for anonymous tokens (before registration)
-    token_uid = device_id
+def create_tokens(user_id: int | None = None, device_id: str | None = None) -> dict[str, str]:
+    """Create tokens. Use user_id for authenticated users, device_id for anonymous."""
     
-    access_token = auth.create_access_token(
-        uid=token_uid,
-        # data=common_claims,
-    )
+    if user_id:
+        token_uid = str(user_id)
+    elif device_id:
+        token_uid = device_id
+    else:
+        raise ValueError("Either user_id or device_id must be provided")
+    
+    access_token = auth.create_access_token(uid=token_uid)
+    refresh_token = auth.create_refresh_token(uid=token_uid)
 
-    refresh_token = auth.create_refresh_token(
-        uid=token_uid,
-        # data=common_claims,
-    )
+    logging.warning(access_token)
 
-    return (
-        access_token,
-        refresh_token,
-    )
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
 
 def create_user_tokens(user_id: int) -> tuple[str, str]:
@@ -164,33 +157,31 @@ def revoke_old_refresh() -> None:
 
 @router.post("/devicelogin")
 async def device_login(req: DeviceLoginRequest, db: AsyncSession = Depends(get_db)):
-    # check if exists in auth users
-    # if doesn't exist, create a record
-    # then create access and refresh tokens
-    result = await db.execute(select(User).where(User.device_id == req.device_id))
-    ex_user = result.scalars().first()
-    if not ex_user:
-        # create record
+    result = await db.execute(select(UserAuth).where(UserAuth.device_id == req.device_id))
+    existing_auth = result.scalars().first()
+    
+    if not existing_auth:
+        # Create minimal UserAuth record for tracking
         try:
-            ex_user = User(device_id=req.device_id)
-            db.add(ex_user)
-            await db.flush()
-            # probably set up a cronjob later that would delete 'empty' User-s
+            user_auth = UserAuth(
+                device_id=req.device_id,
+                username=f"anon_{req.device_id[:8]}",  # Required field
+                password_hash="",  # No password for anonymous
+            )
+            db.add(user_auth)
             await db.commit()
-            await db.refresh(ex_user)
-
         except Exception as e:
-            logging.error(f"Could not record new auth:\n\n{e}")
-            raise HTTPException(status_code=500, detail=f"Error: {e}")
+            logging.warning(f"Could not create UserAuth: {e}")
+    
+    # Create tokens with device_id (not user_id) - anonymous session
+    tokens = create_tokens(device_id=req.device_id)
 
-    # create tokens
-    access, refresh = create_tokens(user_id=ex_user.id, device_id=ex_user.device_id)
-    logging.debug(access)
-
-    return {
-        "access_token": access,
-        "refresh_token": refresh,
+    result = {
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens["refresh_token"],
     }
+    logging.warning(f"DEVICE_LOGIN RESPONSE: {result}")
+    return result
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -257,9 +248,17 @@ async def google_start(request: Request):
 
     redirect_uri = request.url_for("google_callback")
 
+    # Get device_id from query params if provided (from frontend)
+    device_id = request.query_params.get("device_id", "")
+    logging.warning(f"Google OAuth start - device_id from query: {device_id}")
+    
+    # Pass device_id in state so we can link Google to existing user
+    state = device_id if device_id else None
+
     return await oauth.google.authorize_redirect(
         request,
-        redirect_uri = "https://serve-back.ftp.sh/auth/google/callback"
+        redirect_uri = "https://serveyourcommunity.ftp.sh/api/auth/google/callback",
+        state = state
     )
 
 
@@ -270,6 +269,17 @@ async def google_callback(
 ):
     try:
         logging.warning(f"QUERY: {dict(request.query_params)}")
+        
+        # Get device_id from OAuth state (passed through OAuth flow)
+        # Also check all query params to see what's available
+        all_query = dict(request.query_params)
+        state_param = all_query.get('state', '')
+        device_id_param = all_query.get('device_id', '')
+        
+        device_id = state_param or device_id_param
+        
+        logging.warning(f"Full query: {all_query}")
+        logging.warning(f"State param: '{state_param}', Device ID from query: '{device_id_param}'")
         
         token = await oauth.google.authorize_access_token(request)
         google_access_token = token["access_token"]
@@ -290,31 +300,114 @@ async def google_callback(
         family_name = user_info.get('family_name')
         picture = user_info.get('picture')
 
-        # Ensure user exists
-        result = await db.execute(select(User).where(User.email == email))
-        existing_user = result.scalars().first()
+        logging.warning(f"Google OAuth: email={email}, given_name={given_name}, family_name={family_name}")
+
+        # Check by device_id first (if provided in OAuth state)
+        existing_user = None
+        if device_id:
+            result = await db.execute(select(User).where(User.device_id == device_id))
+            existing_user = result.scalars().first()
+            if existing_user:
+                logging.warning(f"Found existing user by device_id: {existing_user.id}")
+        
+        # If not found by device_id, check by email
+        if not existing_user:
+            result = await db.execute(select(User).where(User.email == email))
+            existing_user = result.scalars().first()
+
+        # Also check UserAuth by email as fallback
+        result = await db.execute(
+            select(UserAuth).where(UserAuth.email == email)
+        )
+        existing_auth_by_email = result.scalars().first()
+
+        # Also check UserAuth by device_id
+        if device_id:
+            result = await db.execute(
+                select(UserAuth).where(UserAuth.device_id == device_id)
+            )
+            existing_auth_by_device = result.scalars().first()
+        else:
+            existing_auth_by_device = None
 
         user_id: int
         if existing_user:
+            # Use existing user
             user_id = existing_user.id
-            # Update user profile with Google data if fields are empty
+            logging.warning(f"Existing user found: id={user_id}, first_name={existing_user.first_name}, username={existing_user.username}")
+            # Update user profile with Google data (always prefer real data over placeholders)
             needs_update = False
-            if not existing_user.first_name and given_name:
+            placeholder_names = {"New User", "User", None, ""}
+            if existing_user.first_name in placeholder_names and given_name:
                 existing_user.first_name = given_name
                 needs_update = True
-            if not existing_user.last_name and family_name:
+            if existing_user.last_name in placeholder_names and family_name:
                 existing_user.last_name = family_name
                 needs_update = True
-            if not existing_user.username and email:
-                existing_user.username = email[:email.index('@')]
-                needs_update = True
+            if existing_user.username in placeholder_names or (existing_user.username and existing_user.username.startswith("user_")):
+                if email:
+                    try:
+                        existing_user.username = email.split('@')[0]
+                    except:
+                        existing_user.username = f"user_{existing_user.id}"
+                    needs_update = True
+            # Only set email if not already set OR if current email is placeholder
+            if existing_user.email in placeholder_names and email:
+                # Check if email is already used by another user
+                result = await db.execute(select(User).where(User.email == email, User.id != existing_user.id))
+                other_user_with_email = result.scalars().first()
+                if not other_user_with_email:
+                    existing_user.email = email
+                    needs_update = True
             if needs_update:
                 await db.commit()
+        elif existing_auth_by_device and existing_auth_by_device.user_id:
+            # Found existing user by device_id in UserAuth
+            user_id = existing_auth_by_device.user_id
+            result = await db.execute(select(User).where(User.id == user_id))
+            existing_user = result.scalars().first()
+            if existing_user:
+                # Only set email if not already used by another user
+                if not existing_user.email:
+                    result = await db.execute(select(User).where(User.email == email, User.id != user_id))
+                    other_user_with_email = result.scalars().first()
+                    if not other_user_with_email:
+                        existing_user.email = email
+                if not existing_user.first_name and given_name:
+                    existing_user.first_name = given_name
+                if not existing_user.last_name and family_name:
+                    existing_user.last_name = family_name
+                if not existing_user.username and email:
+                    existing_user.username = email.split('@')[0] if '@' in email else f"user_{user_id}"
+                await db.commit()
+                logging.warning(f"Updated existing user by device_id: {user_id}")
+        elif existing_auth_by_email and existing_auth_by_email.user_id:
+            # User has UserAuth but no email in User table - use existing user
+            user_id = existing_auth_by_email.user_id
+            result = await db.execute(select(User).where(User.id == user_id))
+            existing_user = result.scalars().first()
+            if existing_user:
+                # Only set email if not already used by another user
+                if not existing_user.email:
+                    result = await db.execute(select(User).where(User.email == email, User.id != user_id))
+                    other_user_with_email = result.scalars().first()
+                    if not other_user_with_email:
+                        existing_user.email = email
+                if not existing_user.first_name and given_name:
+                    existing_user.first_name = given_name
+                if not existing_user.last_name and family_name:
+                    existing_user.last_name = family_name
+                await db.commit()
         else:
+            # Create new user
+            username_from_email = None
+            if email and '@' in email:
+                username_from_email = email.split('@')[0]
+            
             new_user = User(
                 email=email,
-                username=email[:email.index('@')],
-                first_name=given_name,
+                username=username_from_email or f"user_{email[:8]}" if email else "new_user",
+                first_name=given_name if given_name else "User",
                 last_name=family_name,
             )
             db.add(new_user)
@@ -322,6 +415,49 @@ async def google_callback(
             await db.commit()
             await db.refresh(new_user)
             user_id = new_user.id
+            logging.warning(f"Created new user: id={user_id}")
+
+        # Create or update UserAuth record for Google login
+        # First check if there's an existing UserAuth with the same email (from anonymous login)
+        result = await db.execute(
+            select(UserAuth).where(UserAuth.email == email)
+        )
+        existing_auth_by_email = result.scalars().first()
+        
+        if existing_auth_by_email and existing_auth_by_email.google is None:
+            # User had anonymous account, link Google to it
+            existing_auth_by_email.google = google_id
+            existing_auth_by_email.user_id = user_id
+            await db.commit()
+            # Also update the User record if it was created newly
+            if not existing_user:
+                # Delete the newly created user since we're using existing one
+                await db.delete(new_user)
+                user_id = existing_auth_by_email.user_id
+        else:
+            # Check if UserAuth with google exists
+            result = await db.execute(
+                select(UserAuth).where(UserAuth.google == google_id)
+            )
+            existing_auth = result.scalars().first()
+
+            if existing_auth:
+                # Update existing UserAuth with user_id if not set
+                if not existing_auth.user_id:
+                    existing_auth.user_id = user_id
+                    existing_auth.email = email
+                    await db.commit()
+            else:
+                # Create new UserAuth for Google user
+                user_auth = UserAuth(
+                    user_id=user_id,
+                    device_id=None,  # No device_id for Google OAuth users
+                    google=google_id,
+                    email=email,
+                    password_hash="",  # No password for Google users
+                )
+                db.add(user_auth)
+            await db.commit()
 
         # Check integration
         result = await db.execute(
@@ -354,8 +490,8 @@ async def google_callback(
         # App tokens
         app_access_token, app_refresh_token = create_user_tokens(user_id)
 
-        # Redirect to web page with success + button to open app
-        success_url = f"https://serve-back.ftp.sh/auth/google/success?access_token={app_access_token}&refresh_token={app_refresh_token}&user_id={user_id}"
+        # Redirect to Flutter app's auth handler with tokens
+        success_url = f"https://serveyourcommunity.ftp.sh/auth?access_token={app_access_token}&refresh_token={app_refresh_token}&user_id={user_id}"
         
         return RedirectResponse(url=success_url)
 
@@ -367,19 +503,13 @@ async def google_callback(
         )
 
 
-@router.get("/google/success", response_class=HTMLResponse)
-async def google_success(
+@router.get("/oauth/callback", response_class=HTMLResponse)
+async def oauth_callback(
     access_token: str,
     refresh_token: str,
     user_id: int
 ):
-    """Web page shown after Google OAuth - has button to open app"""
-    
-    # Use Universal Link (works on iOS/Android when app is installed)
-    deep_link_url = f"https://serve-back.ftp.sh/auth?access_token={access_token}&refresh_token={refresh_token}&user_id={user_id}"
-    
-    # Fallback to custom scheme (works on Android with intent-filter)
-    fallback_url = f"serve-app://auth?access_token={access_token}&refresh_token={refresh_token}&user_id={user_id}"
+    """OAuth callback - stores tokens and shows success message"""
     
     html = f"""
     <!DOCTYPE html>
@@ -387,102 +517,47 @@ async def google_success(
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Success! | Serve App</title>
+        <title>Logging in... | Serve App</title>
         <style>
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 background: #1a1a1a;
                 color: white;
-                margin: 0;
-                padding: 20px;
-                text-align: center;
                 display: flex;
-                flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 min-height: 100vh;
+                margin: 0;
             }}
-            .container {{
-                max-width: 400px;
+            .container {{ text-align: center; }}
+            .spinner {{
+                border: 4px solid #333;
+                border-top: 4px solid #4ade80;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
             }}
-            .checkmark {{
-                font-size: 64px;
-                margin-bottom: 20px;
-            }}
-            h1 {{
-                font-size: 28px;
-                margin-bottom: 10px;
-                color: #4ade80;
-            }}
-            p {{
-                color: #aaa;
-                margin-bottom: 30px;
-            }}
-            .btn {{
-                display: inline-block;
-                background: #4ade80;
-                color: #000;
-                padding: 16px 32px;
-                border-radius: 12px;
-                text-decoration: none;
-                font-weight: bold;
-                font-size: 18px;
-                margin: 10px;
-                cursor: pointer;
-                border: none;
-            }}
-            .btn:hover {{
-                background: #22c55e;
-            }}
-            .btn-secondary {{
-                background: #444;
-                color: white;
-            }}
-            .btn-secondary:hover {{
-                background: #555;
-            }}
-            .footer {{
-                margin-top: 40px;
-                color: #666;
-                font-size: 12px;
-            }}
+            @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
         </style>
+        <script>
+            // Store tokens in localStorage
+            localStorage.setItem('auth_token', '{access_token}');
+            localStorage.setItem('refresh_token', '{refresh_token}');
+            localStorage.setItem('user_id', '{user_id}');
+            
+            // Redirect to home
+            setTimeout(() => {{
+                window.location.href = '/#/home';
+            }}, 500);
+        </script>
     </head>
     <body>
         <div class="container">
-            <div class="checkmark">✅</div>
-            <h1>Success!</h1>
-            <p>Your Google account has been linked.</p>
-            
-            <button class="btn" id="openAppBtn">Open Serve App</button>
-            <br>
-            <a href="https://serve-back.ftp.sh" class="btn btn-secondary">Continue on Web</a>
-            
-            <div class="footer">
-                <p>If the app doesn't open, make sure the app is installed.</p>
-            </div>
+            <div class="spinner"></div>
+            <p>Logging you in...</p>
         </div>
-        
-        <script>
-            const universalLink = '{deep_link_url}';
-            const fallbackLink = '{fallback_url}';
-            const btn = document.getElementById('openAppBtn');
-            
-            btn.addEventListener('click', function() {{
-                // Try Universal Link first (works on iOS/Android with app)
-                window.location.href = universalLink;
-                
-                // After delay, try fallback (Android custom scheme)
-                setTimeout(function() {{
-                    window.location.href = fallbackLink;
-                }}, 1500);
-            }});
-            
-            // Try Universal Link immediately on page load
-            setTimeout(function() {{
-                window.location.href = universalLink;
-            }}, 500);
-        </script>
     </body>
     </html>
     """

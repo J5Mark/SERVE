@@ -28,7 +28,7 @@ async def commit_transaction():
 
 @router.post('/record')
 async def record_payment_ep(
-    req: RecordPaymentrequest,
+    req: RecordPaymentRequest,
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):

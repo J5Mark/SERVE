@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-final apiBase = 'https://serve-back.ftp.sh';
+final apiBase = 'https://serveyourcommunity.ftp.sh/api';
 
 class ApiException implements Exception {
   final String message;
@@ -107,16 +107,61 @@ class Api {
     return _handleResponse(res);
   }
 
-  static Future<Map<String, dynamic>> getUser(String deviceId) async {
+  static Future<Map<String, dynamic>> registerSimple({
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? password,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     if (token == null) {
       throw Exception('Not authenticated: no token found');
     }
+    final res = await http.post(
+      Uri.parse('$apiBase/users/register_simple'),
+      body: jsonEncode({
+        'username': username,
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'password': password,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> getUser(String deviceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final tokenSource = prefs.getString('auth_token_source');
+    print(
+      'API.getUser: token=${token != null ? 'found' : 'null'}, source=$tokenSource, deviceId=$deviceId',
+    );
+
+    if (token == null) {
+      throw Exception('Not authenticated: no token found');
+    }
+
+    try {
+      final decoded = JwtDecoder.decode(token);
+      print('API.getUser: token sub=${decoded['sub']}');
+    } catch (e) {
+      print('API.getUser: Error decoding token: $e');
+    }
+
     final res = await http.get(
       Uri.parse('$apiBase/users/me'),
       headers: {"Authorization": "Bearer $token"},
     );
+
+    print('API.getUser: Response status=${res.statusCode}');
 
     if (res.statusCode != 200) {
       throw Exception('Failed to get user: ${res.statusCode} - ${res.body}');

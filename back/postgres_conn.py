@@ -18,9 +18,16 @@ load_dotenv()
 class UserAuth(SQLModel, table=True):
     __tablename__ = "auth_users"
 
-    user_id: int = Field(foreign_key='users.id', default=None, sa_type=BigInteger)
-    device_id: str = Field(primary_key=True)
-
+    # Primary key - use auto-incrementing ID
+    id: int | None = Field(default=None, primary_key=True, sa_type=BigInteger)
+    
+    # User reference (optional - filled when user registers/links auth)
+    user_id: int | None = Field(foreign_key='users.id', default=None, sa_type=BigInteger)
+    
+    # Device tracking (for anonymous users)
+    device_id: str | None = Field(default=None, index=True)
+    
+    # Auth methods
     username: str | None = Field(default=None, index=True)
     password_hash: str
     email: str | None = Field(default=None, index=True)
@@ -163,10 +170,6 @@ class User(SQLModel, table=True):
     )
     sent_messages: List["Message"] = Relationship(back_populates='author')
 
-    # embedding: List[float] = Field(
-    #     sa_column=Column(Vector(300)) # TODO - check actual embedding size
-    # )
-
 
 class Community(SQLModel, table=True):
     __tablename__ = 'communities'
@@ -215,6 +218,10 @@ class Community(SQLModel, table=True):
         )
     )
 
+    embedding: List[float] | None = Field(
+        sa_column=Column(Vector(768)),
+        default = None
+    ) # TODO recompute the vector each week (?) I guess
 
 
 class Vote(SQLModel, table=True):
@@ -241,6 +248,11 @@ class Vote(SQLModel, table=True):
             ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False
         )
+    )
+
+    embedding: List[float] | None = Field(
+        sa_column = Column(Vector(768)),
+        default = None
     )
 
 
@@ -287,6 +299,10 @@ class Post(SQLModel, table=True):
         sa_column=Column(
             TSVECTOR
         )
+    )
+
+    embedding: List[float] = Field(
+        sa_column = Column(Vector(768))
     )
 
 
@@ -353,6 +369,10 @@ class Business(SQLModel, table=True):
     )
     verifications: List[Verification] = Relationship(
         back_populates='business'
+    )
+
+    embedding: List[float] = Field(
+        sa_column = Column(Vector(768))
     )
 
 

@@ -14,7 +14,7 @@ from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db, Community, Message
 
-router = APIRouter(prefix="/chats", tags=["chats"])
+router = APIRouter(prefix="/api/chats", tags=["chats"])
 
 
 class ConnectionManager:

@@ -7,14 +7,14 @@ from auth import auth, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, defer
 from schemas import *
 from typing import Optional
 from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db, Community
 
-router = APIRouter(prefix="/comm", tags=["communities"])
+router = APIRouter(prefix="/api/comm", tags=["communities"])
 
 
 @router.post("/create")
@@ -60,7 +60,8 @@ async def get_community_ep(
         .where(Community.id == community_id)
         .options(
             selectinload(Community.participants),
-            selectinload(Community.mods)
+            selectinload(Community.mods),
+            defer(Community.embedding),
         )
     )
     community = result.scalars().first()

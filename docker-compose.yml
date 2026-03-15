@@ -10,3 +10,9 @@ services:
       context: ./integrations-service
       dockerfile: Dockerfile
     image: cro/serve-integrations:latest
+
+  front:
+    build:
+      context: ./app        
+      dockerfile: web/Dockerfile 
+    image: cro/serve-front:latest

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, delete
 from sqlalchemy import select, func, update, desc, asc
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, defer
 from typing import List
 from langdetect import detect
 import numpy as np
@@ -11,7 +11,7 @@ import traceback
 import logging
 from schemas import *
 from postgres_conn import *
-from vecutils import sentiment_check
+from vecutils import sentiment_check, get_embeddings
 from auth import hash_password
 from red_flags import RED_FLAGS
 import re
@@ -192,6 +192,9 @@ async def create_business(req: CreateBusinessRequest, user_id: int, db: AsyncSes
             result = await db.execute(select(Community).where(Community.id == c))
             communities.append(result.scalars().first())
         
+        text_for_embedding = f"{req.name} {req.bio}"
+        embedding = await get_embeddings([text_for_embedding])
+        
         business = Business(
             name          = req.name          ,
             bio           = req.bio           ,
@@ -200,6 +203,7 @@ async def create_business(req: CreateBusinessRequest, user_id: int, db: AsyncSes
             verifications = []                ,
             cont_goal     = req.cont_goal     ,
             reaction_time = req.reaction_time ,
+            embedding     = embedding[0]      ,
         )
 
         db.add(business)
@@ -237,12 +241,13 @@ async def edit_business(req: EditBusinessRequest, user_id: int, business_id: int
                                         Business.id == business_id,
                                         Business.user_id == user_id
                                     ).options(
-                                      selectinload(Business.communities)
+                                      selectinload(Business.communities),
+                                      defer(Business.embedding),
                                   ))
         business = result.scalars().first()
 
         if not business:
-            raise HTTPException(status_code=404, detail=f'Business not found')
+            raise HTTPException(status_code=404, detail='Business not found')
 
         if req.bio is not None:
             business.bio = req.bio 
@@ -255,6 +260,10 @@ async def edit_business(req: EditBusinessRequest, user_id: int, business_id: int
                 communities.append(result.scalars().first())
             
             business.communities = communities
+        
+        text_for_embedding = f"{business.name} {business.bio}"
+        embedding = await get_embeddings([text_for_embedding])
+        business.embedding = embedding[0]
         
     except HTTPException:
         raise
@@ -274,6 +283,7 @@ async def get_business(business_id: int, user_id: int, db: AsyncSession):
             .options(
                 selectinload(Business.communities),
                 selectinload(Business.verifications),
+                defer(Business.embedding),
             )
         )
         
@@ -311,7 +321,8 @@ async def get_newcomers_overall(n: int, db: AsyncSession):
         result = await db.execute(
             select(Business)
             .options(
-                selectinload(Business.communities)
+                selectinload(Business.communities),
+                defer(Business.embedding),
             )
             .order_by(desc(Business.created_at))
             .limit(n)
@@ -337,7 +348,8 @@ async def get_newcomers(n: int, communities_ids: List[int], db: AsyncSession):
             select(Business)
             .where(Business.id.in_(business_ids))
             .options(
-                selectinload(Business.communities)
+                selectinload(Business.communities),
+                defer(Business.embedding),
             )
             .order_by(desc(Business.created_at))
             .limit(n)
@@ -390,12 +402,16 @@ async def create_post(req: CreatePostRequest, user_id: int, db: AsyncSession):
         if not community:
             raise HTTPException(status_code=404, detail='Community not found')
         
+        text_for_embedding = f"{req.name} {req.contents}"
+        embedding = await get_embeddings([text_for_embedding])
+        
         post = Post(
             name         = req.name         ,
             contents     = req.contents     ,
             community_id = req.community_id ,
             user_id      = user_id          ,
-            language     = detect_language(req.name, req.contents)
+            language     = detect_language(req.name, req.contents),
+            embedding    = embedding[0],
         )
         db.add(post)
         await db.flush()
@@ -421,7 +437,8 @@ async def get_post(post_id: int, db: AsyncSession):
             .where(Post.id == post_id)
             .options(
                 selectinload(Post.votes),
-                selectinload(Post.community)
+                selectinload(Post.community),
+                defer(Post.embedding),
             )
         )
         post = result.scalars().first()
@@ -492,6 +509,10 @@ async def edit_post(req: EditPostRequest, db: AsyncSession):
 
         post.contents = req.contents
 
+        text_for_embedding = f"{post.name} {post.contents}"
+        embedding = await get_embeddings([text_for_embedding])
+        post.embedding = embedding[0]
+
     except HTTPException:
         raise
     except Exception as e:
@@ -510,12 +531,30 @@ async def vote_on_post(req: VoteOnPostRequest, user_id: int, db: AsyncSession):
         if not post:
             raise HTTPException(status_code=404, detail='Post not found')
 
+        result = await db.execute(
+            select(UserAuth)
+            .where(UserAuth.user_id == user_id)
+        )
+        user = result.scalars().first()
+
+        if not user:
+            raise HTTPException(status_code=401, detail='An account should be created to vote')
+        
+        text_parts = []
+        if req.competition:
+            text_parts.append(req.competition)
+        if req.problems:
+            text_parts.append(req.problems)
+        text_for_embedding = " ".join(text_parts)
+        embedding = await get_embeddings([text_for_embedding])
+
         vote = Vote(
             post_id   = req.post_id       ,
             would_pay = req.would_pay     ,
             voter_id  = user_id           ,
             competition = req.competition ,
             problems = req.problems       ,
+            embedding = embedding[0]       ,
         )
 
         db.add(vote)
@@ -534,7 +573,8 @@ async def fetch_popular_posts(n: int, offset: int, db: AsyncSession) -> List[Pos
             .outerjoin(Post.votes)
             .options(
                 selectinload(Post.votes),
-                selectinload(Post.community)
+                selectinload(Post.community),
+                defer(Post.embedding),
             )
             .group_by(Post.id)
             .order_by(func.count(Vote.id).desc())
@@ -578,7 +618,8 @@ async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSes
             .outerjoin(Post.votes)
             .options(
                 selectinload(Post.votes).load_only(Vote.would_pay),
-                selectinload(Post.community)
+                selectinload(Post.community),
+                defer(Post.embedding),
             )
             .where(ParticipantsLink.user_id == user_id)
             .group_by(Post.id)
@@ -910,7 +951,7 @@ async def fetch_new_community_posts(community_id: int, n: int, db: AsyncSession)
         stmt = (
             select(Post, vote_subq.c.n_votes)
             .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
-            .options(selectinload(Post.community))
+            .options(selectinload(Post.community), defer(Post.embedding))
             .where(Post.community_id == community_id)
             .order_by(Post.created_at.desc())
             .limit(n)
@@ -961,7 +1002,7 @@ async def fetch_popular_community_posts(community_id: int, n: int, db: AsyncSess
         stmt = (
             select(Post, vote_subq.c.n_votes)
             .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
-            .options(selectinload(Post.community))
+            .options(selectinload(Post.community), defer(Post.embedding))
             .where(Post.community_id == community_id)
             .order_by(vote_subq.c.n_votes.desc().nullslast())
             .limit(n)
@@ -1012,7 +1053,7 @@ async def fetch_median_ascending_community_posts(community_id: int, n: int, db: 
         stmt = (
             select(Post, vote_subq.c.n_votes)
             .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
-            .options(selectinload(Post.community))
+            .options(selectinload(Post.community), defer(Post.embedding))
             .where(Post.community_id == community_id)
             .limit(n)
         )
@@ -1068,7 +1109,7 @@ async def fetch_median_descending_community_posts(community_id: int, n: int, db:
         stmt = (
             select(Post, vote_subq.c.n_votes)
             .outerjoin(vote_subq, Post.id == vote_subq.c.post_id)
-            .options(selectinload(Post.community))
+            .options(selectinload(Post.community), defer(Post.embedding))
             .where(Post.community_id == community_id)
             .limit(n)
         )

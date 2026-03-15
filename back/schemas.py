@@ -29,6 +29,14 @@ class RegisterRequest(BaseModel):
     admin: bool = False
 
 
+class SimpleRegisterRequest(BaseModel):
+    username: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
+    password: str | None = None
+
+
 class UpdateUserRequest(BaseModel):
     username: str | None = None
     first_name: str | None = None
@@ -200,7 +208,7 @@ class RecordPaymentRequest(BaseModel):
     pass
 
 
-class ChangebalanceRequest(BaseModel):
+class ChangeBalanceRequest(BaseModel):
     pass
 
 

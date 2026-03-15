@@ -1,9 +1,11 @@
 import os
 import logging
+import secrets
+import string
 
 logging.basicConfig(level=logging.DEBUG)
 from fastapi import Depends, HTTPException, APIRouter
-from auth import auth, create_user_tokens, get_user_id_from_token
+from auth import auth, create_user_tokens, get_user_id_from_token, hash_password
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -14,7 +16,7 @@ from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db
 
-router = APIRouter(prefix='/users', tags=['users'])
+router = APIRouter(prefix='/api/users', tags=['users'])
 
 @router.post('/register')
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
@@ -32,6 +34,77 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         'status': 'ok',
         'access_token': access_token,
         'refresh_token': refresh_token,
+    }
+
+
+def generate_username() -> str:
+    """Generate a random username like user_ik384fnds"""
+    alphabet = string.ascii_lowercase + string.digits
+    random_part = ''.join(secrets.choice(alphabet) for _ in range(8))
+    return f"user_{random_part}"
+
+
+@router.post('/register_simple')
+async def register_simple(
+    req: SimpleRegisterRequest,
+    db: AsyncSession = Depends(get_db),
+    payload: TokenPayload = Depends(auth.access_token_required)
+):
+    """Simple registration for anonymous users - creates a user profile"""
+    sub = payload.sub
+    
+    # Must be anonymous token (device_id)
+    if sub.isdigit():
+        raise HTTPException(status_code=400, detail="Already registered")
+    
+    device_id = sub
+    
+    # Check if user already exists
+    result = await db.execute(select(User).where(User.device_id == device_id))
+    existing_user = result.scalars().first()
+    
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+    
+    # Generate username if not provided
+    username = req.username or generate_username()
+    
+    # Create user
+    user = User(
+        device_id=device_id,
+        username=username,
+        first_name=req.first_name or "User",
+        last_name=req.last_name,
+        email=req.email,
+    )
+    db.add(user)
+    await db.flush()
+    
+    # Create UserAuth
+    password_hash = ""
+    if req.password:
+        from auth import hash_password
+        password_hash = hash_password(req.password)
+    
+    user_auth = UserAuth(
+        device_id=device_id,
+        user_id=user.id,
+        username=username,
+        password_hash=password_hash,
+        email=req.email,
+    )
+    db.add(user_auth)
+    await db.commit()
+    await db.refresh(user)
+    
+    # Create new authenticated tokens
+    access_token, refresh_token = create_user_tokens(user.id)
+    
+    return {
+        'status': 'ok',
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'user_id': user.id,
     }
 
 
@@ -65,6 +138,11 @@ async def get_current_user(
                                   .where(User.device_id == device_id))
     
     user = result.scalars().first()
+    
+    # No lazy user creation - return 404 if no user exists for anonymous device
+    if not user and not sub.isdigit():
+        raise HTTPException(status_code=404, detail="User not registered")
+    
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(
@@ -128,10 +206,13 @@ async def update_user(
         raise HTTPException(status_code=404, detail="User not found")
     
     if req.username is not None:
+        await moderate(db, req.username)
         user.username = req.username
     if req.first_name is not None:
+        await moderate(db, req.first_name)
         user.first_name = req.first_name
     if req.last_name is not None:
+        await moderate(db, req.last_name)
         user.last_name = req.last_name
     if req.phone_number is not None:
         user.phone_number = req.phone_number

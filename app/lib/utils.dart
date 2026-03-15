@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart' as dif;
 import 'package:shared_preferences/shared_preferences.dart' as shp;
 import 'package:uuid/uuid.dart';
@@ -14,7 +15,9 @@ class DeviceIdManager {
     final deviceInfo = dif.DeviceInfoPlugin();
     String newId;
 
-    if (Platform.isAndroid) {
+    if (kIsWeb) {
+      newId = const Uuid().v4();
+    } else if (Platform.isAndroid) {
       final info = await deviceInfo.androidInfo;
       newId = info.id;
       if (newId.isEmpty) newId = const Uuid().v4();

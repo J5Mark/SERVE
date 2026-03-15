@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, selectinload, defer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, desc, case, func, or_, and_
 from fastapi import HTTPException
@@ -66,6 +66,7 @@ async def fetch_useful_businessmen(
         .options(
             selectinload(Business.user),
             selectinload(Business.communities),
+            defer(Business.embedding),
         )
         .where(
             Business.cont_goal.isnot(None),

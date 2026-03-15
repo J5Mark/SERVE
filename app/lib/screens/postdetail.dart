@@ -52,7 +52,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _sharePost() async {
     final postName = _post?['name'] ?? 'Check out this post';
-    final webUrl = 'https://serve-back.ftp.sh/post/g/${widget.postId}';
+    final webUrl = 'https://serveyourcommunity.ftp.sh/#/post/${widget.postId}';
 
     await Share.share('$postName\n\n$webUrl', subject: postName);
   }

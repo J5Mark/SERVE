@@ -35,19 +35,20 @@ class _PostsScreenState extends State<PostsScreen>
   Future<void> _loadPosts() async {
     try {
       final deviceId = await Api.getDeviceId();
-      if (deviceId == null) {
-        final popular = await Api.getPopularPosts(20, 0);
-        if (mounted) {
-          setState(() {
-            _popularPosts = popular;
-            _isLoading = false;
-          });
+
+      // Try to get user - if not registered, show popular posts only
+      dynamic user;
+      if (deviceId != null) {
+        try {
+          user = await Api.getUser(deviceId);
+        } catch (e) {
+          user = null;
         }
-        return;
+      } else {
+        user = null;
       }
 
-      final user = await Api.getUser(deviceId);
-      final communities = user['communities'] as List? ?? [];
+      final communities = user?['communities'] as List? ?? [];
       _communityCount = communities.length;
 
       final results = await Future.wait([
