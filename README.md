@@ -1,4 +1,4 @@
-# Serve - Community Business Platform
+# Serve - Community Business Platform (https://serveyourcommunity.ftp.sh/)
 
 ## Overview
 
