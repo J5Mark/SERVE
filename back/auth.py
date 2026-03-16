@@ -52,6 +52,19 @@ config = AuthXConfig(
 auth = AuthX(config=config)
 
 
+async def get_anonymous_id_from_token(
+    payload: TokenPayload = Depends(auth.access_token_required)
+) -> str:
+    """Validate token and return anonymous_id (for registration endpoints).
+    This is stateless - just validates the JWT signature."""
+    sub = payload.sub
+    
+    if sub.isdigit():
+        raise HTTPException(status_code=400, detail="Already registered")
+    
+    return sub
+
+
 async def get_user_id_from_token(
     payload: TokenPayload = Depends(auth.access_token_required),
     db: AsyncSession = Depends(get_db)
@@ -60,15 +73,13 @@ async def get_user_id_from_token(
     sub = payload.sub
     
     if sub.isdigit():
-        # Authenticated token - contains user_id
         return int(sub)
     else:
-        # Anonymous token - contains device_id, look up user
-        result = await db.execute(select(User).where(User.device_id == sub))
-        user = result.scalars().first()
-        if not user:
+        result = await db.execute(select(UserAuth).where(UserAuth.anonymous_id == sub))
+        user_auth = result.scalars().first()
+        if not user_auth or not user_auth.user_id:
             raise HTTPException(status_code=401, detail="User not found")
-        return user.id
+        return user_auth.user_id
 
 password_hasher = PasswordHash.recommended()
 
@@ -119,15 +130,15 @@ class RefreshRequest(BaseModel):
 #         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
-def create_tokens(user_id: int | None = None, device_id: str | None = None) -> dict[str, str]:
-    """Create tokens. Use user_id for authenticated users, device_id for anonymous."""
+def create_tokens(user_id: int | None = None, anonymous_id: str | None = None) -> dict[str, str]:
+    """Create tokens. Use user_id for authenticated users, anonymous_id for anonymous."""
     
     if user_id:
         token_uid = str(user_id)
-    elif device_id:
-        token_uid = device_id
+    elif anonymous_id:
+        token_uid = anonymous_id
     else:
-        raise ValueError("Either user_id or device_id must be provided")
+        raise ValueError("Either user_id or anonymous_id must be provided")
     
     access_token = auth.create_access_token(uid=token_uid)
     refresh_token = auth.create_refresh_token(uid=token_uid)
@@ -155,35 +166,6 @@ def revoke_old_refresh() -> None:
     pass
 
 
-@router.post("/devicelogin")
-async def device_login(req: DeviceLoginRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserAuth).where(UserAuth.device_id == req.device_id))
-    existing_auth = result.scalars().first()
-    
-    if not existing_auth:
-        # Create minimal UserAuth record for tracking
-        try:
-            user_auth = UserAuth(
-                device_id=req.device_id,
-                username=f"anon_{req.device_id[:8]}",  # Required field
-                password_hash="",  # No password for anonymous
-            )
-            db.add(user_auth)
-            await db.commit()
-        except Exception as e:
-            logging.warning(f"Could not create UserAuth: {e}")
-    
-    # Create tokens with device_id (not user_id) - anonymous session
-    tokens = create_tokens(device_id=req.device_id)
-
-    result = {
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens["refresh_token"],
-    }
-    logging.warning(f"DEVICE_LOGIN RESPONSE: {result}")
-    return result
-
-
 @router.post("/login", response_model=TokenResponse)
 async def login(req: AuthRequest, db: AsyncSession = Depends(get_db)):
     query_conditions = []
@@ -193,8 +175,6 @@ async def login(req: AuthRequest, db: AsyncSession = Depends(get_db)):
         query_conditions.append(UserAuth.email == req.email)
     if req.phone:
         query_conditions.append(UserAuth.phone == str(req.phone))
-
-    query_conditions.append(UserAuth.device_id == req.device_id)
     
     if not query_conditions:
         raise HTTPException(
@@ -248,12 +228,10 @@ async def google_start(request: Request):
 
     redirect_uri = request.url_for("google_callback")
 
-    # Get device_id from query params if provided (from frontend)
-    device_id = request.query_params.get("device_id", "")
-    logging.warning(f"Google OAuth start - device_id from query: {device_id}")
+    anonymous_id = request.query_params.get("anonymous_id", "")
+    logging.warning(f"Google OAuth start - anonymous_id from query: {anonymous_id}")
     
-    # Pass device_id in state so we can link Google to existing user
-    state = device_id if device_id else None
+    state = anonymous_id if anonymous_id else None
 
     return await oauth.google.authorize_redirect(
         request,
@@ -270,22 +248,19 @@ async def google_callback(
     try:
         logging.warning(f"QUERY: {dict(request.query_params)}")
         
-        # Get device_id from OAuth state (passed through OAuth flow)
-        # Also check all query params to see what's available
         all_query = dict(request.query_params)
         state_param = all_query.get('state', '')
-        device_id_param = all_query.get('device_id', '')
+        anonymous_id_param = all_query.get('anonymous_id', '')
         
-        device_id = state_param or device_id_param
+        anonymous_id = state_param or anonymous_id_param
         
         logging.warning(f"Full query: {all_query}")
-        logging.warning(f"State param: '{state_param}', Device ID from query: '{device_id_param}'")
+        logging.warning(f"State param: '{state_param}', Anonymous ID from query: '{anonymous_id_param}'")
         
         token = await oauth.google.authorize_access_token(request)
         google_access_token = token["access_token"]
         google_refresh_token = token.get("refresh_token")
 
-        # User info
         async with httpx.AsyncClient() as client:
             r = await client.get(
                 "https://www.googleapis.com/oauth2/v2/userinfo",
@@ -302,15 +277,18 @@ async def google_callback(
 
         logging.warning(f"Google OAuth: email={email}, given_name={given_name}, family_name={family_name}")
 
-        # Check by device_id first (if provided in OAuth state)
+        # Check by anonymous_id first (if provided in OAuth state)
         existing_user = None
-        if device_id:
-            result = await db.execute(select(User).where(User.device_id == device_id))
-            existing_user = result.scalars().first()
-            if existing_user:
-                logging.warning(f"Found existing user by device_id: {existing_user.id}")
+        if anonymous_id:
+            result = await db.execute(select(UserAuth).where(UserAuth.anonymous_id == anonymous_id))
+            existing_auth_by_anon = result.scalars().first()
+            if existing_auth_by_anon and existing_auth_by_anon.user_id:
+                result = await db.execute(select(User).where(User.id == existing_auth_by_anon.user_id))
+                existing_user = result.scalars().first()
+                if existing_user:
+                    logging.warning(f"Found existing user by anonymous_id: {existing_user.id}")
         
-        # If not found by device_id, check by email
+        # If not found by anonymous_id, check by email
         if not existing_user:
             result = await db.execute(select(User).where(User.email == email))
             existing_user = result.scalars().first()
@@ -321,14 +299,15 @@ async def google_callback(
         )
         existing_auth_by_email = result.scalars().first()
 
-        # Also check UserAuth by device_id
-        if device_id:
+        # Also check UserAuth by anonymous_id
+        existing_auth_by_anon = None
+        if anonymous_id:
             result = await db.execute(
-                select(UserAuth).where(UserAuth.device_id == device_id)
+                select(UserAuth).where(UserAuth.anonymous_id == anonymous_id)
             )
-            existing_auth_by_device = result.scalars().first()
+            existing_auth_by_anon = result.scalars().first()
         else:
-            existing_auth_by_device = None
+            existing_auth_by_anon = None
 
         user_id: int
         if existing_user:
@@ -361,9 +340,9 @@ async def google_callback(
                     needs_update = True
             if needs_update:
                 await db.commit()
-        elif existing_auth_by_device and existing_auth_by_device.user_id:
-            # Found existing user by device_id in UserAuth
-            user_id = existing_auth_by_device.user_id
+        elif existing_auth_by_anon and existing_auth_by_anon.user_id:
+            # Found existing user by anonymous_id in UserAuth
+            user_id = existing_auth_by_anon.user_id
             result = await db.execute(select(User).where(User.id == user_id))
             existing_user = result.scalars().first()
             if existing_user:
@@ -380,7 +359,7 @@ async def google_callback(
                 if not existing_user.username and email:
                     existing_user.username = email.split('@')[0] if '@' in email else f"user_{user_id}"
                 await db.commit()
-                logging.warning(f"Updated existing user by device_id: {user_id}")
+                logging.warning(f"Updated existing user by anonymous_id: {user_id}")
         elif existing_auth_by_email and existing_auth_by_email.user_id:
             # User has UserAuth but no email in User table - use existing user
             user_id = existing_auth_by_email.user_id
@@ -451,7 +430,6 @@ async def google_callback(
                 # Create new UserAuth for Google user
                 user_auth = UserAuth(
                     user_id=user_id,
-                    device_id=None,  # No device_id for Google OAuth users
                     google=google_id,
                     email=email,
                     password_hash="",  # No password for Google users

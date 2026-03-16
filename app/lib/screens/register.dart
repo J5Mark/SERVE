@@ -43,17 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      final deviceId = await Api.getDeviceId();
-      if (deviceId == null) {
-        setState(() {
-          _error = 'Device ID not found';
-          _isLoading = false;
-        });
-        return;
-      }
-
       final result = await Api.register(
-        deviceId: deviceId,
         username: _usernameController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim().isEmpty

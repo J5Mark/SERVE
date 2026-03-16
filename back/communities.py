@@ -53,7 +53,6 @@ async def delete_community_ep(
 async def get_community_ep(
     community_id: int,
     db: AsyncSession = Depends(get_db),
-    user_id: int = Depends(get_user_id_from_token)
 ):
     result = await db.execute(
         select(Community)
@@ -70,7 +69,6 @@ async def get_community_ep(
         raise HTTPException(status_code=404, detail=f"Community not found")
 
     mod_ids = [mod.user_id for mod in community.mods]
-    is_moderator = user_id in mod_ids
 
     resp = CommunityResponse(
         community_id=community_id,
@@ -78,7 +76,7 @@ async def get_community_ep(
         name=community.name,
         description=community.description,
         reddit_link=community.reddit_link,
-        is_moderator=is_moderator,
+        is_moderator=False,
         mods=mod_ids,
     )
 
@@ -113,7 +111,6 @@ async def change_moderators_ep(
 async def list_communities_ep(
     req: ListCommunitiesRequest,
     db: AsyncSession = Depends(get_db),
-    user_id: int = Depends(get_user_id_from_token)
 ):
     match req.sorting:
         case 'popular':
@@ -135,9 +132,8 @@ async def list_communities_ep(
 async def search_communities_ep(
     req: SearchCommunitiesRequest,
     db: AsyncSession = Depends(get_db),
-    user_id: int = Depends(get_user_id_from_token)
 ):
-    communities = await search_communities(req.query, req.n, db, user_id)
+    communities = await search_communities(req.query, req.n, db, None)
     return communities
 
 

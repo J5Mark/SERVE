@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'utils.dart';
 
 final apiBase = 'https://serveyourcommunity.ftp.sh/api';
 
@@ -46,18 +47,7 @@ class Api {
     );
   }
 
-  static Future<Map<String, dynamic>> deviceLogin(String deviceId) async {
-    final res = await http.post(
-      Uri.parse("$apiBase/auth/devicelogin"),
-      body: jsonEncode({'device_id': deviceId}),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    return _handleResponse(res);
-  }
-
   static Future<Map<String, dynamic>> register({
-    required String deviceId,
     required String username,
     required String firstName,
     String? lastName,
@@ -69,7 +59,6 @@ class Api {
     final res = await http.post(
       Uri.parse("$apiBase/users/register"),
       body: jsonEncode({
-        'device_id': deviceId,
         'username': username,
         'first_name': firstName,
         'last_name': lastName,
@@ -77,7 +66,6 @@ class Api {
         'email': email,
         'password': password,
         'entrep': entrep,
-        'admin': false,
       }),
       headers: {'Content-Type': 'application/json'},
     );
@@ -86,7 +74,6 @@ class Api {
   }
 
   static Future<Map<String, dynamic>> login({
-    required String deviceId,
     String? username,
     String? email,
     String? phone,
@@ -95,7 +82,6 @@ class Api {
     final res = await http.post(
       Uri.parse("$apiBase/auth/login"),
       body: jsonEncode({
-        'device_id': deviceId,
         'username': username,
         'email': email,
         'phone': phone,
@@ -120,7 +106,7 @@ class Api {
       throw Exception('Not authenticated: no token found');
     }
     final res = await http.post(
-      Uri.parse('$apiBase/users/register_simple'),
+      Uri.parse('$apiBase/users/register'),
       body: jsonEncode({
         'username': username,
         'first_name': firstName,
@@ -137,13 +123,10 @@ class Api {
     return _handleResponse(res);
   }
 
-  static Future<Map<String, dynamic>> getUser(String deviceId) async {
+  static Future<Map<String, dynamic>> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    final tokenSource = prefs.getString('auth_token_source');
-    print(
-      'API.getUser: token=${token != null ? 'found' : 'null'}, source=$tokenSource, deviceId=$deviceId',
-    );
+    print('API.getUser: token=${token != null ? 'found' : 'null'}');
 
     if (token == null) {
       throw Exception('Not authenticated: no token found');
@@ -511,14 +494,8 @@ class Api {
     }
   }
 
-  static Future<String?> getDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('device_id');
-  }
-
-  static Future<void> setDeviceId(String deviceId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('device_id', deviceId);
+  static Future<String> getAnonymousId() async {
+    return AnonymousIdManager.getAnonymousId();
   }
 
   static Future<Map<String, dynamic>> refreshToken() async {

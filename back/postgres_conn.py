@@ -21,11 +21,11 @@ class UserAuth(SQLModel, table=True):
     # Primary key - use auto-incrementing ID
     id: int | None = Field(default=None, primary_key=True, sa_type=BigInteger)
     
-    # User reference (optional - filled when user registers/links auth)
+    # User reference (filled when user registers/links auth)
     user_id: int | None = Field(foreign_key='users.id', default=None, sa_type=BigInteger)
     
-    # Device tracking (for anonymous users)
-    device_id: str | None = Field(default=None, index=True)
+    # Anonymous session UUID (for unauthenticated users)
+    anonymous_id: str | None = Field(default=None, index=True)
     
     # Auth methods
     username: str | None = Field(default=None, index=True)
@@ -116,12 +116,11 @@ class ConversationParticipant(SQLModel, table=True):
 class User(SQLModel, table=True):
     __tablename__ = "users"
     __table_args__ = (
-        UniqueConstraint("device_id", "username", name='uq_user'), 
+        UniqueConstraint("email", "username", name='uq_user'), 
     )
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
 
-    device_id: Optional[str] = Field(index=True, default=None)
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -491,6 +490,19 @@ class RedFlagIntent(SQLModel, table=True):
     label: str
     embedding: List[float] = Field(sa_column=Column(Vector(768)))
 
+    
+class PostAnalysisRequest(SQLModel, table=True):
+    __tablename__ = 'post_analysis'
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    user_id: int = Field(
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=func.now(),
+            nullable=False
+        )
+    )
     
 ###
 

@@ -406,9 +406,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                     const SizedBox(height: 8),
                     FutureBuilder(
                       future: Api.getUserBusinesses().then((_) async {
-                        final deviceId = await Api.getDeviceId();
-                        if (deviceId != null) {
-                          final user = await Api.getUser(deviceId);
+                        final hasToken = await Api.hasToken();
+                        if (hasToken) {
+                          final user = await Api.getUser();
                           return user['communities'] as List? ?? [];
                         }
                         return [];

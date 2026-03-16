@@ -5,7 +5,6 @@ from datetime import datetime
 
 
 class AuthRequest(BaseModel):
-    device_id: str
     username: Optional[str]
     password: str
     email: Optional[EmailStr]
@@ -13,11 +12,10 @@ class AuthRequest(BaseModel):
 
 
 class DeviceLoginRequest(BaseModel):
-    device_id: str
+    anonymous_id: str
 
 
 class RegisterRequest(BaseModel):
-    device_id: str
     username: str
     first_name: str
     last_name: str | None
@@ -42,7 +40,7 @@ class UpdateUserRequest(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     phone_number: PhoneNumber | None = None
-    email: EmailStr | None = None
+    entrep: bool | None = None    
 
 
 class Profile(BaseModel):
@@ -57,7 +55,6 @@ class Profile(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
-    device_id: Optional[str] = None
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None

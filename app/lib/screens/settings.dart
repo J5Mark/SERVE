@@ -20,7 +20,6 @@ class SettingsScreen extends StatelessWidget {
               final prefs = await SharedPreferences.getInstance();
               await prefs.remove('auth_token');
               await prefs.remove('refresh_token');
-              await prefs.remove('device_id');
               if (context.mounted) {
                 context.go('/init');
               }
@@ -77,7 +76,6 @@ class SettingsScreen extends StatelessWidget {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('auth_token');
       await prefs.remove('refresh_token');
-      await prefs.remove('device_id');
       if (context.mounted) {
         context.go('/init');
       }

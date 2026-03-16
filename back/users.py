@@ -5,7 +5,7 @@ import string
 
 logging.basicConfig(level=logging.DEBUG)
 from fastapi import Depends, HTTPException, APIRouter
-from auth import auth, create_user_tokens, get_user_id_from_token, hash_password
+from auth import auth, create_user_tokens, get_user_id_from_token, get_anonymous_id_from_token, hash_password
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -18,24 +18,6 @@ from postgres_conn import User, UserAuth, get_db
 
 router = APIRouter(prefix='/api/users', tags=['users'])
 
-@router.post('/register')
-async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    await register_user(req, db)
-    await db.commit()
-    
-    # Get the user to create new tokens with user_id
-    result = await db.execute(select(User).where(User.device_id == req.device_id))
-    user = result.scalars().first()
-    
-    # Issue NEW tokens with user_id (authenticated tokens)
-    access_token, refresh_token = create_user_tokens(user.id)
-    
-    return {
-        'status': 'ok',
-        'access_token': access_token,
-        'refresh_token': refresh_token,
-    }
-
 
 def generate_username() -> str:
     """Generate a random username like user_ik384fnds"""
@@ -44,34 +26,27 @@ def generate_username() -> str:
     return f"user_{random_part}"
 
 
-@router.post('/register_simple')
-async def register_simple(
+@router.post('/register')
+async def register(
     req: SimpleRegisterRequest,
     db: AsyncSession = Depends(get_db),
-    payload: TokenPayload = Depends(auth.access_token_required)
 ):
-    """Simple registration for anonymous users - creates a user profile"""
-    sub = payload.sub
+    """Registration - creates a user profile"""
+    # Check if user already exists by email
+    if req.email:
+        result = await db.execute(select(User).where(User.email == req.email))
+        existing_user = result.scalars().first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User already exists with this email")
     
-    # Must be anonymous token (device_id)
-    if sub.isdigit():
-        raise HTTPException(status_code=400, detail="Already registered")
-    
-    device_id = sub
-    
-    # Check if user already exists
-    result = await db.execute(select(User).where(User.device_id == device_id))
-    existing_user = result.scalars().first()
-    
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User already exists")
-    
-    # Generate username if not provided
+    # Also check if username exists
     username = req.username or generate_username()
+    result = await db.execute(select(User).where(User.username == username))
+    existing_by_username = result.scalars().first()
+    if existing_by_username:
+        username = generate_username()
     
-    # Create user
     user = User(
-        device_id=device_id,
         username=username,
         first_name=req.first_name or "User",
         last_name=req.last_name,
@@ -80,24 +55,22 @@ async def register_simple(
     db.add(user)
     await db.flush()
     
-    # Create UserAuth
     password_hash = ""
     if req.password:
         from auth import hash_password
         password_hash = hash_password(req.password)
     
     user_auth = UserAuth(
-        device_id=device_id,
         user_id=user.id,
         username=username,
         password_hash=password_hash,
         email=req.email,
     )
     db.add(user_auth)
+    
     await db.commit()
     await db.refresh(user)
     
-    # Create new authenticated tokens
     access_token, refresh_token = create_user_tokens(user.id)
     
     return {
@@ -115,9 +88,7 @@ async def get_current_user(
 ):
     sub = payload.sub
     
-    # Check if token contains user_id (authenticated) or device_id (anonymous)
     if sub.isdigit():
-        # Authenticated token - contains user_id
         user_id = int(sub)
         result = await db.execute(select(User)
                                   .options(
@@ -127,27 +98,26 @@ async def get_current_user(
                                        )
                                   .where(User.id == user_id))
     else:
-        # Anonymous token - contains device_id
-        device_id = sub
+        anonymous_id = sub
+        result = await db.execute(select(UserAuth).where(UserAuth.anonymous_id == anonymous_id))
+        user_auth = result.scalars().first()
+        if not user_auth or not user_auth.user_id:
+            raise HTTPException(status_code=404, detail="User not registered")
+        
         result = await db.execute(select(User)
                                   .options(
                                            selectinload(User.communities),
                                            selectinload(User.businesses),
                                            selectinload(User.posts),
                                        )
-                                  .where(User.device_id == device_id))
+                                  .where(User.id == user_auth.user_id))
     
     user = result.scalars().first()
-    
-    # No lazy user creation - return 404 if no user exists for anonymous device
-    if not user and not sub.isdigit():
-        raise HTTPException(status_code=404, detail="User not registered")
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(
         id=user.id,
-        device_id=user.device_id,
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
@@ -164,21 +134,20 @@ async def get_current_user(
     )
 
 
-@router.get('/{device_id}', response_model=UserResponse)
+@router.get('/{user_id}', response_model=UserResponse)
 async def get_user(
-    device_id: str,
+    user_id: int,
     db: AsyncSession = Depends(get_db),
     payload: TokenPayload = Depends(auth.access_token_required)
 ) -> UserResponse:
     result = await db.execute(select(User)
                               .options(selectinload(User.communities))
-                              .where(User.device_id == device_id))
+                              .where(User.id == user_id))
     user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(
         id=user.id,
-        device_id=user.device_id,
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
@@ -216,8 +185,8 @@ async def update_user(
         user.last_name = req.last_name
     if req.phone_number is not None:
         user.phone_number = req.phone_number
-    if req.email is not None:
-        user.email = req.email
+    if req.entrep is not None:
+        user.entrep = req.entrep
     
     await db.commit()
     await db.refresh(user)
@@ -231,7 +200,6 @@ async def update_user(
     
     return UserResponse(
         id=user.id,
-        device_id=user.device_id,
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,

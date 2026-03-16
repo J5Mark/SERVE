@@ -45,7 +45,7 @@ class AuthStateNotifier extends ChangeNotifier {
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setString('auth_token', accessToken);
     await _prefs!.setString('refresh_token', refreshToken);
-    // Note: don't overwrite device_id with userId - device_id is for the device
+    // Anonymous ID is managed separately
     await _prefs!.setString('auth_token_source', 'oauth');
     _state = AuthState.authenticated;
     print('AUTH_PROVIDER: auth_token set to oauth, state set to authenticated');
@@ -95,7 +95,7 @@ class AuthStateNotifier extends ChangeNotifier {
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setString('auth_token', accessToken);
     await _prefs!.setString('refresh_token', refreshToken);
-    // DO NOT overwrite device_id - it's managed by DeviceIdManager
+    // Anonymous ID is managed by AnonymousIdManager
     _state = AuthState.authenticated;
     notifyListeners();
   }

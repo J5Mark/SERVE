@@ -34,13 +34,12 @@ class _PostsScreenState extends State<PostsScreen>
 
   Future<void> _loadPosts() async {
     try {
-      final deviceId = await Api.getDeviceId();
+      final hasToken = await Api.hasToken();
 
-      // Try to get user - if not registered, show popular posts only
       dynamic user;
-      if (deviceId != null) {
+      if (hasToken) {
         try {
-          user = await Api.getUser(deviceId);
+          user = await Api.getUser();
         } catch (e) {
           user = null;
         }

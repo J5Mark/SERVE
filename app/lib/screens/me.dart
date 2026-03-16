@@ -34,7 +34,7 @@ class _MeScreenState extends State<MeScreen> {
       final token = prefs.getString('auth_token');
       if (token == null) return;
 
-      final user = await Api.getUser(token);
+      final user = await Api.getUser();
       final integrations = user['integrations'] as List? ?? [];
       final hasGoogle = integrations.any((i) => i['provider'] == 'google');
       if (mounted) {
@@ -49,12 +49,10 @@ class _MeScreenState extends State<MeScreen> {
 
   Future<void> _linkGoogleAccount() async {
     try {
-      // Get device_id to pass to OAuth for linking to existing anonymous user
-      final prefs = await SharedPreferences.getInstance();
-      final deviceId = prefs.getString('device_id') ?? '';
+      final anonymousId = await Api.getAnonymousId();
 
       final url = Uri.parse(
-        'https://serveyourcommunity.ftp.sh/api/auth/google/start?device_id=$deviceId',
+        'https://serveyourcommunity.ftp.sh/api/auth/google/start?anonymous_id=$anonymousId',
       );
       // Use in-app webview for better UX, falls back to external browser
       final result = await launchUrl(url, mode: LaunchMode.platformDefault);
@@ -77,8 +75,8 @@ class _MeScreenState extends State<MeScreen> {
 
   Future<void> _loadUser() async {
     try {
-      final deviceId = await Api.getDeviceId();
-      if (deviceId == null) {
+      final hasToken = await Api.hasToken();
+      if (!hasToken) {
         if (mounted) {
           setState(() {
             _error = 'Not logged in';
@@ -88,7 +86,7 @@ class _MeScreenState extends State<MeScreen> {
         return;
       }
 
-      final user = await Api.getUser(deviceId);
+      final user = await Api.getUser();
       if (mounted) {
         setState(() {
           _user = user;
@@ -873,7 +871,6 @@ class _MeScreenState extends State<MeScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('refresh_token');
-    await prefs.remove('device_id');
     if (mounted) {
       context.go('/init');
     }

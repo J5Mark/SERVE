@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -37,16 +37,18 @@ app = FastAPI()
 # App Links - Android assetlinks.json
 @app.get("/.well-known/assetlinks.json")
 async def assetlinks():
-    return [
+    content = [
         {
-            "relation": ["delegate_permission/common.handle_all_links"],
+            "relation": ["delegate_permission/common.handle_all_urls"],
             "target": {
                 "namespace": "android_app",
                 "package_name": "com.serve.app",
-                "sha256_cert_fingerprints": []
+                "sha256_cert_fingerprints": [env.get('SHA256_ANDROID', '').replace(':', '').lower()]
             }
         }
     ]
+
+    return Response(content=json.dumps(content), media_type="application/json")
 
 
 # App Links - iOS apple-app-site-association

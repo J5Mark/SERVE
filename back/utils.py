@@ -72,59 +72,6 @@ def detect_language(name: str, contents: str) -> str:
 
     return LANG_MAP.get(code, "english")
 
-async def register_user(req: RegisterRequest, db: AsyncSession):
-    try:
-        result = await db.execute(select(UserAuth).where(UserAuth.device_id == req.device_id))
-        user_auth = result.scalars().first()
-
-        if user_auth:
-           raise HTTPException(status_code=401, detail="User already exists")
-
-        result = await db.execute(select(User).where(User.device_id == req.device_id))
-        user = result.scalars().first()
-
-        # create the user if it doesn't exist (from deviceLogin)
-        if not user:
-            user = User(
-                device_id    = req.device_id    ,
-                username     = req.username     ,
-                first_name   = req.first_name   ,
-                last_name    = req.last_name    ,
-                phone_number = req.phone_number ,
-                email        = req.email        ,
-                entrep       = req.entrep       ,
-                admin        = req.admin        ,
-            )
-            db.add(user)
-            await db.flush()
-        else:
-            # Update existing user with registration details
-            user.username = req.username
-            user.first_name = req.first_name
-            user.last_name = req.last_name
-            user.phone_number = req.phone_number
-            user.email = req.email
-            user.entrep = req.entrep
-            user.admin = req.admin
-        
-        # create user_auth
-        logging.warning(req.password)
-        user_auth = UserAuth(
-            device_id     = user.device_id              ,
-            user_id       = user.id                     ,
-            username      = user.username               ,
-            password_hash = hash_password(req.password) ,
-            email         = user.email                  ,
-            phone         = user.phone_number           ,
-        )
-        db.add(user_auth)        
-       
-    except HTTPException:
-        raise
-    except Exception as e:
-        await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to register user: {e}")
-
 
 async def create_community(req: CreateCommunityRequest, user_id: int, db: AsyncSession):
     try:

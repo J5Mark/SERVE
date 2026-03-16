@@ -38,9 +38,9 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
 
   Future<void> _loadCommunities() async {
     try {
-      final deviceId = await Api.getDeviceId();
-      if (deviceId != null) {
-        final user = await Api.getUser(deviceId);
+      final hasToken = await Api.hasToken();
+      if (hasToken) {
+        final user = await Api.getUser();
         final communities = user['communities'] as List? ?? [];
         if (mounted) {
           setState(() {

@@ -29,7 +29,8 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="serve-app"/>
+                <data android:scheme="com.googleusercontent.apps.172901203155-tudgj0ao0h48l2i2r7g35vph6f2is9j4"/>
+                <data android:scheme="serve-app" android:host="callback" />
             </intent-filter>
             <!-- App Links (Universal Links) for serveyourcommunity.ftp.sh -->
             <intent-filter android:autoVerify="true">

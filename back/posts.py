@@ -184,7 +184,6 @@ async def search_posts_ep(
 async def get_community_posts(
     req: GetCommunityPostsRequest,
     db: AsyncSession = Depends(get_db),
-    user_id: int = Depends(get_user_id_from_token),
 ):
     match req.sorting:
         case 'new':

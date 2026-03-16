@@ -1,4 +1,3 @@
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/auth_provider.dart';
@@ -28,9 +27,6 @@ void main() async {
   print('MAIN: Current URL = ${Uri.base}');
   print('MAIN: Current URL query = ${Uri.base.query}');
   print('MAIN: Current URL fragment = ${Uri.base.fragment}');
-  print('MAIN: Window location href = ${html.window.location.href}');
-  print('MAIN: Window location search = ${html.window.location.search}');
-  print('MAIN: Window location hash = ${html.window.location.hash}');
   print('MAIN: Query params = ${Uri.base.queryParameters}');
 
   // Check for OAuth tokens in the URL BEFORE initializing app
@@ -113,15 +109,8 @@ final GoRouter _router = GoRouter(
 
     final isOnInit = state.matchedLocation == '/init';
 
-    if (authState!.isUnauthenticated) {
-      if (!isOnInit) return '/init';
-      return null;
-    }
-
-    print(
-      'DEBUG: authState.isAuthenticated = ${authState!.isAuthenticated}, isOnInit = $isOnInit',
-    );
-    if (authState!.isAuthenticated && isOnInit) {
+    // If on init screen, always allow going to home (browse without auth)
+    if (isOnInit) {
       return '/home';
     }
 
@@ -289,6 +278,10 @@ final GoRouter _router = GoRouter(
           path: '/newcomers',
           builder: (context, state) => const NewcomersScreen(),
         ),
+        GoRoute(
+          path: '/chats',
+          builder: (context, state) => const ChatsScreen(),
+        ),
         GoRoute(path: '/', builder: (context, state) => const PostsScreen()),
         GoRoute(
           path: '/home',
@@ -297,6 +290,10 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/chats',
+          builder: (context, state) => const ChatsScreen(),
         ),
       ],
     ),
