@@ -29,6 +29,7 @@ async def fetch_post_for_task(task_id: int, token: str) -> dict:
             headers={"Authorization": f"Bearer {token}"}
         ) as resp:
             resp.raise_for_status()
+            data = await resp.json()
             return await resp.json()
 
 
