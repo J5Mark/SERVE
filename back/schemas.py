@@ -254,3 +254,9 @@ class MessageResponse(BaseModel):
     class Config:
         from_attributes=True
 
+
+class SubmitAnalysisRequest(BaseModel):
+    Y: str
+    Z: str
+    U: str
+    additional: str
