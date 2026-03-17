@@ -492,7 +492,7 @@ class RedFlagIntent(SQLModel, table=True):
 
     
 class PostAnalysisRequest(SQLModel, table=True):
-    __tablename__ = 'post_analysis'
+    __tablename__ = 'post_analysis_requests'
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
     processing: bool = Field(default=False)
