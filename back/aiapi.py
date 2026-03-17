@@ -138,3 +138,29 @@ async def submit_analysis(
     q.task_done()
 
     return {'status': 'accepted'}
+
+
+class ErrorRequest(BaseModel):
+    task_id: int
+    error: str
+
+
+@router.post('/submit_error')
+async def submit_error(
+    req: ErrorRequest,
+    db: AsyncSession = Depends(get_db),
+    task_id: int = Depends(get_task_id_from_token)
+):
+    result = await db.execute(
+        select(PostAnalysisRequest)
+        .where(PostAnalysisRequest.id == task_id)
+    )
+    task = result.scalars().first()
+
+    if task:
+        task.processing = False
+        await db.commit()
+
+    logging.error(f"Task {task_id} failed: {req.error}")
+
+    return {'status': 'error_logged'}

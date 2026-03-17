@@ -549,8 +549,7 @@ async def fetch_popular_posts(n: int, offset: int, db: AsyncSession) -> List[Pos
             )
             previews.append(preview)
         
-        return previews
-                    
+        return previews                    
     except HTTPException:
         raise
     except Exception as e:
@@ -559,6 +558,7 @@ async def fetch_popular_posts(n: int, offset: int, db: AsyncSession) -> List[Pos
 
 async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSession) -> List[PostPreview]:
     try:
+        votes_count = select(func.count(Vote.id)).where(Vote.post_id == Post.id).scalar_subquery()
         result = await db.execute(
             select(Post)
             .join(ParticipantsLink, ParticipantsLink.community_id == Post.community_id)
@@ -569,8 +569,7 @@ async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSes
                 defer(Post.embedding),
             )
             .where(ParticipantsLink.user_id == user_id)
-            .group_by(Post.id)
-            .order_by(func.count(Vote.id).desc())
+            .order_by(votes_count.desc())
             .offset(offset)
             .limit(n)
         )
@@ -1268,13 +1267,12 @@ async def delete_user(
         if not user:
             raise HTTPException(status_code=404, detail='User not found')
         
-        result = await db.execute(
-            select(UserAuth)
+        await db.execute(
+            update(UserAuth)
             .where(UserAuth.user_id == user_id)
+            .values(user_id=None)
         )
-        user_auth = result.scalars().first()
-    
-        await db.delete(user_auth)
+        
         await db.delete(user)
 
     except HTTPException:
@@ -1331,7 +1329,7 @@ async def fetch_analysis_request(
         .where(PostAnalysisRequest.processing == False)
         .order_by(PostAnalysisRequest.created_at.asc())
         .limit(1)
-        .with_for_update(skip_locked=True)
+        # .with_for_update(skip_locked=True)
     ).scalar_subquery()
 
     stmt = (

@@ -16,3 +16,9 @@ services:
       context: ./app        
       dockerfile: web/Dockerfile 
     image: cro/serve-front:latest
+
+  ai:
+    build:
+      context: ./ai-services
+      dockerfile: Dockerfile
+    image: cro/serve-ai:latest
