@@ -22,6 +22,7 @@ from posts import router as posts_router
 from chats import router as chats_router
 from integrations import router as integrations_router
 from payments import router as payments_router
+from aiapi import router as ai_router, ai_analysis_worker
 from utils import *
 from postgres_conn import get_db, init_db
 from vecutils import insert_redflag_intentions, run_embedding_worker
@@ -87,6 +88,7 @@ app.include_router(business_router, dependencies=[Depends(security)])
 app.include_router(posts_router, dependencies=[Depends(security)])
 app.include_router(chats_router, dependencies=[Depends(security)])
 app.include_router(integrations_router)
+app.include_router(ai_router)
 auth_.handle_errors(app)
 
 ### ENDPOINTS
@@ -116,6 +118,7 @@ async def startup_event():
         async for db in get_db():
             await insert_redflag_intentions(db)
             await db.commit()
+        asyncio.create_task(ai_analysis_worker())
         logging.info("Startup event completed successfully")
 
     except Exception as err:

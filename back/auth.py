@@ -81,6 +81,12 @@ async def get_user_id_from_token(
             raise HTTPException(status_code=401, detail="User not found")
         return user_auth.user_id
 
+
+async def ai_token_required(
+    payload: TokenPayload = Depends(auth.access_token_required),
+):
+    sub = payload
+
 password_hasher = PasswordHash.recommended()
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])

@@ -495,14 +495,61 @@ class PostAnalysisRequest(SQLModel, table=True):
     __tablename__ = 'post_analysis'
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
+    processing: bool = Field(default=False)
 
     user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE'),
+            unique=True
+        )
+    )
+
+    post_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('posts.id', ondelete='CASCADE')
+        )
+    )
+
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=func.now(),
+            nullable=False,
+            index=True
+        )
+    )
+
+
+class PostAnalysis(SQLModel, table=True):
+    __tablename__ = 'post_analysies'
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE'),
+            unique=True
+        )
+    )
+
+    Y: str
+    Z: str
+    U: str
+    additional: str
+
+    started_working: datetime
+
+    created_at: datetime = Field(
         sa_column=Column(
             DateTime(timezone=False),
             server_default=func.now(),
             nullable=False
         )
     )
+    
     
 ###
 
@@ -534,7 +581,6 @@ async def get_db():
         except Exception:
             await db.rollback()
             raise
-
 
 
 def create_post_search_trigger(conn):

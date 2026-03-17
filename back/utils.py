@@ -1282,3 +1282,72 @@ async def delete_user(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f'Could not delete user: {e}')
+
+
+async def accept_analysis(
+    req: SubmitAnalysisRequest,
+    task_id: int,
+    db: AsyncSession,
+):
+    try:
+        result = await db.execute(
+            select(PostAnalysisRequest)
+            .where(PostAnalysisRequest.id == task_id)
+        )
+        task = result.scalars().first()
+
+        if not task:
+            raise HTTPException(status_code=404, detail='task not found')
+
+        task_processing_start = task.created_at
+        user_id = task.user_id
+
+        await db.delete(task)
+
+        analysis = PostAnalysis(
+            user_id    = user_id        ,
+            Y          = req.Y          ,
+            Z          = req.Z          ,
+            U          = req.U          ,
+            additional = req.additional ,
+
+            started_processing = task_processing_start
+        )
+
+        db.add(analysis)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f'Could not delete user: {e}')
+
+
+async def fetch_analysis_request(
+    db: AsyncSession
+):
+    subquery = (
+        select(PostAnalysisRequest.id)
+        .where(PostAnalysisRequest.processing == False)
+        .order_by(PostAnalysisRequest.created_at.asc())
+        .limit(1)
+        .with_for_update(skip_locked=True)
+    ).scalar_subquery()
+
+    stmt = (
+        update(PostAnalysisRequest)
+        .where(PostAnalysisRequest.id == subquery)
+        .values(processing=True)
+        .returning(PostAnalysisRequest) 
+    )
+
+    try:
+        result = await db.execute(stmt)
+        latest = result.scalar() 
+        
+        await db.commit()
+        return latest 
+
+    except Exception:
+        await db.rollback()
+        raise
