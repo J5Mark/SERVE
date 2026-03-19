@@ -25,14 +25,14 @@ LLM_PROVIDER_BASE_URL = env.get('LLM_PROVIDER_BASE', 'http://ollama-service:1143
 
 match PROVIDER:
     case 'ollama':
-        scrutiniaer_provider = OllamaProvider(base_url=LLM_PROVIDER_BASE_URL)
+        Z_provider = OllamaProvider(base_url=LLM_PROVIDER_BASE_URL)
 
     case 'openai':
-        scrutiniaer_provider = OpenAIProvider(base_url=LLM_PROVIDER_BASE_URL)
+        Z_provider = OpenAIProvider(base_url=LLM_PROVIDER_BASE_URL)
 
     case 'mistral':
         api_key = env.get('LLM_API_KEY')
-        scrutiniaer_provider = MistralProvider(api_key=api_key)
+        Z_provider = MistralProvider(api_key=api_key)
 
     case _:
         raise ValueError(f'Unsupported LLM provider')
@@ -40,12 +40,40 @@ match PROVIDER:
 
 class ZAgent(BaseAgent):
     def __init__(self):
-        agent_p = AgentParams()
+        agent_p = AgentParams(
+            model_name     = env.get('MODEL_NAME') ,
+            deps_type      = ZDeps                 ,
+            out_type       = ZOut                  ,
+            model_provider = Z_provider            ,
+            mcp_servers    = [MCPServerStdio(command='uvx', args=['duckduckgo-mcp-server'])],
+            toolset        = [],
+            model_settings = ModelSettings(
+                extra_body = {
+                    'truncate_prompt_tokens': int(env.get('TOKENS_TRUNCATION', 10000))
+                }
+            ),
+        )
 
         super().__init__(agent_p=agent_p)
 
     def _get_sysprompt(self, ctx: RunContext[ZDeps]) -> str:
-        pass
+        template = f'''
+            # SYSTEM PROMPT: AGENT Z
+            Focus: The 'Z' variable (The Current Alternatives).
+            
+            ## INPUT
+            {ctx.deps.votes}
+            
+            ## YOUR TASK
+            1. Identify the "incumbent" solutions. This includes big brands, but also "DIY" fixes (e.g., "people just stop buying salads and cook at home").
+            2. Search for the limitations of these incumbents. What are their reviews saying? Why haven't they fixed the problem yet?
+            3. Define "Z" as the current standard that we are going to beat.
+            
+            ## EXAMPLE (Few-Shot)
+            *Context:* High-end salad delivery.
+            *Search:* "DoorDash salad reviews," "Sweetgreen delivery complaints," "Insulated packaging for cold delivery costs."
+            *Analysis:* The 'Z' is "Standard Third-Party Delivery Apps." They fail because their logistics are general-purpose and don't prioritize temperature-sensitive greens.
+        '''
 
 
 agent = ZAgent()
