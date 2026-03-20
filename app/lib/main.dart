@@ -16,6 +16,8 @@ import 'package:app/screens/business_detail.dart';
 import 'package:app/screens/community_posts.dart';
 import 'package:app/screens/chats.dart';
 import 'package:app/screens/chat.dart';
+import 'package:app/screens/my_analyses.dart';
+import 'package:app/screens/view_analysis.dart';
 import 'package:app/widgets.dart';
 
 AuthStateNotifier? authState;
@@ -175,6 +177,10 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
+      path: '/login',
+      builder: (context, state) => const RegisterScreen(showLoginTab: true),
+    ),
+    GoRoute(
       path: '/create-post',
       builder: (context, state) => const CreatePostScreen(),
     ),
@@ -294,6 +300,17 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/chats',
           builder: (context, state) => const ChatsScreen(),
+        ),
+        GoRoute(
+          path: '/my-analyses',
+          builder: (context, state) => const MyAnalysesScreen(),
+        ),
+        GoRoute(
+          path: '/analysis/:postId',
+          builder: (context, state) {
+            final postId = int.parse(state.pathParameters['postId']!);
+            return ViewAnalysisScreen(postId: postId);
+          },
         ),
       ],
     ),

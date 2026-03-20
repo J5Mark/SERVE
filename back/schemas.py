@@ -27,12 +27,13 @@ class RegisterRequest(BaseModel):
     admin: bool = False
 
 
-class SimpleRegisterRequest(BaseModel):
+class RegisterRequest(BaseModel):
     username: str | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
     password: str | None = None
+    entrep: bool | None = False
 
 
 class UpdateUserRequest(BaseModel):
@@ -260,3 +261,15 @@ class SubmitAnalysisRequest(BaseModel):
     Z: str
     U: str
     additional: str
+
+
+class AnalysisShort(BaseModel):
+    post_id: int
+    post_name: str
+    Y: str | None = None
+    Z: str | None = None
+    U: str | None = None
+    additional: str | None = None
+    created_at: datetime
+
+

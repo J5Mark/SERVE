@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir uv
 WORKDIR /app
 
 COPY pyproject.toml uv.lock* ./
-RUN uv pip install --system -r pyproject.toml
+RUN uv pip install --system .
 
 COPY . /app
 

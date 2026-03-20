@@ -175,46 +175,72 @@ class _MeScreenState extends State<MeScreen> {
         'ME_SCREEN: _user is null, error = $_error, showing complete profile screen',
       );
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.person_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text(
-              'Complete your profile',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text('Register or sign in with Google'),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => context.push('/register'),
-              icon: const Icon(Icons.email),
-              label: const Text('Register'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brightGreen,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.person_outline, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text(
+                'Welcome',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _linkGoogleAccount,
-              icon: const Icon(Icons.g_mobiledata, size: 24),
-              label: const Text('Continue with Google'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
+              const SizedBox(height: 8),
+              const Text(
+                'Register, login, or continue with Google',
+                style: TextStyle(color: AppColors.grey),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/login'),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Login'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.grey,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/register'),
+                  icon: const Icon(Icons.email),
+                  label: const Text('Register'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brightGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _linkGoogleAccount,
+                  icon: const Icon(Icons.g_mobiledata, size: 24),
+                  label: const Text('Continue with Google'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: AppColors.grey),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -554,6 +580,28 @@ class _MeScreenState extends State<MeScreen> {
                   ),
                 ),
               ),
+            const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: const Icon(
+                  Icons.analytics,
+                  color: AppColors.yellowAccent,
+                ),
+                title: const Text(
+                  'My Analyses',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  'View your post analyses',
+                  style: TextStyle(color: AppColors.grey),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.grey,
+                ),
+                onTap: () => context.push('/my-analyses'),
+              ),
+            ),
           ],
         ),
       ),

@@ -8,6 +8,7 @@ from uuid import uuid4
 from utils import *
 from postgres_conn import *
 from authx import AuthX, AuthXConfig, TokenPayload
+from sqlalchemy.orm import contains_eager
 
 
 JWT_SECRET_KEY = os.getenv("AI_JWT_SECRET_KEY", "zxcvbnmasdfg")
@@ -28,21 +29,18 @@ q = asyncio.Queue(maxsize=int(os.getenv('AI_QUEUE_MAXSIZE', 10)))
 
 async def auth_ai(req_id: int):
     token = auth.create_access_token(
-        uid = str(req_id),
-        data = {
-            "service": "ai"
-        }
+        uid=str(req_id),
+        data={"service": "ai"}
     )
     return {"access_token": token}
 
 
 async def start_analysis(task: PostAnalysisRequest, token: str):
-    url = os.getenv('AI_SERVICE_BASEURL', 'http://ai-service:3000')
+    url = os.getenv('AI_SERVICE_BASEURL', 'http://ai:3000')
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"{url}/start_analysis",
-                json={"task_id": task.id}, 
+                f"{url}/start_analysis/{task.id}", 
                 headers={"Authorization": f"Bearer {token}"} 
             ) as resp:
                 resp.raise_for_status()
@@ -75,13 +73,12 @@ async def ai_analysis_worker():
 async def get_task_id_from_token(
     payload: TokenPayload = Depends(auth.access_token_required)
 ) -> int:
-    sub = payload.sub
-    extra = payload.extra_dict
-
-    if extra.get('service') != 'ai':
+    service = getattr(payload, 'service', None) or payload.extra_dict.get('service')
+    
+    if service != 'ai':
         raise HTTPException(status_code=401, detail="Forbidden")
 
-    return int(sub)
+    return int(payload.sub)
 
 
 @router.get('/task_post')

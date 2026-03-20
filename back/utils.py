@@ -1299,17 +1299,18 @@ async def accept_analysis(
 
         task_processing_start = task.created_at
         user_id = task.user_id
+        post_id = task.post_id
 
         await db.delete(task)
 
         analysis = PostAnalysis(
-            user_id    = user_id        ,
-            Y          = req.Y          ,
-            Z          = req.Z          ,
-            U          = req.U          ,
-            additional = req.additional ,
-
-            started_processing = task_processing_start
+            user_id    = user_id,
+            post_id    = post_id,
+            Y          = req.Y,
+            Z          = req.Z,
+            U          = req.U,
+            additional = req.additional,
+            started_working = task_processing_start
         )
 
         db.add(analysis)
@@ -1318,7 +1319,7 @@ async def accept_analysis(
         raise
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f'Could not delete user: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not save analysis: {e}')
 
 
 async def fetch_analysis_request(
@@ -1349,3 +1350,116 @@ async def fetch_analysis_request(
     except Exception:
         await db.rollback()
         raise
+
+
+async def request_analysis(post_id: int, user_id: int, full_analysis: bool, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(User)
+            .where(User.id == user_id)
+        )
+        user = result.scalars().first()
+        if not user.entrep:
+            raise HTTPException(status_code=401, detail='Forbidden')
+
+        pending_count = await db.execute(
+            select(func.count())
+            .select_from(PostAnalysisRequest)
+            .where(PostAnalysisRequest.user_id == user_id)
+        )
+        count = pending_count.scalar()
+        if count >= 3:
+            raise HTTPException(status_code=400, detail='Maximum 3 pending analyses allowed')
+
+        request = PostAnalysisRequest(
+            user_id=user_id,
+            post_id=post_id,
+            full_analysis=full_analysis,
+        )
+        db.add(request)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f'Could not request analysis: {e}')
+
+
+async def get_post_analysis(post_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(PostAnalysis)
+            .where(PostAnalysis.post_id == post_id)
+        )
+        analysis = result.scalars().first()
+
+        if not analysis:
+            raise HTTPException(status_code=404, detail='Analysis not found')
+
+        return {
+            'Y': analysis.Y,
+            'Z': analysis.Z,
+            'U': analysis.U,
+            'additional': analysis.additional,
+            'created_at': analysis.created_at,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get analysis: {e}')
+
+
+async def get_analysis_status(post_id: int, db: AsyncSession):
+    try:
+        result = await db.execute(
+            select(PostAnalysisRequest)
+            .where(PostAnalysisRequest.post_id == post_id)
+        )
+        request = result.scalars().first()
+
+        if request:
+            return {'status': 'pending', 'processing': request.processing}
+
+        result = await db.execute(
+            select(PostAnalysis)
+            .where(PostAnalysis.post_id == post_id)
+        )
+        if result.scalars().first():
+            return {'status': 'completed'}
+
+        return {'status': 'not_requested'}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not get analysis status: {e}')
+
+
+async def list_analyses(
+    n: int,
+    offset: int,
+    user_id: int,
+    db: AsyncSession,
+):
+    try:
+        result = await db.execute(
+            select(PostAnalysis, Post.name)
+            .join(Post, Post.id == PostAnalysis.post_id)
+            .where(PostAnalysis.user_id == user_id)
+            .order_by(PostAnalysis.created_at.desc())
+            .offset(offset)
+            .limit(n)
+        )
+        analyses = result.all()
+
+        short = []
+        for analysis_obj, post_name in analyses:
+            data = analysis_obj.model_dump()
+            data["post_name"] = post_name
+            short.append(AnalysisShort(**data))
+
+        return short
+        
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not list analyses: {e}')

@@ -1,13 +1,27 @@
-from fastapi import FastAPI, Depends, HTTPException, Response
+from fastapi import FastAPI, Depends, HTTPException, Response, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 import asyncio, uuid, json, aiohttp, logging, os
 from datetime import datetime
 import uvicorn
 from competition import get_post_analysis
 
 
-app = FastAPI()
+q = asyncio.Queue(maxsize=15)
+
+CORE_BASE_URL = os.getenv('CORE_BASEURL', 'http://back:1000')
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logging.info('Starting up - launching worker')
+    asyncio.create_task(post_analysis())
+    yield
+    logging.info('Shutting down')
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,10 +31,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CORE_BASE_URL = os.getenv('CORE_BASEURL', 'http://back:8000')
-
-q = asyncio.Queue(maxsize=15)
-
 
 async def fetch_post_for_task(task_id: int, token: str) -> dict:
     async with aiohttp.ClientSession() as session:
@@ -29,7 +39,6 @@ async def fetch_post_for_task(task_id: int, token: str) -> dict:
             headers={"Authorization": f"Bearer {token}"}
         ) as resp:
             resp.raise_for_status()
-            data = await resp.json()
             return await resp.json()
 
 
@@ -55,15 +64,17 @@ async def submit_error(task_id: int, error: str, token: str):
             return await resp.json()
 
 
-@app.post('/start_analysis')
-async def start_analysis(task_id: int, authorization: str = None):
+@app.post('/start_analysis/{task_id}')
+async def start_analysis(task_id: int, authorization: str = Header(None)):
     token = authorization.replace("Bearer ", "") if authorization else None
     await q.put((task_id, token))
-    logging.info(f"Task {task_id} queued")
+    logging.info(f'Token: {token}')
+    logging.info(f"Task {task_id} queued, queue size: {q.qsize()}")
     return {"status": "queued", "task_id": task_id}
 
 
 async def post_analysis():
+    logging.info('Post analysis worker started')
     while True:
         try:
             task_id, token = await q.get()
@@ -99,17 +110,7 @@ async def post_analysis():
 
 @app.get('/health')
 async def health():
-    return {'status': 'ok'}
-
-
-app.on_event('startup')
-async def startup_event():
-    logging.info('Starting up')
-    try:
-        asyncio.create_task(post_analysis())
-    
-    except Exception as e:
-        logging.error(f'Could not init app. Error: {e}')
+    return {'status': 'ok', 'queue_size': q.qsize()}
 
 
 if __name__ == "__main__":

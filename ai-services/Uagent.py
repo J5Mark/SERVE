@@ -2,7 +2,7 @@ from baseagent import AgentParams, BaseAgent
 from os import environ as env
 from pydantic import BaseModel, Field
 from pydantic_ai.providers.openai import OpenAIProvider
-from pydantic_ai.providers.mistral import MistralProvider
+# from pydantic_ai.providers.mistral import MistralProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai import RunContext
 from typing import List, Optional
@@ -23,7 +23,7 @@ class UOut(BaseModel):
 scrutinizer_provider = None
 
 PROVIDER = env.get('LLM_PROVIDER', 'ollama')
-LLM_PROVIDER_BASE_URL = env.get('LLM_PROVIDER_BASE', 'http://ollama-service:11434')
+LLM_PROVIDER_BASE_URL = env.get('LLM_PROVIDER_BASE', 'http://ollama-service:11434/v1')
 
 match PROVIDER:
     case 'ollama':
@@ -32,9 +32,9 @@ match PROVIDER:
     case 'openai':
         U_provider = OpenAIProvider(base_url=LLM_PROVIDER_BASE_URL)
 
-    case 'mistral':
-        api_key = env.get('LLM_API_KEY')
-        U_provider = MistralProvider(api_key=api_key)
+    # case 'mistral':
+    #     api_key = env.get('LLM_API_KEY')
+    #     U_provider = MistralProvider(api_key=api_key)
 
     case _:
         raise ValueError(f'Unsupported LLM provider')
@@ -76,6 +76,10 @@ class UAgent(BaseAgent):
             *Search:* "Innovative food packaging for temperature control," "Direct-to-consumer fresh logistics models."
             *Analysis:* The 'U' is "Guaranteed Thermal Integrity"—the customer receives a bowl that is crisp and chilled, perhaps via specialized 'Active-Cool' delivery containers, making the experience feel "Kitchen-to-Table" rather than "Courier-to-Door."
         '''
+        return template
+
+    def _register_tools(self):
+        pass
 
 
 agent = UAgent()
