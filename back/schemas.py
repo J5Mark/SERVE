@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from pydantic_extra_types.phone_numbers import PhoneNumber
 from typing import Optional, List
 from datetime import datetime
@@ -273,3 +273,8 @@ class AnalysisShort(BaseModel):
     created_at: datetime
 
 
+class PostForAnalysis(BaseModel):
+    id: int
+    name: str
+    contents: str
+    votes: List

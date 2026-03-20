@@ -1,0 +1,1306 @@
+<!-- Community Feed (Interest-Based) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#235c68",
+                        "secondary": "#00dcfd",
+                        "primary": "#6feffb",
+                        "primary-dim": "#5fe1ed",
+                        "surface-container": "#001d23",
+                        "inverse-surface": "#f0fbff",
+                        "on-secondary-container": "#ebfaff",
+                        "secondary-fixed-dim": "#00d6f6",
+                        "surface-dim": "#001115",
+                        "surface-container-high": "#00242a",
+                        "outline": "#477d8a",
+                        "on-tertiary-fixed-variant": "#003b68",
+                        "tertiary-fixed": "#74b4ff",
+                        "inverse-primary": "#006a71",
+                        "error-dim": "#d7383b",
+                        "on-tertiary-container": "#002647",
+                        "tertiary-dim": "#4ca2f9",
+                        "secondary-dim": "#00cdec",
+                        "on-tertiary": "#00325a",
+                        "on-error-container": "#ffa8a3",
+                        "on-secondary": "#004955",
+                        "tertiary-fixed-dim": "#52a7ff",
+                        "on-tertiary-fixed": "#001931",
+                        "on-surface": "#b8eefd",
+                        "primary-container": "#1bb4c0",
+                        "primary-fixed-dim": "#5fe1ed",
+                        "on-secondary-fixed-variant": "#005967",
+                        "surface-bright": "#00313a",
+                        "surface-container-low": "#00161b",
+                        "surface": "#001115",
+                        "surface-container-highest": "#002a32",
+                        "secondary-container": "#006878",
+                        "error": "#ff716c",
+                        "outline-variant": "#114f5b",
+                        "secondary-fixed": "#59e3ff",
+                        "surface-variant": "#002a32",
+                        "on-primary-fixed": "#004348",
+                        "surface-tint": "#6feffb",
+                        "on-secondary-fixed": "#003a44",
+                        "background": "#001115",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#7eb3c1",
+                        "on-error": "#490006",
+                        "primary-fixed": "#6feffb",
+                        "surface-container-lowest": "#000000",
+                        "tertiary": "#74b4ff",
+                        "tertiary-container": "#52a7ff",
+                        "on-primary": "#00575e",
+                        "on-primary-container": "#002a2e",
+                        "on-background": "#b8eefd",
+                        "on-primary-fixed-variant": "#006269"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        body {
+            background-color: #001115;
+            color: #b8eefd;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-header {
+            background: rgba(0, 17, 21, 0.8);
+            backdrop-filter: blur(24px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #001115;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #114f5b;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 glass-header flex items-center justify-between px-6 h-16 w-full bg-gradient-to-b from-[#001d23] to-transparent">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest border border-outline-variant/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">menu</span>
+</div>
+<h1 class="text-2xl font-extrabold tracking-tighter text-[#33C0CC] font-headline">Serve</h1>
+</div>
+<div class="hidden md:flex items-center gap-8 font-label text-sm font-semibold uppercase tracking-widest text-[#33C0CC]">
+<a class="hover:text-cyan-300 transition-colors" href="#">Feed</a>
+<a class="text-on-surface-variant hover:text-cyan-300 transition-colors" href="#">Communities</a>
+<a class="text-on-surface-variant hover:text-cyan-300 transition-colors" href="#">Reports</a>
+<a class="text-on-surface-variant hover:text-cyan-300 transition-colors" href="#">Global</a>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-lg flex items-center justify-center text-[#7eb3c1] hover:text-primary transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-lg overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="User profile avatar close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpxLYcHNRdiVqAouDwjTjsoso0kjlUkyFGBBKLEDOmyCwHsVjSiRmL5SncRDxlqLsIaCJy9op4WSDK5SCEmIfQzJQkVUXMvCw3JAFlCu6aZO371Dc6bhqVty3DGmAcz4O-aNLtG1uY_VG-qxBoHqqvkwDkLnppNy2Rk6RzxnYy6HwilVS0Q4Yhez2NKni_3XisGE2g3v9Tsj8HnLPcL1VPV1gyzX27IovN6v7tX6fflZlfFq6vhP6YEFngHLM_IzdS-dAYYJEf"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-24 px-4 md:px-8 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Sidebar: Discover Communities (Hidden on mobile) -->
+<aside class="hidden lg:block lg:col-span-3 space-y-6">
+<div class="bg-surface-container rounded-lg p-5">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline font-bold text-lg tracking-tight">Communities</h2>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">settings</span>
+</div>
+<nav class="space-y-2">
+<a class="flex items-center gap-3 p-3 bg-surface-bright rounded-lg text-primary group" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-medium">All Communities</span>
+</a>
+<a class="flex items-center gap-3 p-3 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">bolt</span>
+<span class="font-medium">c/energy</span>
+</a>
+<a class="flex items-center gap-3 p-3 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">eco</span>
+<span class="font-medium">c/sustainability</span>
+</a>
+<a class="flex items-center gap-3 p-3 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">engineering</span>
+<span class="font-medium">c/infrastructure</span>
+</a>
+<a class="flex items-center gap-3 p-3 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">shield_moon</span>
+<span class="font-medium">c/public-safety</span>
+</a>
+</nav>
+<button class="w-full mt-6 py-3 px-4 bg-surface-container-highest hover:bg-surface-bright text-primary border border-outline-variant/10 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">explore</span>
+                    Discover Communities
+                </button>
+</div>
+<div class="bg-gradient-to-br from-primary-container/20 to-transparent p-6 rounded-lg border border-primary/10">
+<h3 class="font-headline font-extrabold text-primary mb-2">Vibrancy Report</h3>
+<p class="text-xs text-on-surface-variant mb-4 leading-relaxed">Your neighborhood sustainability score has increased by 12% this week. Keep contributing!</p>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-3/4"></div>
+</div>
+</div>
+</aside>
+<!-- Main Feed -->
+<div class="lg:col-span-6 space-y-6">
+<!-- Create Post Anchor -->
+<div class="bg-surface-container rounded-lg p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="User avatar for post input" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpKMJjTlzYbeTKlIJDQW8IwcITwOAVIUKg8V7lhWGImkSboe7WkOBamNB1wvXFB3gcd-ymaROPNFlbtlSo5e2v1oy9umyLx5-mzcadH6WKjTd1wjf6wnMyE_mr01paFI7WmOf6kKS2vLPwXiEFizm2Y9UfEz_3UeoqszIniKoM327ZPKrC35b9PkFX5X1GSVXjmvDdYcceIwRPCnRKznSWJeZi5W9DssROuvenCUKPCmLHZuwaDJgD1_VjbbfmSGnIvxn14NZu"/>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-lg px-4 py-2.5 text-on-surface-variant text-sm cursor-text hover:bg-surface-bright transition-colors border border-outline-variant/5">
+                    What's happening in your community?
+                </div>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">image</span></button>
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined">link</span></button>
+</div>
+</div>
+<!-- Feed Post 1 -->
+<article class="bg-surface-container rounded-lg overflow-hidden border border-outline-variant/5 hover:border-primary/20 transition-all group">
+<div class="p-5">
+<div class="flex items-center gap-2 mb-3">
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-highest rounded text-[10px] font-bold uppercase tracking-wider text-primary">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+                            c/energy
+                        </div>
+<span class="text-on-surface-variant text-xs">•</span>
+<span class="text-on-surface-variant text-xs">Posted by u/GridGuard • 4h ago</span>
+</div>
+<h2 class="text-xl font-bold font-headline mb-3 text-on-surface leading-snug">Broken Power Grid near Sector 7 Industrial Zone</h2>
+<p class="text-on-surface-variant text-sm mb-4 leading-relaxed">Third outage this week. The transformers at the corner of 4th and Main are sparking. Local businesses are losing inventory.</p>
+<div class="rounded-lg overflow-hidden aspect-video bg-surface-container-highest mb-4">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Dramatic image of sparking electrical transformer at night" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJwspMzK4r4tA3nehcWHDuKY9RnIK8ubnTjue6_ewZOwsbAs5SPgIKdlpr0Ak4ERI5SsBM5fozvSd_Otgov3CI9h0qjVcCkUOL3YcspkoYnZxzC8PCqzSpPde-NoSMNSl8-66QA4n92WaQ2LK_vja20fvmghrPe0h0LaJ3WN79MYatxiFypoEqaEc90aslioloqGtLRCwcjUT50t19OxItSoCNFO-cLEd13UQ8jjfoWTMyTEagAKZATU79b4sDjH5QMRjRipwT"/>
+</div>
+<div class="flex items-center justify-between mt-6">
+<div class="flex items-center gap-1 bg-surface-container-low rounded-lg p-1">
+<button class="w-8 h-8 flex items-center justify-center hover:bg-secondary-container/30 hover:text-secondary rounded-lg transition-colors">
+<span class="material-symbols-outlined">arrow_upward</span>
+</button>
+<span class="px-2 font-bold text-sm text-secondary">1.2k</span>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-error-container/20 hover:text-error rounded-lg transition-colors">
+<span class="material-symbols-outlined">arrow_downward</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-lg">chat_bubble</span>
+<span class="text-xs font-bold uppercase tracking-tighter">142 Comments</span>
+</div>
+<div class="flex items-center gap-1.5 text-tertiary-fixed hover:text-tertiary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-lg">lightbulb</span>
+<span class="text-xs font-bold uppercase tracking-tighter">8 Solutions</span>
+</div>
+</div>
+</div>
+</div>
+</article>
+<!-- Feed Post 2 -->
+<article class="bg-surface-container rounded-lg overflow-hidden border border-outline-variant/5">
+<div class="p-5">
+<div class="flex items-center gap-2 mb-3">
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-highest rounded text-[10px] font-bold uppercase tracking-wider text-primary">
+<span class="material-symbols-outlined text-[14px]">eco</span>
+                            c/sustainability
+                        </div>
+<span class="text-on-surface-variant text-xs">•</span>
+<span class="text-on-surface-variant text-xs">Posted by u/AquaSave • 8h ago</span>
+</div>
+<h2 class="text-xl font-bold font-headline mb-3 text-on-surface leading-snug">Major Water Waste identified at City Park</h2>
+<p class="text-on-surface-variant text-sm mb-4 leading-relaxed">The irrigation system has been running during peak rain hours. Thousands of gallons are being wasted. We need to push for automated moisture sensors.</p>
+<div class="bg-surface-container-high p-4 rounded-lg mb-4 flex items-center justify-between border-l-4 border-tertiary-fixed">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-tertiary-fixed/10 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary-fixed">link</span>
+</div>
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-tertiary-fixed">Related Community</p>
+<p class="text-sm font-bold">r/WaterConservation</p>
+</div>
+</div>
+<button class="text-xs font-bold text-on-surface-variant bg-surface-container-highest py-1.5 px-3 rounded hover:bg-surface-bright transition-all">Visit</button>
+</div>
+<div class="flex items-center justify-between mt-6">
+<div class="flex items-center gap-1 bg-surface-container-low rounded-lg p-1">
+<button class="w-8 h-8 flex items-center justify-center text-secondary rounded-lg transition-colors">
+<span class="material-symbols-outlined">arrow_upward</span>
+</button>
+<span class="px-2 font-bold text-sm text-secondary">842</span>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-error-container/20 hover:text-error rounded-lg transition-colors">
+<span class="material-symbols-outlined">arrow_downward</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg">chat_bubble</span>
+<span class="text-xs font-bold uppercase tracking-tighter">56 Comments</span>
+</div>
+<div class="flex items-center gap-1.5 text-tertiary-fixed">
+<span class="material-symbols-outlined text-lg">lightbulb</span>
+<span class="text-xs font-bold uppercase tracking-tighter">24 Solutions</span>
+</div>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Right Sidebar: Trends & Activity -->
+<aside class="hidden lg:block lg:col-span-3 space-y-6">
+<div class="bg-surface-container rounded-lg p-5">
+<h3 class="font-headline font-bold text-sm tracking-widest uppercase text-on-surface-variant mb-4">Trending Issues</h3>
+<ul class="space-y-4">
+<li class="group cursor-pointer">
+<p class="text-[10px] font-bold text-primary uppercase mb-0.5">c/infrastructure</p>
+<p class="text-sm font-semibold group-hover:text-primary transition-colors">Metro Line 4 Delays</p>
+<p class="text-[10px] text-on-surface-variant">2.4k Reports Today</p>
+</li>
+<li class="group cursor-pointer">
+<p class="text-[10px] font-bold text-primary uppercase mb-0.5">c/public-safety</p>
+<p class="text-sm font-semibold group-hover:text-primary transition-colors">Street Light Audit</p>
+<p class="text-[10px] text-on-surface-variant">1.1k Reports Today</p>
+</li>
+<li class="group cursor-pointer">
+<p class="text-[10px] font-bold text-primary uppercase mb-0.5">c/education</p>
+<p class="text-sm font-semibold group-hover:text-primary transition-colors">New Tech Center Proposal</p>
+<p class="text-[10px] text-on-surface-variant">892 Reports Today</p>
+</li>
+</ul>
+</div>
+<div class="bg-surface-container rounded-lg p-5">
+<h3 class="font-headline font-bold text-sm tracking-widest uppercase text-on-surface-variant mb-4">Top Problem Solvers</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-sm">workspace_premium</span>
+</div>
+<div>
+<p class="text-sm font-bold">Mayor_Green</p>
+<p class="text-[10px] text-on-surface-variant">42 Solutions Verified</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-sm">verified</span>
+</div>
+<div>
+<p class="text-sm font-bold">EcoWarrior_99</p>
+<p class="text-[10px] text-on-surface-variant">38 Solutions Verified</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- BottomNavBar (Visible on mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-lg border-none bg-gradient-to-t from-[#001115] to-[#001d23] shadow-[0_-8px_32px_rgba(51,192,204,0.08)] flex justify-around items-center w-full px-2 py-3">
+<a class="flex flex-col items-center justify-center text-[#33C0CC] bg-[#00313a]/40 rounded-lg py-1 px-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest">Report</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3" href="#">
+<span class="material-symbols-outlined">lightbulb</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest">Solutions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest">Profile</span>
+</a>
+</nav>
+<!-- Floating Action Button -->
+<button class="fixed right-6 bottom-24 md:bottom-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-on-primary-container rounded-lg shadow-[0_8px_32px_rgba(51,192,204,0.3)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group">
+<span class="material-symbols-outlined text-3xl font-bold">add</span>
+<span class="absolute right-full mr-4 px-3 py-1.5 bg-surface-container rounded-lg text-xs font-bold text-primary opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Submit Report</span>
+</button>
+</body></html>
+
+<!-- Solutions Hub (Interest-Based) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Serve | Business Solutions Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#235c68",
+                        "secondary": "#00dcfd",
+                        "primary": "#6feffb",
+                        "primary-dim": "#5fe1ed",
+                        "surface-container": "#001d23",
+                        "inverse-surface": "#f0fbff",
+                        "on-secondary-container": "#ebfaff",
+                        "secondary-fixed-dim": "#00d6f6",
+                        "surface-dim": "#001115",
+                        "surface-container-high": "#00242a",
+                        "outline": "#477d8a",
+                        "on-tertiary-fixed-variant": "#003b68",
+                        "tertiary-fixed": "#74b4ff",
+                        "inverse-primary": "#006a71",
+                        "error-dim": "#d7383b",
+                        "on-tertiary-container": "#002647",
+                        "tertiary-dim": "#4ca2f9",
+                        "secondary-dim": "#00cdec",
+                        "on-tertiary": "#00325a",
+                        "on-error-container": "#ffa8a3",
+                        "on-secondary": "#004955",
+                        "tertiary-fixed-dim": "#52a7ff",
+                        "on-tertiary-fixed": "#001931",
+                        "on-surface": "#b8eefd",
+                        "primary-container": "#1bb4c0",
+                        "primary-fixed-dim": "#5fe1ed",
+                        "on-secondary-fixed-variant": "#005967",
+                        "surface-bright": "#00313a",
+                        "surface-container-low": "#00161b",
+                        "surface": "#001115",
+                        "surface-container-highest": "#002a32",
+                        "secondary-container": "#006878",
+                        "error": "#ff716c",
+                        "outline-variant": "#114f5b",
+                        "secondary-fixed": "#59e3ff",
+                        "surface-variant": "#002a32",
+                        "on-primary-fixed": "#004348",
+                        "surface-tint": "#6feffb",
+                        "on-secondary-fixed": "#003a44",
+                        "background": "#001115",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#7eb3c1",
+                        "on-error": "#490006",
+                        "primary-fixed": "#6feffb",
+                        "surface-container-lowest": "#000000",
+                        "tertiary": "#74b4ff",
+                        "tertiary-container": "#52a7ff",
+                        "on-primary": "#00575e",
+                        "on-primary-container": "#002a2e",
+                        "on-background": "#b8eefd",
+                        "on-primary-fixed-variant": "#006269"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(0, 42, 50, 0.6);
+            backdrop-filter: blur(24px);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #1bb4c0 0%, #001115 100%);
+        }
+        .asymmetric-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .asymmetric-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface selection:bg-primary/30 min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#001115]/80 backdrop-blur-lg flex items-center justify-between px-6 h-16 w-full shadow-none bg-gradient-to-b from-[#001d23] to-transparent">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-extrabold tracking-tighter text-[#33C0CC] font-headline">Serve</span>
+<nav class="hidden md:flex gap-6 ml-8">
+<a class="text-[#7eb3c1] font-medium hover:text-cyan-300 transition-colors uppercase tracking-widest text-[11px]" href="#">Feed</a>
+<a class="text-[#7eb3c1] font-medium hover:text-cyan-300 transition-colors uppercase tracking-widest text-[11px]" href="#">Search</a>
+<a class="text-[#7eb3c1] font-medium hover:text-cyan-300 transition-colors uppercase tracking-widest text-[11px]" href="#">Report</a>
+<a class="text-[#33C0CC] font-medium hover:text-cyan-300 transition-colors uppercase tracking-widest text-[11px] border-b-2 border-[#33C0CC]" href="#">Solutions</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#7eb3c1] hover:text-cyan-300 transition-colors">notifications</button>
+<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant/20 flex items-center justify-center overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Stylized user avatar for profile profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPI5KeAJThc5YNOSqu2MQ-EZifTVQMa8Wtb8Esr9TsCTFFkyqjkueXsETWUu9BBVYmfhqgl4TCNnri6nnLy73JD4XveLBERRlBhn_FlOykCCUL5GJZhipdQhPdPYtIA3p-vmDn-SfNWMoheNnv3YxZ2KlYwYNGNzBzqpNu1G5m8Bu3D9KwYQ6K22Hg6mfR8-8xznhguvgZFDmXhNAkzdKJKfLTFEtp-f5oT1Ad-rDHDKkc61FmHz7l806aNF9V78YcWok0b3lB"/>
+</div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-7xl mx-auto space-y-8 mb-12">
+<!-- Dashboard Header -->
+<section class="space-y-2">
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-primary-fixed">Solutions Hub</h1>
+<p class="text-on-surface-variant max-w-2xl font-medium">Discover validated market opportunities within active community clusters. Bridge the gap between civil demand and enterprise innovation.</p>
+</section>
+<!-- Bento Grid Clusters -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Market Opportunity Main Card -->
+<div class="md:col-span-8 bg-surface-container rounded-lg p-8 relative overflow-hidden group shadow-2xl">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -mr-32 -mt-32"></div>
+<div class="relative z-10 flex flex-col h-full justify-between">
+<div>
+<span class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-on-secondary-container rounded text-[10px] font-bold tracking-widest uppercase mb-4">
+                            High Demand
+                        </span>
+<h2 class="text-3xl font-bold text-on-surface leading-tight mb-4">Decentralized Waste Management <br/>in Lagos Urban Clusters</h2>
+<div class="flex gap-4 items-center text-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">group</span> 4.2k Residents</span>
+<span class="flex items-center gap-1 text-tertiary"><span class="material-symbols-outlined text-[18px]">trending_up</span> +22% Sentiment</span>
+</div>
+</div>
+<div class="mt-8 flex gap-3">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-2.5 rounded font-bold transition-transform active:scale-95">Explore Opportunity</button>
+<button class="bg-surface-container-highest text-on-surface px-6 py-2.5 rounded font-bold hover:bg-surface-bright transition-colors">Save Hub</button>
+</div>
+</div>
+<div class="absolute bottom-0 right-0 opacity-20 pointer-events-none p-4">
+<span class="material-symbols-outlined text-[160px]" style="font-variation-settings: 'FILL' 1;">recycling</span>
+</div>
+</div>
+<!-- Sentiment Niche Chart -->
+<div class="md:col-span-4 bg-surface-container-high rounded-lg p-6 flex flex-col justify-between">
+<div>
+<h3 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">Cluster Sentiment</h3>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>Urban Logistics</span>
+<span class="text-primary">88%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 88%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>Sanitation Systems</span>
+<span class="text-secondary">64%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 64%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>Renewable Energy</span>
+<span class="text-tertiary">42%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary" style="width: 42%"></div>
+</div>
+</div>
+</div>
+</div>
+<p class="text-[10px] text-on-surface-variant italic mt-4">Real-time aggregate of 12.4k citizen interactions across 14 clusters.</p>
+</div>
+</section>
+<!-- Filters & Navigation -->
+<section class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 bg-surface-bright text-primary rounded-full text-xs font-bold border border-primary/20">All Categories</button>
+<button class="px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-bold hover:text-on-surface">Energy</button>
+<button class="px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-bold hover:text-on-surface">Sanitation</button>
+<button class="px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-bold hover:text-on-surface">Urban Logistics</button>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs text-on-surface-variant font-medium">Sort by:</span>
+<select class="bg-surface-container-highest border-none text-xs font-bold rounded focus:ring-1 focus:ring-primary py-1.5 pl-3 pr-8">
+<option>Community Activity</option>
+<option>Solution Demand</option>
+<option>Investment Potential</option>
+</select>
+</div>
+</section>
+<!-- Opportunity Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Problem Card 1 -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-6 rounded-lg group border-b-2 border-transparent hover:border-primary">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded bg-tertiary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">bolt</span>
+</div>
+<span class="text-[10px] font-bold text-tertiary px-2 py-0.5 bg-tertiary/5 rounded uppercase">Energy Cluster</span>
+</div>
+<h4 class="font-bold text-lg mb-2 text-on-surface group-hover:text-primary transition-colors">Micro-grid Solar P2P Trading</h4>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-6">Local housing associations seeking automated billing systems for shared solar arrays.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/10">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-on-surface-variant tracking-wider">Solution Demand</span>
+<span class="text-sm font-bold text-on-surface">Critical</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+<!-- Problem Card 2 -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-6 rounded-lg group border-b-2 border-transparent hover:border-secondary">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">local_shipping</span>
+</div>
+<span class="text-[10px] font-bold text-secondary px-2 py-0.5 bg-secondary/5 rounded uppercase">Urban Logistics</span>
+</div>
+<h4 class="font-bold text-lg mb-2 text-on-surface group-hover:text-secondary transition-colors">Last-Mile Cargo Optimization</h4>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-6">Downtown retailers reported 40% delivery delay due to narrow-street congestion.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/10">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-on-surface-variant tracking-wider">Active Users</span>
+<span class="text-sm font-bold text-on-surface">1.8k Active</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+<!-- Problem Card 3 -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-6 rounded-lg group border-b-2 border-transparent hover:border-error">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded bg-error/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-error">water_drop</span>
+</div>
+<span class="text-[10px] font-bold text-error px-2 py-0.5 bg-error/5 rounded uppercase">Sanitation</span>
+</div>
+<h4 class="font-bold text-lg mb-2 text-on-surface group-hover:text-error transition-colors">Stormwater Sensor Network</h4>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-6">Need for low-cost IoT sensors to monitor drainage blockages before monsoon surge.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/10">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase text-on-surface-variant tracking-wider">Opportunity Tag</span>
+<span class="text-sm font-bold text-on-surface">Hardware Lab</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</section>
+<!-- Asymmetric Information Section -->
+<section class="asymmetric-grid pt-12 pb-12">
+<div class="bg-surface-container-highest rounded-lg p-8">
+<h3 class="text-2xl font-extrabold text-on-surface mb-6 tracking-tight">Community Interest Trends</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+<div class="space-y-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Logistics</span>
+<div class="text-xl font-bold text-primary">+142%</div>
+</div>
+<div class="space-y-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Hydrology</span>
+<div class="text-xl font-bold text-secondary">+88%</div>
+</div>
+<div class="space-y-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Agri-tech</span>
+<div class="text-xl font-bold text-tertiary">+34%</div>
+</div>
+<div class="space-y-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Waste-to-X</span>
+<div class="text-xl font-bold text-primary">+212%</div>
+</div>
+</div>
+<div class="mt-12 h-48 w-full bg-[#001d23] rounded-lg relative overflow-hidden flex items-end">
+<!-- Faux Chart Lines -->
+<div class="absolute bottom-12 left-0 w-full flex items-end justify-between px-4 gap-2 h-32">
+<div class="w-full bg-primary/20 h-[30%] rounded-t-sm"></div>
+<div class="w-full bg-primary/20 h-[45%] rounded-t-sm"></div>
+<div class="w-full bg-primary/20 h-[35%] rounded-t-sm"></div>
+<div class="w-full bg-primary/40 h-[60%] rounded-t-sm"></div>
+<div class="w-full bg-primary/30 h-[55%] rounded-t-sm"></div>
+<div class="w-full bg-primary h-[85%] rounded-t-sm relative">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded">PEAK</div>
+</div>
+<div class="w-full bg-primary/40 h-[70%] rounded-t-sm"></div>
+<div class="w-full bg-primary/30 h-[50%] rounded-t-sm"></div>
+</div>
+</div>
+</div>
+<div class="bg-primary/5 rounded-lg border border-primary/10 p-8 flex flex-col justify-center">
+<span class="material-symbols-outlined text-primary text-4xl mb-6">lightbulb</span>
+<h4 class="text-xl font-bold text-on-surface mb-2">Can't find a problem?</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed mb-6">Collaborate directly with our community moderators to define custom opportunity clusters based on your company's vertical.</p>
+<button class="w-full py-3 bg-surface-bright border border-primary/30 text-primary font-bold rounded-lg hover:bg-primary/10 transition-colors uppercase tracking-widest text-xs">Request Data Deep-Dive</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-lg border-none bg-gradient-to-t from-[#001115] to-[#001d23] shadow-[0_-8px_32px_rgba(51,192,204,0.08)]">
+<div class="flex justify-around items-center w-full px-2 py-3">
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Report</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#33C0CC] bg-[#00313a]/40 rounded-lg py-1 px-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Solutions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>
+
+<!-- Report a Problem (Interest-Based) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Serve | Report a Problem</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-on-surface": "#235c68",
+              "secondary": "#00dcfd",
+              "primary": "#6feffb",
+              "primary-dim": "#5fe1ed",
+              "surface-container": "#001d23",
+              "inverse-surface": "#f0fbff",
+              "on-secondary-container": "#ebfaff",
+              "secondary-fixed-dim": "#00d6f6",
+              "surface-dim": "#001115",
+              "surface-container-high": "#00242a",
+              "outline": "#477d8a",
+              "on-tertiary-fixed-variant": "#003b68",
+              "tertiary-fixed": "#74b4ff",
+              "inverse-primary": "#006a71",
+              "error-dim": "#d7383b",
+              "on-tertiary-container": "#002647",
+              "tertiary-dim": "#4ca2f9",
+              "secondary-dim": "#00cdec",
+              "on-tertiary": "#00325a",
+              "on-error-container": "#ffa8a3",
+              "on-secondary": "#004955",
+              "tertiary-fixed-dim": "#52a7ff",
+              "on-tertiary-fixed": "#001931",
+              "on-surface": "#b8eefd",
+              "primary-container": "#1bb4c0",
+              "primary-fixed-dim": "#5fe1ed",
+              "on-secondary-fixed-variant": "#005967",
+              "surface-bright": "#00313a",
+              "surface-container-low": "#00161b",
+              "surface": "#001115",
+              "surface-container-highest": "#002a32",
+              "secondary-container": "#006878",
+              "error": "#ff716c",
+              "outline-variant": "#114f5b",
+              "secondary-fixed": "#59e3ff",
+              "surface-variant": "#002a32",
+              "on-primary-fixed": "#004348",
+              "surface-tint": "#6feffb",
+              "on-secondary-fixed": "#003a44",
+              "background": "#001115",
+              "error-container": "#9f0519",
+              "on-surface-variant": "#7eb3c1",
+              "on-error": "#490006",
+              "primary-fixed": "#6feffb",
+              "surface-container-lowest": "#000000",
+              "tertiary": "#74b4ff",
+              "tertiary-container": "#52a7ff",
+              "on-primary": "#00575e",
+              "on-primary-container": "#002a2e",
+              "on-background": "#b8eefd",
+              "on-primary-fixed-variant": "#006269"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #001115;
+        }
+        .glass-panel {
+            background: rgba(0, 42, 50, 0.6);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#001115]/80 backdrop-blur-lg flex items-center justify-between px-6 h-16 w-full bg-gradient-to-b from-[#001d23] to-transparent shadow-none">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest overflow-hidden border border-outline-variant/20">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close up professional male portrait avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA5sMgnTgd10_xSq0Ico0T1mA8Zt9ps7xcIyiSOpmE0xzwAdfJxvIbLIQwQjd26n0dOJBnw634R3GYMgiV80EWxPaYXvBByhSfdN0ROn_OjII8Fjj1HaenUKNBeNXM3mLq-SbBfl3hMY_VbPhdF2sukcgWXSWY82V6gNpnYrvSa2o0Wx8P-y_SDP9up4Dh98OvNIlj1cWCd3oBIf0byaJN3QPBpgm3xl5x4XTJOez6iSZMNFwfXbmmZeZxW6KC6Aj6PxfByXFY"/>
+</div>
+<span class="text-2xl font-extrabold tracking-tighter text-[#33C0CC] font-['Plus_Jakarta_Sans']">Serve</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#7eb3c1] hover:text-cyan-300 transition-colors" data-icon="notifications">notifications</button>
+</div>
+</header>
+<main class="pt-24 px-4 max-w-2xl mx-auto min-h-screen">
+<!-- Editorial Header -->
+<div class="mb-10 text-left">
+<span class="text-[10px] font-medium uppercase tracking-[0.2em] text-tertiary mb-2 block">Civic Action</span>
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Report a Problem</h1>
+<p class="text-on-surface-variant max-w-md">Document issues within your community to initiate collaborative solutions with professional oversight.</p>
+</div>
+<!-- Form Canvas -->
+<div class="space-y-6">
+<!-- Bento Section: Target Community -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-6 bg-surface-container rounded-lg group hover:bg-surface-container-high transition-all duration-300">
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Post to a Community</label>
+<div class="relative">
+<select class="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-on-surface appearance-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+<option value="infrastructure">c/infrastructure</option>
+<option value="education">c/education</option>
+<option selected="" value="sustainability">c/sustainability</option>
+<option value="health">c/health</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="p-6 bg-surface-container rounded-lg flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div>
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-1">External Link</label>
+<span class="text-sm font-semibold text-on-surface">Link to Subreddit</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[#7eb3c1] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary/40 peer-checked:after:bg-primary"></div>
+</label>
+</div>
+<p class="text-xs text-on-surface-variant mt-4 italic">Automatically mirror this report to r/local_community</p>
+</div>
+</section>
+<!-- Description Field -->
+<section class="p-6 bg-surface-container rounded-lg">
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Report Details</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-on-surface mb-4 placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Subject of your report" type="text"/>
+<textarea class="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/20 transition-all resize-none" placeholder="Describe the issue in detail..." rows="4"></textarea>
+</section>
+<!-- Contextual Tags & Impact -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Impact Level -->
+<div class="p-6 bg-surface-container rounded-lg">
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Impact Level</label>
+<div class="flex gap-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-highest text-xs font-semibold text-on-surface-variant hover:bg-surface-bright hover:text-primary transition-all">Low</button>
+<button class="flex-1 py-2 rounded-lg bg-surface-bright text-xs font-semibold text-primary border border-primary/20">Medium</button>
+<button class="flex-1 py-2 rounded-lg bg-surface-container-highest text-xs font-semibold text-on-surface-variant hover:bg-error/10 hover:text-error transition-all">High</button>
+</div>
+</div>
+<!-- Contextual Tags -->
+<div class="p-6 bg-surface-container rounded-lg">
+<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Contextual Tags</label>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-variant rounded-lg text-[10px] font-bold text-tertiary flex items-center gap-1">#URGENT</span>
+<span class="px-3 py-1 bg-surface-variant rounded-lg text-[10px] font-bold text-on-surface-variant flex items-center gap-1">#RESOURCE_WASTE <span class="material-symbols-outlined text-[12px]">close</span></span>
+<button class="px-3 py-1 bg-surface-container-highest rounded-lg text-[10px] font-bold text-primary flex items-center gap-1 hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-[12px]">add</span> ADD TAG
+                        </button>
+</div>
+</div>
+</section>
+<!-- Success Preview (Dynamic Alert) -->
+<div class="p-4 bg-primary/5 border border-primary/10 rounded-lg flex items-start gap-4">
+<span class="material-symbols-outlined text-primary mt-0.5">info</span>
+<p class="text-sm text-on-surface-variant leading-relaxed">
+<span class="font-bold text-on-surface">Preview:</span> Your report will be shared with the <span class="text-primary">c/sustainability</span> community and linked moderators.
+                </p>
+</div>
+<!-- Submit Action -->
+<div class="pt-4 pb-12">
+<button class="w-full py-4 rounded-lg bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold tracking-tight text-lg shadow-[0_8px_32px_rgba(51,192,204,0.2)] hover:scale-[1.01] active:scale-95 transition-all">
+                    Submit Report
+                </button>
+<p class="text-center text-xs text-on-surface-variant/60 mt-4">By submitting, you agree to Serve's Social Architecture Guidelines.</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg border-none bg-gradient-to-t from-[#001115] to-[#001d23] shadow-[0_-8px_32px_rgba(51,192,204,0.08)]">
+<div class="flex justify-around items-center w-full px-2 py-3">
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#33C0CC] bg-[#00313a]/40 rounded-lg py-1 px-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Report</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Solutions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>
+
+<!-- Problem Detail (Interest-Based) -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Serve - Problem Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#235c68",
+                        "secondary": "#00dcfd",
+                        "primary": "#6feffb",
+                        "primary-dim": "#5fe1ed",
+                        "surface-container": "#001d23",
+                        "inverse-surface": "#f0fbff",
+                        "on-secondary-container": "#ebfaff",
+                        "secondary-fixed-dim": "#00d6f6",
+                        "surface-dim": "#001115",
+                        "surface-container-high": "#00242a",
+                        "outline": "#477d8a",
+                        "on-tertiary-fixed-variant": "#003b68",
+                        "tertiary-fixed": "#74b4ff",
+                        "inverse-primary": "#006a71",
+                        "error-dim": "#d7383b",
+                        "on-tertiary-container": "#002647",
+                        "tertiary-dim": "#4ca2f9",
+                        "secondary-dim": "#00cdec",
+                        "on-tertiary": "#00325a",
+                        "on-error-container": "#ffa8a3",
+                        "on-secondary": "#004955",
+                        "tertiary-fixed-dim": "#52a7ff",
+                        "on-tertiary-fixed": "#001931",
+                        "on-surface": "#b8eefd",
+                        "primary-container": "#1bb4c0",
+                        "primary-fixed-dim": "#5fe1ed",
+                        "on-secondary-fixed-variant": "#005967",
+                        "surface-bright": "#00313a",
+                        "surface-container-low": "#00161b",
+                        "surface": "#001115",
+                        "surface-container-highest": "#002a32",
+                        "secondary-container": "#006878",
+                        "error": "#ff716c",
+                        "outline-variant": "#114f5b",
+                        "secondary-fixed": "#59e3ff",
+                        "surface-variant": "#002a32",
+                        "on-primary-fixed": "#004348",
+                        "surface-tint": "#6feffb",
+                        "on-secondary-fixed": "#003a44",
+                        "background": "#001115",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#7eb3c1",
+                        "on-error": "#490006",
+                        "primary-fixed": "#6feffb",
+                        "surface-container-lowest": "#000000",
+                        "tertiary": "#74b4ff",
+                        "tertiary-container": "#52a7ff",
+                        "on-primary": "#00575e",
+                        "on-primary-container": "#002a2e",
+                        "on-background": "#b8eefd",
+                        "on-primary-fixed-variant": "#006269"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #001115; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(0, 29, 35, 0.6); backdrop-filter: blur(24px); }
+        .community-banner-mask { mask-image: linear-gradient(to bottom, black 60%, transparent 100%); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#001d23]/80 backdrop-blur-lg flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-lg bg-surface-bright flex items-center justify-center overflow-hidden border border-outline-variant/20">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close up of a professional male headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCX8Dm4a0qscyJHOXZtLPhYrai_N9ey62tp1SzjShxrIJcSAF9YKfr6YxENRxE4AucnxT3eRRJIWxGUR66elAane0LwKcBeDmT_Qb0QhLHmRmeoAGTufoxb1-mDEezebmOcEXRF8Rt38L10gm0plKyfOLLYiMULIiAby5stLcTyago71SC1c_FRue2wJKOr1j6zqx_7Ek5B_a5_h1Veaoh0wvjQrgb229DcjQZgVDedRyYLqX-_4j7LAwr5uZaXIC0YjnPv1dDu"/>
+</div>
+<span class="text-2xl font-extrabold tracking-tighter text-[#33C0CC] font-headline">Serve</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-8 text-[#7eb3c1] font-medium text-sm">
+<a class="hover:text-cyan-300 transition-colors" href="#">Feed</a>
+<a class="hover:text-cyan-300 transition-colors" href="#">Search</a>
+<a class="text-[#33C0CC]" href="#">Report</a>
+<a class="hover:text-cyan-300 transition-colors" href="#">Solutions</a>
+<a class="hover:text-cyan-300 transition-colors" href="#">Profile</a>
+</nav>
+<button class="material-symbols-outlined text-[#7eb3c1] hover:text-[#33C0CC] transition-colors" data-icon="notifications">notifications</button>
+</div>
+</header>
+<main class="pt-16 pb-24 min-h-screen">
+<!-- Community Banner & Identity Section -->
+<div class="relative w-full h-64 overflow-hidden">
+<img alt="City Infrastructure" class="w-full h-full object-cover community-banner-mask opacity-40" data-alt="High angle view of a modern city at night with glowing streetlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfGELXdWLOPLIBllIrC_uEs3AJvwneCgOAvGr_mqwIxu8sFlkUHduDPZmse34FeBCPlZiDcr7OMmZpnlg-siWGLbfB--fIfhyRXJVV06qpCPo375cSosFfrueCYI_d5yQtRt3CF4aUCckyhD9weM-NbbEfUifXjZB6zeXkDjWXGCRd8va_SKV1kKmHKKTAgbMf9iVHj6ob1y3ecqfvi0oYNKu781-WbOPBQLq8Mk098Cn3Kl2pr6E8ZHGAQNRpPS6INBD-R3O4"/>
+<div class="absolute bottom-0 left-0 w-full p-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="flex items-center gap-6">
+<div class="w-20 h-20 bg-surface-container-highest rounded-lg flex items-center justify-center border border-outline-variant/30 shadow-xl">
+<span class="material-symbols-outlined text-4xl text-primary" data-icon="construction">construction</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h1 class="text-3xl font-extrabold tracking-tight text-on-surface">c/infrastructure</h1>
+<span class="px-2 py-0.5 rounded bg-tertiary/10 text-tertiary text-[10px] font-bold tracking-widest uppercase">Verified Authority</span>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant">
+<a class="flex items-center gap-1.5 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="link">link</span>
+                                r/cityplanning
+                            </a>
+<span>• 12.4k Members</span>
+<span class="text-secondary font-medium">• 142 Active Now</span>
+</div>
+</div>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold px-8 py-3 rounded-lg hover:scale-105 transition-transform shadow-lg shadow-primary/10">
+                    Join Community
+                </button>
+</div>
+</div>
+<!-- Content Grid (Intentional Asymmetry) -->
+<div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
+<!-- Left Column: Report Details (8 Columns) -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Narrative Section -->
+<div class="bg-surface-container rounded-lg p-8 border-l-4 border-primary">
+<div class="flex items-center gap-2 mb-4">
+<span class="text-xs font-bold tracking-widest uppercase text-primary bg-primary/10 px-2 py-1 rounded">High Priority</span>
+<span class="text-on-surface-variant text-sm">Reported 2 days ago in Zone 4</span>
+</div>
+<h2 class="text-4xl font-extrabold mb-6 leading-tight">Systemic Streetlight Failure: North Corridor</h2>
+<p class="text-on-surface-variant text-lg leading-relaxed mb-6">
+                        The entire 4-mile stretch of the North Corridor has experienced intermittent to total blackout over the last 14 nights. This infrastructure decay isn't limited to a single bulb; current diagnostics suggest a failure in the master grid controller or severe copper wire degradation following the recent heavy flooding.
+                    </p>
+<div class="flex gap-4">
+<div class="flex -space-x-3">
+<img alt="Voter 1" class="w-10 h-10 rounded-full border-2 border-surface-container" data-alt="Headshot of a smiling young man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCShdxUoKQ_E3Cfy1pW8SSHqylDf5qFI3nUq3_UM_IzfQ7BSf8hLraqTrtgwnP9aMUCyKT1fyu3FxDUBMYjaf8C7kbzq9yy5YtcNClLWX8yflSNN-AUwWse-5w0V-nGz7-z2P2QeeEmu32P__ouDyimZbp3kUwZ_WPYSXUtBvaeqlaLR14XaLqY6vpEz4X0lE8M9JojJ2nbfMZ0X0pUagBNgSyDJimkqNWs5nTO48p8MrCIANvl18RolJPhWkJN3j7UlabGz1hs"/>
+<img alt="Voter 2" class="w-10 h-10 rounded-full border-2 border-surface-container" data-alt="Headshot of a young woman with long hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjlYVxeG6HrdUUDdC8_ZEktARbBd3p0LEsqh66rTfEwmZmNTOm3Dp8pvbBz4oiCL7LQ4uiBL9Rpoo5yU6_SGUizrOMVPIGaSwttSntYz0sNpTU1aWIDOiNU1OPwwo7jjMi7hRyRz0GvVyhgC7IsmhjiCjlmbDRNvpLnhpwuvuonq6BD-hjB5cAmwI478vYh8VXV0FRNlIqCmkNFPZKiLh3GMMH3-YfQDi2BMWUBkxo2umaCWliP6rNza0ZQXHTJRFsVaabA5UA"/>
+<img alt="Voter 3" class="w-10 h-10 rounded-full border-2 border-surface-container" data-alt="Headshot of a man wearing glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_nT2dj_blAPg57UbzbkChm4Yn6oPe8ZzmI_g8IiVWD1oWtG0bAmz21_lm-ppZh19X0y9QQwIWB1rALfpEP53Rn6TLjgPLNHrZGDckT0RnhUty4S6Z87ko0Q-MMzHaZjL1EzZ1L_1v6CoeVvzqmKxyaEN6bxB3V29f9pBQ-OeuoBIJis3oEyFxb5xTDLRZW5UXRWs4h9TMJ9ExwCnDZlsDqvIVjnclJMUxQqOgZ3z8Kbsq2ESsLyYQDBPDbdJDs4aloSmOyVP8"/>
+<div class="w-10 h-10 rounded-full border-2 border-surface-container bg-surface-bright flex items-center justify-center text-[10px] font-bold text-primary">
+                                +890
+                            </div>
+</div>
+<div class="text-sm">
+<span class="block font-bold text-on-surface">893 Citizens Affected</span>
+<span class="text-on-surface-variant">Actively tracking this report</span>
+</div>
+</div>
+</div>
+<!-- Impact Data Visuals -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-surface-container-high rounded-lg p-6 border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<span class="label-sm font-bold tracking-widest text-on-surface-variant uppercase">Incident Intensity</span>
+<span class="material-symbols-outlined text-error" data-icon="trending_up">trending_up</span>
+</div>
+<div class="h-32 flex items-end gap-1">
+<div class="bg-surface-bright w-full rounded-t" style="height: 40%"></div>
+<div class="bg-surface-bright w-full rounded-t" style="height: 60%"></div>
+<div class="bg-surface-bright w-full rounded-t" style="height: 45%"></div>
+<div class="bg-primary w-full rounded-t" style="height: 90%"></div>
+<div class="bg-primary-container w-full rounded-t" style="height: 100%"></div>
+</div>
+<p class="text-xs text-on-surface-variant mt-4">Peak failure reported between 8 PM and 4 AM daily.</p>
+</div>
+<div class="bg-surface-container-high rounded-lg p-6 border border-outline-variant/10">
+<span class="label-sm font-bold tracking-widest text-on-surface-variant uppercase block mb-4">Safety Impact Score</span>
+<div class="flex items-center gap-4">
+<div class="relative w-24 h-24">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-bright" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-secondary" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="62.8" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-extrabold text-2xl">75%</div>
+</div>
+<div>
+<h4 class="font-bold text-error">High Risk</h4>
+<p class="text-sm text-on-surface-variant">Reported increase in local accidents and pedestrian anxiety.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Proposed Solutions Section -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="lightbulb">lightbulb</span>
+                            Proposed Solutions
+                        </h3>
+<button class="text-sm font-bold text-primary hover:underline">Post a Solution</button>
+</div>
+<!-- Solution Card 1 (Business Proposal) -->
+<div class="bg-surface-container-highest rounded-lg p-6 border border-outline-variant/20 shadow-lg">
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-white rounded-lg p-1.5 flex items-center justify-center">
+<img alt="Lumina Tech Logo" class="w-full h-full object-contain" data-alt="Abstract modern logo of a technology company" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8YNi0COCFYYQua3vaNp5uYeq0iUKhifn_vzTHRSOiN6WNELZgc8TTNLpC_0ecv_486SE5hch_wkLQB8hrxSCakYwkg42nTOAKEJ6DV6Xlm0GzBZkTDbOpyewV3CA14vREH-bS6vQQjmgWraOBYm5ggF8z7Ymx5ElKS_s6cJ597JaTF9TueIf_mbHvxG3lo0gtvIyN8fZwfuwrsyneJD1JSOHqLUl3NHT_JVlwSe4KgWbMzv7W2W2ciqcdL2VEic_KoV3oIO9l"/>
+</div>
+<div>
+<h4 class="font-bold text-lg">Lumina Tech Solutions</h4>
+<div class="flex items-center gap-2">
+<span class="text-xs px-2 py-0.5 rounded bg-secondary/10 text-secondary font-bold tracking-tighter">Gold Partner</span>
+<span class="text-xs text-on-surface-variant">Response Time: 24h</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<span class="block text-2xl font-bold text-primary">$12,400</span>
+<span class="text-xs text-on-surface-variant uppercase tracking-widest">Est. Implementation</span>
+</div>
+</div>
+<h5 class="font-bold text-on-surface mb-3">Modular LED Controller Retrofit</h5>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">
+                            We propose replacing the existing analog grid hubs with our IoT-enabled Zenith Controllers. These units allow for remote monitoring and prevent total grid blackout by isolating individual circuit failures.
+                        </p>
+<div class="flex items-center justify-between">
+<div class="flex gap-4">
+<button class="flex items-center gap-2 text-sm font-bold text-on-surface-variant bg-surface-bright px-4 py-2 rounded hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="thumb_up">thumb_up</span>
+                                    24
+                                </button>
+<button class="flex items-center gap-2 text-sm font-bold text-on-surface-variant bg-surface-bright px-4 py-2 rounded hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chat">chat</span>
+                                    8
+                                </button>
+</div>
+<button class="text-sm font-extrabold text-on-primary bg-primary px-6 py-2 rounded-lg">View Technical Brief</button>
+</div>
+</div>
+<!-- Solution Card 2 -->
+<div class="bg-surface-container-high rounded-lg p-6 border border-outline-variant/10 opacity-80">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-surface-bright rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="business">business</span>
+</div>
+<div>
+<h4 class="font-bold text-base">City Grid Co.</h4>
+<span class="text-xs text-on-surface-variant">Official Utility Provider</span>
+</div>
+</div>
+<span class="text-xs text-on-surface-variant italic">Reviewing Internal Logs...</span>
+</div>
+<p class="text-sm text-on-surface-variant italic">"We are currently investigating the copper wire theft reports in this sector. A proposal for reinforced conduits will be posted shortly."</p>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar (4 Columns) -->
+<aside class="lg:col-span-4 space-y-8">
+<!-- Location Mini-Map -->
+<div class="bg-surface-container-high rounded-lg overflow-hidden border border-outline-variant/10">
+<div class="p-4 border-b border-outline-variant/10 flex justify-between items-center">
+<span class="text-xs font-bold tracking-widest uppercase text-on-surface-variant">Affected Area</span>
+<span class="text-xs text-primary font-bold">Live Updates</span>
+</div>
+<div class="h-48 relative">
+<img alt="Map" class="w-full h-full object-cover" data-alt="Satellite map view of a suburban neighborhood grid" data-location="Chicago" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw4l_ui8L0x9CSWhWi7U0wwegBJhoTPhLk9GXlWKW2GOgvlo6RzDPr0N4-z2r7UCJp2cKbscvyA1w4sj0xL3bH-D_d9qazbaRn4p2df2G0W1iTEsow-oZPTEIalj0iFTX-TYvSWsmjv-kwDOEzXYfydKMj_TW5vUi1cZ_3I_i5MOB4GD1zswMurw95d_Uz042LA6HGWChwO_LjXZvLtU4Ye9C8deEz3oZ-PpFRTBmHZAZ5JElkTUYSHuc8NQbVfHw3RyvPu45s"/>
+<div class="absolute inset-0 bg-primary/10 pointer-events-none"></div>
+<!-- Hotspot Indicators -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<div class="w-8 h-8 bg-primary/40 rounded-full animate-pulse flex items-center justify-center">
+<div class="w-3 h-3 bg-primary rounded-full shadow-lg shadow-primary"></div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-highest">
+<div class="flex items-center gap-3 text-sm mb-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="location_on">location_on</span>
+<span class="text-on-surface">North Corridor, Districts 4-7</span>
+</div>
+<div class="text-xs text-on-surface-variant">Last blackout detected: 1h 22m ago</div>
+</div>
+</div>
+<!-- Community Milestones -->
+<div class="bg-surface-container rounded-lg p-6 border border-outline-variant/10">
+<h4 class="label-sm font-bold tracking-widest uppercase text-on-surface-variant mb-6">Action Progress</h4>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="relative flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-primary text-sm" data-icon="check">check</span>
+</div>
+<div class="w-0.5 h-full bg-primary/30 absolute top-8"></div>
+</div>
+<div class="pb-6">
+<span class="block font-bold text-on-surface">Report Verified</span>
+<span class="text-xs text-on-surface-variant">By 50+ local residents</span>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="relative flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-primary text-sm" data-icon="campaign">campaign</span>
+</div>
+<div class="w-0.5 h-full bg-primary/30 absolute top-8"></div>
+</div>
+<div class="pb-6">
+<span class="block font-bold text-on-surface">Escalated to Council</span>
+<span class="text-xs text-on-surface-variant">Official case #9822-NW</span>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="relative flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface-bright border border-outline-variant flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="pending">pending</span>
+</div>
+</div>
+<div>
+<span class="block font-bold text-on-surface-variant">Awaiting Solution Pick</span>
+<span class="text-xs text-on-surface-variant">Deadline in 5 days</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Mod Badges -->
+<div class="bg-surface-container rounded-lg p-6 border border-outline-variant/10">
+<h4 class="label-sm font-bold tracking-widest uppercase text-on-surface-variant mb-4">Community Advocates</h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface-container-high rounded border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-tertiary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="verified">verified</span>
+</div>
+<span class="text-sm font-medium">Urban_Jane</span>
+</div>
+<span class="text-[10px] bg-surface-bright px-2 py-0.5 rounded text-on-surface-variant uppercase font-bold">Councilor</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-high rounded border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="engineering">engineering</span>
+</div>
+<span class="text-sm font-medium">VoltMaster</span>
+</div>
+<span class="text-[10px] bg-surface-bright px-2 py-0.5 rounded text-on-surface-variant uppercase font-bold">Engineer</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg bg-[#001d23]/90 backdrop-blur-2xl border-none bg-gradient-to-t from-[#001115] to-[#001d23] shadow-[0_-8px_32px_rgba(51,192,204,0.08)] md:hidden">
+<div class="flex justify-around items-center w-full px-2 py-3">
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#33C0CC] bg-[#00313a]/40 rounded-lg py-1 px-3" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Report</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Solutions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#7eb3c1] py-1 px-3 hover:bg-[#00313a] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

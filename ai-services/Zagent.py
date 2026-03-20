@@ -59,12 +59,13 @@ class ZAgent(BaseAgent):
         super().__init__(agent_p=agent_p)
 
     def _get_sysprompt(self, ctx: RunContext[ZDeps]) -> str:
+        votes_formatted = '\n'.join([f'competition: {v.competition}\n promblem: {v.problems}' for v in ctx.deps.votes])        
         template = f'''
             # SYSTEM PROMPT: AGENT Z
             Focus: The 'Z' variable (The Current Alternatives).
             
             ## INPUT
-            {ctx.deps.votes}
+            {votes_formatted}
             
             ## YOUR TASK
             1. Identify the "incumbent" solutions. This includes big brands, but also "DIY" fixes (e.g., "people just stop buying salads and cook at home").
