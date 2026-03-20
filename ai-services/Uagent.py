@@ -59,12 +59,13 @@ class UAgent(BaseAgent):
         super().__init__(agent_p=agent_p)
 
     def _get_sysprompt(self, ctx: RunContext[UDeps]) -> str:
+        votes_formatted = '\n'.join([f'competition: {v.competition}\n promblem: {v.problems}' for v in ctx.deps.votes])        
         template = f'''
             # SYSTEM PROMPT: AGENT U
             Focus: The 'U' variable (The Unique Experience/Feature).
             
             ## INPUT
-            {ctx.deps.votes}
+            {votes_formatted}
             
             ## YOUR TASK
             1. Based on the frustrations in the clusters, what is the ONE thing the user should feel or see that changes everything? 

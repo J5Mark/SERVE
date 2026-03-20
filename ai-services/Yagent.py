@@ -59,12 +59,13 @@ class YAgent(BaseAgent):
         super().__init__(agent_p=agent_p)
 
     def _get_sysprompt(self, ctx: RunContext[YDeps]) -> str:
+        votes_formatted = '\n'.join([f'competition: {v.competition}\n promblem: {v.problems}' for v in ctx.deps.votes])        
         template = f"""
             # SYSTEM PROMPT: AGENT Y
             Focus: The 'Y' variable (The Pain Point).
 
             ## INPUT
-            {ctx.deps.votes}
+            {votes_formatted}
 
             ## YOUR TASK
             1. Extract the underlying friction from the clusters. Is it a loss of time, money, status, or comfort?

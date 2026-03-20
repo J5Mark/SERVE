@@ -8,7 +8,7 @@ from uuid import uuid4
 from utils import *
 from postgres_conn import *
 from authx import AuthX, AuthXConfig, TokenPayload
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import with_loader_criteria
 
 
 JWT_SECRET_KEY = os.getenv("AI_JWT_SECRET_KEY", "zxcvbnmasdfg")
@@ -95,28 +95,42 @@ async def get_post_for_task(
     if not req:
         raise HTTPException(status_code=404, detail='Analysis request not found')
 
-    result = await db.execute(
+    stmt_post = (
         select(Post)
-        .join(Post.votes)
+        .where(Post.id == req.post_id)
         .options(
-            contains_eager(Post.votes),
-            defer(Post.embedding),
+            defer(Post.embedding), 
             defer(Post.search_vector)
         )
+    )
+    result_post = await db.execute(stmt_post)
+    post_obj = result_post.scalar_one_or_none()
+    
+    if not post_obj:
+        raise HTTPException(status_code=404, detail='Post not found')
+    
+    stmt_votes = (
+        select(Vote)
         .where(
-            Post.id == req.post_id,
-            Post.votes.any(
-                (Vote.competition.is_not(None)) &
-                (Vote.problems.is_not(None))
-            )
+            Vote.post_id == post_obj.id,
+            Vote.competition.is_not(None),
+            Vote.problems.is_not(None)
         )
     )
-    post = result.unique().scalars().first()
+    result_votes = await db.execute(stmt_votes)
+    votes_list = result_votes.scalars().all()
+    
+    for v in votes_list:
+        v.embedding = v.embedding.tolist()
+    
+    final_post = PostForAnalysis(
+        id       =  post_obj.id       ,
+        name     =  post_obj.name     ,
+        contents =  post_obj.contents ,
+        votes    =  votes_list        ,
+    )
 
-    if not post:
-        raise HTTPException(status_code=404, detail='Post not found')
-
-    return post
+    return final_post
     
 
 @router.post('/submit_analysis')

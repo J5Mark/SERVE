@@ -62,6 +62,8 @@ class ScrutinizerAgent(BaseAgent):
         super().__init__(agent_p=agent_p)
 
     def _get_sysprompt(self, ctx: RunContext[ScrutinizerDeps]) -> str:
+        votes_formatted = '\n'.join([f'competition: {v.competition}\n promblem: {v.problems}' for v in ctx.deps.votes])        
+        
         template = f''''
             Role: Senior Market Skeptic & Reality Auditor.
             Objective: You are the "Voice of the Customer" and the "Voice of the Wallet." Your job is to aggressively challenge the analyst's conclusion by comparing it against the raw user data and cold market facts. You must detect "AI-optimism," "corporate buzzwords," and "logical leaps."
@@ -106,7 +108,7 @@ class ScrutinizerAgent(BaseAgent):
                 Critique: "Excel isn't losing because it lacks 'visualization'—it's winning because it's free and everyone knows how to use it."
 
             User voices:
-            {ctx.deps.votes}
+            {votes_formatted}
 
             Previous agent analysis:
             {ctx.deps.prev}

@@ -18,6 +18,7 @@ async def get_post_analysis(post_data: dict, full_analysis: bool = True) -> dict
     Always returns clustered votes. If full_analysis=True, also runs the agentic
     workflow with critic validation loops.
     """
+    logger.warning(post_data)
     post = Post.model_validate(post_data, from_attributes=True)
     clusters = get_vote_clusters(votes=post.votes)
 
