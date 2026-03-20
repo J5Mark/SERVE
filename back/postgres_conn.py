@@ -60,36 +60,38 @@ class ParticipantsLink(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint('community_id', 'user_id', name='uq_participant'),    
     )
+    id: int | None = Field(default=None, sa_type=BigInteger, primary_key=True)
     
     community_id: int = Field(
         sa_column=Column(
             BigInteger,
             ForeignKey("communities.id", ondelete="CASCADE"),
-            primary_key=True
         )
     )
     user_id: int = Field(
         sa_column=Column(
             BigInteger,
-            ForeignKey("users.id", ondelete="CASCADE"),
-            primary_key=True
+            ForeignKey('users.id', ondelete='CASCADE'),
         )
     )
 
 
 class BusinessOperationsLink(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint('community_id', 'business_id', name='uq_operationslink'),
+    )
+    id: int | None = Field(default=None, sa_type=BigInteger, primary_key=True)
+    
     community_id: int = Field(
         sa_column=Column(
             BigInteger,
             ForeignKey("communities.id", ondelete="CASCADE"),
-            primary_key=True
         )
     )
     business_id: int = Field(
         sa_column=Column(
             BigInteger,
             ForeignKey("businesses.id", ondelete="CASCADE"),
-            primary_key=True
         )
     )
 
@@ -496,12 +498,12 @@ class PostAnalysisRequest(SQLModel, table=True):
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
     processing: bool = Field(default=False)
+    full_analysis: bool = Field(default=True)
 
     user_id: int = Field(
         sa_column=Column(
             BigInteger,
             ForeignKey('users.id', ondelete='CASCADE'),
-            unique=True
         )
     )
 
@@ -531,16 +533,28 @@ class PostAnalysis(SQLModel, table=True):
         sa_column=Column(
             BigInteger,
             ForeignKey('users.id', ondelete='CASCADE'),
-            unique=True
         )
     )
 
-    Y: str
-    Z: str
-    U: str
-    additional: str
+    post_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('posts.id', ondelete='CASCADE'),
+        )
+    )
 
-    started_working: datetime
+    Y: str | None = None
+    Z: str | None = None
+    U: str | None = None
+    additional: str | None = None
+
+    started_working: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=func.now(),
+            nullable=False
+        )
+    )
 
     created_at: datetime = Field(
         sa_column=Column(

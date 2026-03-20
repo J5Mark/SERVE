@@ -21,11 +21,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   String? _error;
   List<dynamic> _contacts = [];
   bool _isLoadingContacts = false;
+  bool _isAnalyzing = false;
+  String _analysisStatus = 'not_requested';
 
   @override
   void initState() {
     super.initState();
     _loadPost();
+    _checkAnalysisStatus();
   }
 
   Future<void> _loadPost() async {
@@ -81,6 +84,128 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         });
       }
     }
+  }
+
+  Future<void> _checkAnalysisStatus() async {
+    try {
+      final status = await Api.getAnalysisStatus(widget.postId);
+      if (mounted) {
+        setState(() {
+          _analysisStatus = status['status'] ?? 'not_requested';
+        });
+      }
+    } catch (e) {
+      // Silently fail - analysis might not be requested yet
+    }
+  }
+
+  Future<void> _requestAnalysis(bool fullAnalysis) async {
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      await Api.requestAnalysis(widget.postId, fullAnalysis: fullAnalysis);
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _analysisStatus = 'pending';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              fullAnalysis
+                  ? 'Full analysis requested'
+                  : 'Quick analysis requested',
+            ),
+            backgroundColor: AppColors.brightGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to request analysis: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAnalysisTypeSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.primaryBlack,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.grey,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Request Analysis',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.bolt, color: AppColors.yellowAccent),
+              title: const Text(
+                'Quick Analysis',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Clustered votes only (faster)',
+                style: TextStyle(color: AppColors.grey),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _requestAnalysis(false);
+              },
+            ),
+            const Divider(color: AppColors.grey),
+            ListTile(
+              leading: const Icon(
+                Icons.analytics,
+                color: AppColors.brightGreen,
+              ),
+              title: const Text(
+                'Full Analysis',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Y/Z/U extraction with AI (slower)',
+                style: TextStyle(color: AppColors.grey),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _requestAnalysis(true);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showContactsSheet() {
@@ -228,11 +353,51 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               ),
             )
           : _buildContent(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showContactsSheet,
-        backgroundColor: AppColors.brightGreen,
-        icon: const Icon(Icons.people),
-        label: const Text('Get Contacts'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_analysisStatus == 'pending')
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FloatingActionButton.small(
+                heroTag: 'analysis_status',
+                onPressed: null,
+                backgroundColor: AppColors.yellowAccent,
+                child: const Icon(Icons.hourglass_empty, color: Colors.black),
+              ),
+            ),
+          if (_isAnalyzing)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FloatingActionButton.small(
+                heroTag: 'analyzing',
+                onPressed: null,
+                backgroundColor: AppColors.yellowAccent,
+                child: const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+          FloatingActionButton.extended(
+            heroTag: 'contacts',
+            onPressed: _showContactsSheet,
+            backgroundColor: AppColors.brightGreen,
+            icon: const Icon(Icons.people),
+            label: const Text('Get Contacts'),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            heroTag: 'analyze',
+            onPressed: _isAnalyzing ? null : _showAnalysisTypeSheet,
+            backgroundColor: AppColors.yellowAccent,
+            child: const Icon(Icons.analytics, color: Colors.black),
+          ),
+        ],
       ),
     );
   }

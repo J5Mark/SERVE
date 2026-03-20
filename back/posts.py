@@ -13,7 +13,7 @@ from schemas import *
 from typing import Optional
 from uuid import uuid4
 from utils import *
-from postgres_conn import User, UserAuth, get_db, Community, Post
+from postgres_conn import User, UserAuth, get_db, Community, Post, PostAnalysis, PostAnalysisRequest
 
 router = APIRouter(prefix='/api/post', tags=['posts'])
 
@@ -202,3 +202,44 @@ async def get_community_posts(
             posts = []
 
     return posts
+
+
+@router.post('/analyze/{post_id}')
+async def request_analysis_ep(
+    post_id: int,
+    full_analysis: bool = True,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    await request_analysis(post_id, user_id, full_analysis, db)
+    await db.commit()
+    return {'status': 'requested', 'post_id': post_id}
+
+
+@router.get('/analysis/{post_id}')
+async def get_analysis_ep(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await get_post_analysis(post_id, db)
+    return result
+
+
+@router.get('/analysis_status/{post_id}')
+async def get_analysis_status_ep(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await get_analysis_status(post_id, db)
+    return result
+
+
+@router.get('/analyses/my/{n}/{offset}')
+async def list_analyses_ep(
+    n: int,
+    offset: int,
+    user_id: int = Depends(get_user_id_from_token),
+    db: AsyncSession = Depends(get_db),
+):
+    analyses = await list_analyses(n, offset, user_id, db) # TODO
+    return analyses

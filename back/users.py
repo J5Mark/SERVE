@@ -28,7 +28,7 @@ def generate_username() -> str:
 
 @router.post('/register')
 async def register(
-    req: SimpleRegisterRequest,
+    req: RegisterRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """Registration - creates a user profile"""
@@ -47,10 +47,11 @@ async def register(
         username = generate_username()
     
     user = User(
-        username=username,
-        first_name=req.first_name or "User",
-        last_name=req.last_name,
-        email=req.email,
+        username   = username                 ,
+        first_name = req.first_name or "User" ,
+        last_name  = req.last_name            ,
+        email      = req.email                ,
+        entrep     = req.entrep               ,
     )
     db.add(user)
     await db.flush()

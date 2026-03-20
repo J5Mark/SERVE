@@ -759,4 +759,56 @@ class Api {
     final data = jsonDecode(res.body);
     return data;
   }
+
+  static Future<Map<String, dynamic>> requestAnalysis(
+    int postId, {
+    bool fullAnalysis = true,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/post/analyze/$postId?full_analysis=$fullAnalysis'),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> getAnalysis(int postId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/post/analysis/$postId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> getAnalysisStatus(int postId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/post/analysis_status/$postId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    return _handleResponse(res);
+  }
+
+  static Future<List<dynamic>> getMyAnalyses(int n, int offset) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/post/analyses/my/$n/$offset'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    final response = jsonDecode(res.body);
+    if (response is List) return response;
+    return [];
+  }
 }
