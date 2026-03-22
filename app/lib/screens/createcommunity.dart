@@ -96,9 +96,9 @@ Looking forward to seeing you there!
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkGreen,
+        backgroundColor: AppColors.surfaceContainer,
         shape: const RoundedRectangleBorder(
-          side: BorderSide(color: AppColors.grey),
+          side: BorderSide(color: AppColors.onSurfaceVariant),
         ),
         title: const Text(
           'Community Created!',
@@ -125,9 +125,9 @@ Looking forward to seeing you there!
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
-                color: AppColors.primaryBlack,
+                color: AppColors.surface,
                 border: Border(
-                  left: BorderSide(color: AppColors.brightGreen, width: 3),
+                  left: BorderSide(color: AppColors.primary, width: 3),
                 ),
               ),
               child: SelectableText(
@@ -141,11 +141,11 @@ Looking forward to seeing you there!
             const SizedBox(height: 16),
             Row(
               children: [
-                const Text('Reddit: ', style: TextStyle(color: AppColors.grey)),
+                const Text('Reddit: ', style: TextStyle(color: AppColors.onSurfaceVariant)),
                 Text(
                   redditLink,
                   style: const TextStyle(
-                    color: AppColors.brightGreen,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -159,7 +159,7 @@ Looking forward to seeing you there!
               Navigator.of(context).pop();
               context.pop();
             },
-            child: const Text('Skip', style: TextStyle(color: AppColors.grey)),
+            child: const Text('Skip', style: TextStyle(color: AppColors.onSurfaceVariant)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -167,7 +167,7 @@ Looking forward to seeing you there!
               context.pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brightGreen,
+              backgroundColor: AppColors.primary,
             ),
             child: const Text('Done'),
           ),
@@ -239,7 +239,7 @@ Looking forward to seeing you there!
               ElevatedButton(
                 onPressed: _isLoading ? null : _createCommunity,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brightGreen,
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isLoading

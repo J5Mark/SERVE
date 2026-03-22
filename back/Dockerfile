@@ -12,7 +12,9 @@ COPY pyproject.toml uv.lock* ./
 RUN uv pip install --system .
 
 COPY . /app
+COPY alembic.ini /app/
+RUN chmod +x /app/entrypoint.sh
 
 ENV PYTHONBUFFERED=1
-EXPOSE 3000
-CMD ["python", "-m", "main"]
+EXPOSE 1000
+ENTRYPOINT ["/app/entrypoint.sh"]

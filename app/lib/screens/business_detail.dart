@@ -81,7 +81,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Business updated'),
-            backgroundColor: AppColors.brightGreen,
+            backgroundColor: AppColors.primary,
           ),
         );
       }
@@ -117,12 +117,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
             ListTile(
               leading: const Icon(
                 Icons.visibility,
-                color: AppColors.brightGreen,
+                color: AppColors.primary,
               ),
               title: const Text('Seen', style: TextStyle(color: Colors.white)),
               subtitle: const Text(
                 'I have seen this business work',
-                style: TextStyle(color: AppColors.grey),
+                style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               onTap: () => _verify('seen'),
             ),
@@ -134,7 +134,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
               title: const Text('Used', style: TextStyle(color: Colors.white)),
               subtitle: const Text(
                 'I have used their services',
-                style: TextStyle(color: AppColors.grey),
+                style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               onTap: () => _verify('use'),
             ),
@@ -146,7 +146,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
               ),
               subtitle: const Text(
                 'I am willing to cooperate',
-                style: TextStyle(color: AppColors.grey),
+                style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               onTap: () => _verify('coop'),
             ),
@@ -165,7 +165,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Business verified'),
-            backgroundColor: AppColors.brightGreen,
+            backgroundColor: AppColors.primary,
           ),
         );
         _loadBusiness();
@@ -265,7 +265,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                       controller: _bioController,
                       decoration: const InputDecoration(
                         labelText: 'Bio',
-                        labelStyle: TextStyle(color: AppColors.grey),
+                        labelStyle: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                       style: const TextStyle(color: Colors.white),
                       maxLines: 3,
@@ -306,9 +306,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                       controller: _contGoalController,
                       decoration: const InputDecoration(
                         labelText: 'Contact Goal',
-                        labelStyle: TextStyle(color: AppColors.grey),
+                        labelStyle: TextStyle(color: AppColors.onSurfaceVariant),
                         hintText: 'What kind of connections do you want?',
-                        hintStyle: TextStyle(color: AppColors.grey),
+                        hintStyle: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                       style: const TextStyle(color: Colors.white),
                     ),
@@ -317,9 +317,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                       value: _reactionTimeDays,
                       decoration: const InputDecoration(
                         labelText: 'Response Time',
-                        labelStyle: TextStyle(color: AppColors.grey),
+                        labelStyle: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
-                      dropdownColor: AppColors.darkGreen,
+                      dropdownColor: AppColors.surfaceContainer,
                       style: const TextStyle(color: Colors.white),
                       items: List.generate(14, (i) => i + 1)
                           .map(
@@ -360,7 +360,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                           const Icon(
                             Icons.timer,
                             size: 16,
-                            color: AppColors.brightGreen,
+                            color: AppColors.primary,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -375,7 +375,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                         business['reaction_time'] == null)
                       Text(
                         'No contact preferences set',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                   ],
                 ],
@@ -401,7 +401,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                   if (_isEditing) ...[
                     Text(
                       'Select communities:',
-                      style: TextStyle(color: AppColors.grey),
+                      style: TextStyle(color: AppColors.onSurfaceVariant),
                     ),
                     const SizedBox(height: 8),
                     FutureBuilder(
@@ -437,7 +437,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                       }
                                     });
                                   },
-                                  activeColor: AppColors.brightGreen,
+                                  activeColor: AppColors.primary,
                                 ),
                               )
                               .toList(),
@@ -457,7 +457,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                   'Community $id',
                                   style: const TextStyle(color: Colors.white),
                                 ),
-                                backgroundColor: AppColors.darkGreen,
+                                backgroundColor: AppColors.surfaceContainer,
                               ),
                             )
                             .toList(),
@@ -465,7 +465,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                     else
                       Text(
                         'No communities',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                   ],
                 ],

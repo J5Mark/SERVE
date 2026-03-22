@@ -146,8 +146,6 @@ async def submit_analysis(
     )
     await db.commit()
 
-    q.task_done()
-
     return {'status': 'accepted'}
 
 

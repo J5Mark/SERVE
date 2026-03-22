@@ -2,7 +2,7 @@ from baseagent import AgentParams, BaseAgent
 from os import environ as env
 from pydantic import BaseModel, Field
 from pydantic_ai.providers.openai import OpenAIProvider
-# from pydantic_ai.providers.mistral import MistralProvider
+from pydantic_ai.providers.mistral import MistralProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai import RunContext
 from typing import List, Optional
@@ -11,13 +11,14 @@ from pydantic_ai.settings import ModelSettings
 
 
 class YDeps(BaseModel):
+    post: str
     votes: List
     critique: str | None = None
 
 
 class YOut(BaseModel):
     Y: str
-    reason: str
+    reason: str = Field(description='Short and concise reasoning')
 
 
 scrutinizer_provider = None
@@ -32,9 +33,9 @@ match PROVIDER:
     case 'openai':
         Y_provider = OpenAIProvider(base_url=LLM_PROVIDER_BASE_URL)
 
-    # case 'mistral':
-    #     api_key = env.get('LLM_API_KEY')
-    #     Y_provider = MistralProvider(api_key=api_key)
+    case 'mistral':
+        api_key = env.get('LLM_API_KEY')
+        Y_provider = MistralProvider(api_key=api_key)
 
     case _:
         raise ValueError(f'Unsupported LLM provider')
@@ -47,7 +48,7 @@ class YAgent(BaseAgent):
             deps_type      = YDeps                 ,
             out_type       = YOut                  ,
             model_provider = Y_provider            ,
-            mcp_servers    = [MCPServerStdio(command='uvx', args=['duckduckgo-mcp-server'])],
+            # mcp_servers    = [MCPServerStdio(command='uvx', args=['duckduckgo-mcp-server'])],
             toolset        = [],
             model_settings = ModelSettings(
                 extra_body = {
@@ -65,17 +66,47 @@ class YAgent(BaseAgent):
             Focus: The 'Y' variable (The Pain Point).
 
             ## INPUT
+            ### POST CONTENTS:
+            {ctx.deps.post}
+
+            ### VOTES UNDER POST:
             {votes_formatted}
 
-            ## YOUR TASK
-            1. Extract the underlying friction from the clusters. Is it a loss of time, money, status, or comfort?
-            2. Search the web to see if this "Pain" is a documented market trend or a niche complaint.
-            3. Define "Y" as a clear, high-stakes problem statement.
+            ## HARD RULES (STRICT)
+            1. DO NOT invent new problems.
+            2. DO NOT use metaphors, buzzwords, or abstract labels (e.g. "fragmentation tax", "paradigm shift").
+            3. USE wording from users whenever possible.
+            4. If multiple problems exist — pick ONLY ONE dominant problem.
+            5. The problem must be concrete and observable in user behavior.
             
-            ## EXAMPLE (Few-Shot)
-            *User Voice:* "I'm tired of ordering 'healthy' salads that arrive soggy and warm after 40 minutes."
-            *Search:* "Food delivery quality complaints 2024," "Salad shelf-life in transport," "Customer retention for healthy delivery."
-            *Analysis:* The 'Y' isn't just "soggy salad"—it is the "Unreliability of fresh-food delivery," where the health benefit is negated by poor texture/temperature.
+            ## SELECTION LOGIC
+            1. Identify repeated or very similar complaints.
+            2. Prefer:
+               - highest frequency
+               - strongest frustration (clear negative emotion, inconvenience, or loss)
+            3. Ignore weak, vague, or one-off signals.
+            
+            ## TASK
+            
+            ### Step 1 — Extract candidate pains
+            List 3–5 short pain statements directly based on user text.
+            
+            ### Step 2 — Select dominant pain
+            Pick ONE pain that best represents the cluster.
+            
+            ### Step 3 — Define Y
+            Rewrite it into a clear, simple problem statement:
+            - one sentence
+            - no abstraction
+            - no invented terminology
+            - must describe what the user struggles to do
+            
+            ### Step 4 — Classify loss
+            Mark the primary loss:
+            - time / money / status / comfort
+
+            ## YOUR OUTPUT
+            {YOut(Y='your hypiothesis', reason='your reasoning').model_dump_json()}
         """
         return template
 

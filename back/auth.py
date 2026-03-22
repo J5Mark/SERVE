@@ -206,19 +206,78 @@ async def login(req: AuthRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
+async def revoke_all_user_refresh_tokens(user_id: str, db: AsyncSession):
+    try:
+        await db.execute(
+            update(models.RefreshToken)
+            .where(models.RefreshToken.user_id == user_id)
+            .values(is_revoked=True)
+        )
+        await db.commit()
+        logger.warning(f"All refresh tokens revoked for user {user_id} due to token reuse attempt")
+    except SQLAlchemyError as e:
+        await db.rollback()
+        logger.error(f"Failed to revoke all tokens for user {user_id}: {e}")
+        raise
+
+
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(req: RefreshRequest):
+async def refresh(
+    req: RefreshRequest,
+    db: AsyncSession = Depends(get_db),
+):
     try:
         payload = auth.token_decode(req.refresh_token)
         user_id = payload.get("sub")
+        token_jti = payload.get("jti")  # уникальный идентификатор токена
 
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+        if not user_id or not token_jti:
+            raise HTTPException(401, "Invalid token payload")
 
-        access_token = auth.create_access_token(uid=user_id)
-        refresh_token = auth.create_refresh_token(uid=user_id)
+        # 2. Ищем текущий refresh token в базе
+        result = await db.execute(
+            select(models.RefreshToken)
+            .where(
+                models.RefreshToken.jti == token_jti,
+                models.RefreshToken.user_id == user_id
+            )
+        )
+        db_token = result.scalars().first()
 
-        return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+        # 3. Проверяем существование и состояние
+        if not db_token:
+            # Токен не найден → возможно украден или подделан
+            await revoke_all_user_refresh_tokens(user_id, db)
+            raise HTTPException(401, "Invalid refresh token")
+
+        if db_token.is_revoked:
+            # Reuse попытка → компрометация → отзываем ВСЕ токены пользователя
+            await revoke_all_user_refresh_tokens(user_id, db)
+            raise HTTPException(401, "Token reuse detected — session terminated")
+
+        # 4. Помечаем текущий токен как использованный (ротация)
+        db_token.is_revoked = True
+
+        # 5. Генерируем новую пару токенов
+        new_access_token = auth.create_access_token(uid=user_id)
+        new_refresh_token = auth.create_refresh_token(uid=user_id)
+
+        # 6. Сохраняем новый refresh token
+        new_db_token = models.RefreshToken(
+            jti=auth.get_jti(new_refresh_token),  # если у тебя есть такая функция
+            token=new_refresh_token,              # или хранишь хэш — лучше хэш
+            user_id=user_id,
+            expires_at=auth.get_refresh_expires_at(),  # опционально
+            is_revoked=False
+        )
+        db.add(new_db_token)
+
+        await db.commit()
+
+        return schemas.TokenResponse(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token
+        )
     except Exception as e:
         logging.error(f"Refresh token error: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")

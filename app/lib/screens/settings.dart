@@ -43,14 +43,14 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkGreen,
+        backgroundColor: AppColors.surfaceContainer,
         title: const Text(
           'Delete Profile',
           style: TextStyle(color: Colors.white),
         ),
         content: const Text(
           'Are you sure you want to delete your profile? This action cannot be undone.',
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
         actions: [
           TextButton(

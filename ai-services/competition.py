@@ -24,11 +24,9 @@ async def get_post_analysis(post_data: dict, full_analysis: bool = True) -> dict
 
     all_votes = [v for cluster_votes in clusters.values() for v in cluster_votes]
 
-    result = {
-        "clusters": clusters,
-        "vote_count": len(post.votes),
-        "cluster_count": len(clusters),
-    }
+    result = {}
+
+    logger.warning(full_analysis)
 
     if not full_analysis:
         logger.info("Returning clustered votes only (full_analysis=False)")
@@ -38,18 +36,25 @@ async def get_post_analysis(post_data: dict, full_analysis: bool = True) -> dict
         f"Running full analysis on {len(all_votes)} votes across {len(clusters)} clusters"
     )
 
-    y_result = await _run_agent_with_critique(all_votes, get_Y, "Y", YOut)
-    z_result = await _run_agent_with_critique(all_votes, get_Z, "Z", ZOut)
-    u_result = await _run_agent_with_critique(all_votes, get_U, "U", UOut)
+    post_contents = f'{post.name} \n\n{post.contents}'
+
+    y_result = await _run_agent_with_critique(post_contents, all_votes, get_Y, "Y", YOut)
+    z_result = await _run_agent_with_critique(post_contents, all_votes, get_Z, "Z", ZOut)
+    u_result = await _run_agent_with_critique(post_contents, all_votes, get_U, "U", UOut)
 
     result.update(
         {
             "Y": y_result["analysis"],
-            "Y_reason": y_result["reason"],
+            # "Y_reason": y_result["reason"],
             "Z": z_result["analysis"],
-            "Z_reason": z_result["reason"],
+            # "Z_reason": z_result["reason"],
             "U": u_result["analysis"],
-            "U_reason": u_result["reason"],
+            # "U_reason": u_result["reason"],
+            "additional": '\n\n'.join([
+                                          y_result['reason'],
+                                          z_result['reason'],
+                                          u_result['reason'],
+                                      ])
         }
     )
 
@@ -57,7 +62,7 @@ async def get_post_analysis(post_data: dict, full_analysis: bool = True) -> dict
 
 
 async def _run_agent_with_critique(
-    votes: list, agent_fn, letter: str, out_type, max_retries: int = MAX_CRITIC_RETRIES
+    post: str, votes: list, agent_fn, letter: str, out_type, max_retries: int = MAX_CRITIC_RETRIES
 ) -> dict:
     """
     Run an agent (Y, Z, or U) with critic validation loop.
@@ -71,7 +76,7 @@ async def _run_agent_with_critique(
                 f"Running {letter} agent (attempt {attempt + 1}/{max_retries + 1})"
             )
 
-            analysis_result = await agent_fn(votes=votes, criticism=critique)
+            analysis_result = await agent_fn(post=post, votes=votes, criticism=critique)
 
             if isinstance(analysis_result, out_type):
                 analysis_str = (
@@ -84,7 +89,7 @@ async def _run_agent_with_critique(
                 analysis_str = str(analysis_result)
                 reason = ""
 
-            scrutiny = await criticise(votes=votes, prev=analysis_result, letter=letter)
+            scrutiny = await criticise(post=post, votes=votes, prev=analysis_result, letter=letter)
 
             if scrutiny.approved:
                 logger.info(f"{letter} agent approved by critic")

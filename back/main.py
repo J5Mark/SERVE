@@ -23,6 +23,7 @@ from chats import router as chats_router
 from integrations import router as integrations_router
 from payments import router as payments_router
 from aiapi import router as ai_router, ai_analysis_worker
+from notifications import router as notifications_router
 from utils import *
 from postgres_conn import get_db, init_db
 from vecutils import insert_redflag_intentions, run_embedding_worker
@@ -89,6 +90,7 @@ app.include_router(posts_router, dependencies=[Depends(security)])
 app.include_router(chats_router, dependencies=[Depends(security)])
 app.include_router(integrations_router)
 app.include_router(ai_router)
+app.include_router(notifications_router)
 auth_.handle_errors(app)
 
 ### ENDPOINTS

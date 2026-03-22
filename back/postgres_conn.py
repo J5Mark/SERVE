@@ -9,6 +9,7 @@ from typing import List, Optional
 from enum import Enum
 
 from uuid import uuid4
+import os
 from os import environ as env
 from dotenv import load_dotenv
 
@@ -29,7 +30,7 @@ class UserAuth(SQLModel, table=True):
     
     # Auth methods
     username: str | None = Field(default=None, index=True)
-    password_hash: str
+    password_hash: str = Field(sa_column=Column(String))
     email: str | None = Field(default=None, index=True)
     google: str | None = Field(default=None, index=True)
     phone: str | None = Field(default=None, index=True)
@@ -422,7 +423,7 @@ class Message(SQLModel, table=True):
     __tablename__='messages'
 
     id: int = Field(primary_key=True, sa_type=BigInteger)
-    content: str
+    content: str = Field(sa_column=Column(String))
     conversation_id: int = Field(
         sa_column = Column(
             BigInteger,
@@ -463,7 +464,7 @@ class Integration(SQLModel, table=True):
     provider: str = Field(index=True)
     account_id: str = Field(index=True)
 
-    access_token: str
+    access_token: str = Field(sa_column=Column(String))
     refresh_token: Optional[str] = None
 
     expires_at: Optional[datetime] = None
@@ -489,7 +490,7 @@ class Integration(SQLModel, table=True):
 class RedFlagIntent(SQLModel, table=True):
     id: int = Field(primary_key=True, sa_type=BigInteger)
 
-    label: str
+    label: str = Field(sa_column=Column(String))
     embedding: List[float] = Field(sa_column=Column(Vector(768)))
 
     
@@ -564,11 +565,35 @@ class PostAnalysis(SQLModel, table=True):
         )
     )
     
+
+# class RefreshToken(SQLModel, table=True):
+#     __tablename__ = 'refresh_tokens'
+
+#     id: int = Field(primary_key=True, sa_type=BigInteger)
+
+#     is_revoked: bool = Field(default=False)
+#     jti: str = Field(sa_column=Column(String))
+#     token: str = Field(sa_column=Column(String))
+#     created_at: datetime = Field(
+#         sa_column=Column(
+#             DateTime(timezone=False),
+#             server_default=func.now(),
+#             nullable=False
+#         )
+#     )
+#     expires_at: datetime = Field()
+#     user_id: int = Field(
+#         sa_column=Column(
+#             BigInteger,
+#             ForeignKey('user.id', ondelete='CASCADE'),
+#         )
+#     )
+    
     
 ###
 
 def get_database_url():
-    return f"postgresql+asyncpg://{env['POSTGRES_USERNAME']}:{env['POSTGRES_PASSWORD']}@{env['POSTGRES_HOST']}:{env['POSTGRES_PORT']}/postgres"
+    return f"postgresql+asyncpg://{os.getenv('POSTGRES_USERNAME')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/postgres"
 
 def get_engine():
     return create_async_engine(
@@ -673,9 +698,9 @@ def install_pgvector(conn):
 async def init_db():
     async with engine.begin() as conn:
         # Drop all tables first to ensure clean schema
-        await conn.run_sync(SQLModel.metadata.drop_all)
+        # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(install_pgvector)
-        await conn.run_sync(SQLModel.metadata.create_all)
+        # await conn.run_sync(SQLModel.metadata.create_all)
         await conn.run_sync(create_post_search_trigger)
         await conn.run_sync(create_community_search_trigger)
         

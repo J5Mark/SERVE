@@ -129,9 +129,9 @@ class _MeScreenState extends State<MeScreen> {
       await Api.joinCommunity(communityId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Joined community!'),
-            backgroundColor: AppColors.brightGreen,
+          SnackBar(
+            content: const Text('Joined community!'),
+            backgroundColor: AppColors.primary,
           ),
         );
         _loadUser();
@@ -157,7 +157,8 @@ class _MeScreenState extends State<MeScreen> {
       body: _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showActionSheet(context),
-        backgroundColor: AppColors.brightGreen,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Create'),
       ),
@@ -180,20 +181,24 @@ class _MeScreenState extends State<MeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.person_outline, size: 64, color: Colors.grey),
+              Icon(
+                Icons.person_outline,
+                size: 64,
+                color: AppColors.onSurfaceVariant,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Welcome',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Register, login, or continue with Google',
-                style: TextStyle(color: AppColors.grey),
+                style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -203,8 +208,8 @@ class _MeScreenState extends State<MeScreen> {
                   icon: const Icon(Icons.login),
                   label: const Text('Login'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.grey,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.onSurfaceVariant,
+                    foregroundColor: AppColors.surface,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -217,7 +222,8 @@ class _MeScreenState extends State<MeScreen> {
                   icon: const Icon(Icons.email),
                   label: const Text('Register'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brightGreen,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -230,11 +236,11 @@ class _MeScreenState extends State<MeScreen> {
                   icon: const Icon(Icons.g_mobiledata, size: 24),
                   label: const Text('Continue with Google'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.onSurface,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.grey),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
+                    side: BorderSide(color: AppColors.outlineVariant),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
@@ -268,20 +274,24 @@ class _MeScreenState extends State<MeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.person_outline, size: 64, color: AppColors.grey),
+            Icon(
+              Icons.person_outline,
+              size: 64,
+              color: AppColors.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Complete your profile',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Set up your username and name to get started',
-              style: TextStyle(color: AppColors.grey),
+              style: TextStyle(color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             Row(
@@ -291,7 +301,8 @@ class _MeScreenState extends State<MeScreen> {
                   child: ElevatedButton(
                     onPressed: () => context.push('/register'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brightGreen,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
                     ),
                     child: const Text('Register'),
                   ),
@@ -301,12 +312,13 @@ class _MeScreenState extends State<MeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _linkGoogleAccount(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
+                      backgroundColor: AppColors.surfaceBright,
+                      foregroundColor: AppColors.onSurface,
                     ),
-                    icon: Icon(Icons.g_mobiledata, color: Colors.black),
+                    icon: Icon(Icons.g_mobiledata, color: AppColors.onSurface),
                     label: Text(
                       'Google',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: AppColors.onSurface),
                     ),
                   ),
                 ),
@@ -359,33 +371,33 @@ class _MeScreenState extends State<MeScreen> {
             const SizedBox(height: 24),
             Card(
               child: ListTile(
-                leading: Icon(
-                  Icons.drive_file_move,
-                  color: AppColors.brightGreen,
-                ),
+                leading: Icon(Icons.drive_file_move, color: AppColors.primary),
                 title: Text(
                   _hasGoogleIntegration
                       ? 'Google Connected'
                       : 'Link Google Account',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.onSurface),
                 ),
                 subtitle: Text(
                   _hasGoogleIntegration
                       ? 'Your Google account is connected'
                       : 'Connect for Drive access',
-                  style: TextStyle(color: AppColors.grey),
+                  style: TextStyle(color: AppColors.onSurfaceVariant),
                 ),
                 trailing: _hasGoogleIntegration
-                    ? Icon(Icons.check_circle, color: AppColors.brightGreen)
-                    : Icon(Icons.chevron_right, color: AppColors.grey),
+                    ? Icon(Icons.check_circle, color: AppColors.primary)
+                    : Icon(
+                        Icons.chevron_right,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                 onTap: () => _linkGoogleAccount(),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Your Communities',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -399,7 +411,7 @@ class _MeScreenState extends State<MeScreen> {
                     children: [
                       Text(
                         'No communities yet',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton(
@@ -415,17 +427,14 @@ class _MeScreenState extends State<MeScreen> {
                 (c) => Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.groups,
-                      color: AppColors.brightGreen,
-                    ),
+                    leading: Icon(Icons.groups, color: AppColors.primary),
                     title: Text(
                       c['name'] ?? '',
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.onSurface),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppColors.grey,
+                      color: AppColors.onSurfaceVariant,
                     ),
                     onTap: () => context.push('/community/${c['id']}'),
                   ),
@@ -435,10 +444,10 @@ class _MeScreenState extends State<MeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Discover Communities',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.onSurface,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -448,7 +457,10 @@ class _MeScreenState extends State<MeScreen> {
                     _loadDiscoverCommunities();
                     _showDiscoverCommunitiesSheet(context);
                   },
-                  child: const Text('See All'),
+                  child: Text(
+                    'See All',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
                 ),
               ],
             ),
@@ -460,7 +472,7 @@ class _MeScreenState extends State<MeScreen> {
                   children: [
                     Text(
                       'Find new communities',
-                      style: TextStyle(color: AppColors.grey),
+                      style: TextStyle(color: AppColors.onSurfaceVariant),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
@@ -475,10 +487,10 @@ class _MeScreenState extends State<MeScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Your Businesses',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -492,7 +504,7 @@ class _MeScreenState extends State<MeScreen> {
                     children: [
                       Text(
                         'No businesses yet',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton(
@@ -508,33 +520,30 @@ class _MeScreenState extends State<MeScreen> {
                 (b) => Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.business,
-                      color: AppColors.brightGreen,
-                    ),
+                    leading: Icon(Icons.business, color: AppColors.primary),
                     title: Text(
                       b['name'] ?? '',
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.onSurface),
                     ),
                     subtitle: Text(
                       b['bio'] ?? '',
-                      style: TextStyle(color: AppColors.grey),
+                      style: TextStyle(color: AppColors.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppColors.grey,
+                      color: AppColors.onSurfaceVariant,
                     ),
                     onTap: () => context.push('/business/${b['id']}'),
                   ),
                 ),
               ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Your Posts',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -548,7 +557,7 @@ class _MeScreenState extends State<MeScreen> {
                     children: [
                       Text(
                         'No posts yet',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton(
@@ -564,17 +573,14 @@ class _MeScreenState extends State<MeScreen> {
                 (p) => Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.article,
-                      color: AppColors.brightGreen,
-                    ),
+                    leading: Icon(Icons.article, color: AppColors.primary),
                     title: Text(
                       p['name'] ?? '',
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.onSurface),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
-                      color: AppColors.grey,
+                      color: AppColors.onSurfaceVariant,
                     ),
                     onTap: () => context.push('/post/${p['id']}'),
                   ),
@@ -583,21 +589,18 @@ class _MeScreenState extends State<MeScreen> {
             const SizedBox(height: 24),
             Card(
               child: ListTile(
-                leading: const Icon(
-                  Icons.analytics,
-                  color: AppColors.yellowAccent,
-                ),
-                title: const Text(
+                leading: Icon(Icons.analytics, color: AppColors.secondary),
+                title: Text(
                   'My Analyses',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.onSurface),
                 ),
                 subtitle: Text(
                   'View your post analyses',
-                  style: TextStyle(color: AppColors.grey),
+                  style: TextStyle(color: AppColors.onSurfaceVariant),
                 ),
-                trailing: const Icon(
+                trailing: Icon(
                   Icons.chevron_right,
-                  color: AppColors.grey,
+                  color: AppColors.onSurfaceVariant,
                 ),
                 onTap: () => context.push('/my-analyses'),
               ),
@@ -611,13 +614,30 @@ class _MeScreenState extends State<MeScreen> {
   void _showActionSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.post_add),
-              title: const Text('Create Post'),
+              leading: Icon(Icons.post_add, color: AppColors.primary),
+              title: Text(
+                'Create Post',
+                style: TextStyle(color: AppColors.onSurface),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 context.push('/create-post');
@@ -625,21 +645,28 @@ class _MeScreenState extends State<MeScreen> {
             ),
             if (_user != null && (_user!['entrep'] == true))
               ListTile(
-                leading: const Icon(Icons.business),
-                title: const Text('Create Business'),
+                leading: Icon(Icons.business, color: AppColors.primary),
+                title: Text(
+                  'Create Business',
+                  style: TextStyle(color: AppColors.onSurface),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   context.push('/create-business');
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.group_add),
-              title: const Text('Create Community'),
+              leading: Icon(Icons.group_add, color: AppColors.primary),
+              title: Text(
+                'Create Community',
+                style: TextStyle(color: AppColors.onSurface),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 context.push('/create-community');
               },
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -650,7 +677,7 @@ class _MeScreenState extends State<MeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -666,7 +693,7 @@ class _MeScreenState extends State<MeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.grey,
+                color: AppColors.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -674,17 +701,17 @@ class _MeScreenState extends State<MeScreen> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Discover Communities',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.grey),
+                    icon: Icon(Icons.close, color: AppColors.onSurfaceVariant),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -706,15 +733,19 @@ class _MeScreenState extends State<MeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Divider(color: AppColors.grey, height: 1),
+            Divider(color: AppColors.outlineVariant, height: 1),
             Expanded(
               child: _isLoadingDiscover
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    )
                   : _discoverCommunities.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'No communities found',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                     )
                   : ListView.builder(
@@ -726,17 +757,19 @@ class _MeScreenState extends State<MeScreen> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
-                            leading: const Icon(
+                            leading: Icon(
                               Icons.groups,
-                              color: AppColors.brightGreen,
+                              color: AppColors.primary,
                             ),
                             title: Text(
                               community['name'] ?? '',
-                              style: const TextStyle(color: Colors.white),
+                              style: TextStyle(color: AppColors.onSurface),
                             ),
                             subtitle: Text(
                               community['description'] ?? '',
-                              style: TextStyle(color: AppColors.grey),
+                              style: TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -746,7 +779,7 @@ class _MeScreenState extends State<MeScreen> {
                                 Navigator.pop(context);
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.brightGreen,
+                                backgroundColor: AppColors.primary,
                               ),
                               child: const Text('Join'),
                             ),
@@ -780,7 +813,7 @@ class _MeScreenState extends State<MeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -800,17 +833,20 @@ class _MeScreenState extends State<MeScreen> {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Edit Profile',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.onSurface,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.grey),
+                      icon: Icon(
+                        Icons.close,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -818,38 +854,50 @@ class _MeScreenState extends State<MeScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: usernameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Username',
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: Icon(
+                      Icons.person,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.onSurface),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: firstNameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'First Name',
-                    prefixIcon: Icon(Icons.badge),
+                    prefixIcon: Icon(
+                      Icons.badge,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.onSurface),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: lastNameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Last Name',
-                    prefixIcon: Icon(Icons.badge_outlined),
+                    prefixIcon: Icon(
+                      Icons.badge_outlined,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.onSurface),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.onSurface),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 24),
@@ -878,9 +926,9 @@ class _MeScreenState extends State<MeScreen> {
                               Navigator.pop(context);
                               _loadUser();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Profile updated!'),
-                                  backgroundColor: AppColors.brightGreen,
+                                SnackBar(
+                                  content: const Text('Profile updated!'),
+                                  backgroundColor: AppColors.primary,
                                 ),
                               );
                             }
@@ -889,7 +937,7 @@ class _MeScreenState extends State<MeScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Error: $e'),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: AppColors.error,
                                 ),
                               );
                             }
@@ -900,11 +948,12 @@ class _MeScreenState extends State<MeScreen> {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brightGreen,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: isLoading
-                      ? const CircularProgressIndicator()
+                      ? CircularProgressIndicator(color: AppColors.onPrimary)
                       : const Text('Save'),
                 ),
               ],

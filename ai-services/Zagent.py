@@ -2,7 +2,7 @@ from baseagent import AgentParams, BaseAgent
 from os import environ as env
 from pydantic import BaseModel, Field
 from pydantic_ai.providers.openai import OpenAIProvider
-# from pydantic_ai.providers.mistral import MistralProvider
+from pydantic_ai.providers.mistral import MistralProvider
 from pydantic_ai.providers.ollama import OllamaProvider
 from pydantic_ai import RunContext
 from typing import List, Optional
@@ -11,13 +11,14 @@ from pydantic_ai.settings import ModelSettings
 
 
 class ZDeps(BaseModel):
+    post: str
     votes: List
     critique: str | None = None
 
 
 class ZOut(BaseModel):
     Z: str
-    reason: str
+    reason: str = Field(description='Short and concise reasoning')
 
 
 scrutinizer_provider = None
@@ -32,9 +33,9 @@ match PROVIDER:
     case 'openai':
         Z_provider = OpenAIProvider(base_url=LLM_PROVIDER_BASE_URL)
 
-    # case 'mistral':
-    #     api_key = env.get('LLM_API_KEY')
-    #     Z_provider = MistralProvider(api_key=api_key)
+    case 'mistral':
+        api_key = env.get('LLM_API_KEY')
+        Z_provider = MistralProvider(api_key=api_key)
 
     case _:
         raise ValueError(f'Unsupported LLM provider')
@@ -47,7 +48,7 @@ class ZAgent(BaseAgent):
             deps_type      = ZDeps                 ,
             out_type       = ZOut                  ,
             model_provider = Z_provider            ,
-            mcp_servers    = [MCPServerStdio(command='uvx', args=['duckduckgo-mcp-server'])],
+            # mcp_servers    = [MCPServerStdio(command='uvx', args=['duckduckgo-mcp-server'])],
             toolset        = [],
             model_settings = ModelSettings(
                 extra_body = {
@@ -65,17 +66,47 @@ class ZAgent(BaseAgent):
             Focus: The 'Z' variable (The Current Alternatives).
             
             ## INPUT
+            ### POST CONTENTS:
+            {ctx.deps.post}
+
+            ### VOTES UNDER POST:
             {votes_formatted}
             
-            ## YOUR TASK
-            1. Identify the "incumbent" solutions. This includes big brands, but also "DIY" fixes (e.g., "people just stop buying salads and cook at home").
-            2. Search for the limitations of these incumbents. What are their reviews saying? Why haven't they fixed the problem yet?
-            3. Define "Z" as the current standard that we are going to beat.
+            ## HARD RULES (STRICT)
+            1. DO NOT explain industry reasons or "why companies failed".
+            2. DO NOT use abstract labels or buzzwords.
+            3. ONLY use solutions or behaviors mentioned or clearly implied by users.
+            4. Prefer concrete actions over product names.
+            5. If users describe a workaround — prioritize it over official products.
             
-            ## EXAMPLE (Few-Shot)
-            *Context:* High-end salad delivery.
-            *Search:* "DoorDash salad reviews," "Sweetgreen delivery complaints," "Insulated packaging for cold delivery costs."
-            *Analysis:* The 'Z' is "Standard Third-Party Delivery Apps." They fail because their logistics are general-purpose and don't prioritize temperature-sensitive greens.
+            ## SELECTION LOGIC
+            1. Extract all mentioned ways users currently solve the problem.
+            2. Separate:
+               - tools/products (apps, platforms, brands)
+               - behaviors/workarounds (manual steps, hacks, routines)
+            3. Prefer the most:
+               - frequent
+               - painful (complex, repetitive, annoying)
+            
+            ## TASK
+            
+            ### Step 1 — Extract current solutions
+            List 3–5 ways users currently deal with the problem.
+            
+            ### Step 2 — Select dominant alternative
+            Pick ONE that best represents the "default behavior".
+            
+            ### Step 3 — Define Z
+            Write a simple, concrete description:
+            - one sentence
+            - describes what users actually DO
+            - no abstraction, no naming frameworks
+            
+            ### Step 4 — Optional context
+            Mention tools ONLY if they are directly part of the behavior.
+
+            ## YOUR OUTPUT
+            {ZOut(Z='your hypiothesis', reason='your reasoning').model_dump_json()}
         '''
         return template
 
