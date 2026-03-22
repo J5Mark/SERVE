@@ -184,7 +184,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.darkGreen,
+                  color: AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -197,7 +197,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
                     const SizedBox(height: 8),
                     Text(
                       _getErrorHint(),
-                      style: TextStyle(color: AppColors.grey, fontSize: 12),
+                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -212,7 +212,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('Go Back'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.grey,
+                      foregroundColor: AppColors.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -221,7 +221,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brightGreen,
+                      backgroundColor: AppColors.primary,
                     ),
                   ),
                 ],
@@ -237,7 +237,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.analytics, size: 64, color: AppColors.grey),
+            Icon(Icons.analytics, size: 64, color: AppColors.onSurfaceVariant),
             const SizedBox(height: 16),
             const Text(
               'Analysis not found',
@@ -246,7 +246,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
             const SizedBox(height: 8),
             Text(
               'The analysis may still be processing',
-              style: TextStyle(color: AppColors.grey),
+              style: TextStyle(color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -254,7 +254,7 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Refresh'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brightGreen,
+                backgroundColor: AppColors.primary,
               ),
             ),
           ],
@@ -309,11 +309,11 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 16, color: AppColors.grey),
+                    Icon(Icons.calendar_today, size: 16, color: AppColors.onSurfaceVariant),
                     const SizedBox(width: 8),
                     Text(
                       'Generated: ${_formatDate(_analysis!['created_at'])}',
-                      style: TextStyle(color: AppColors.grey, fontSize: 12),
+                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
                     ),
                   ],
                 ),
@@ -323,12 +323,12 @@ class _ViewAnalysisScreenState extends State<ViewAnalysisScreen> {
           const SizedBox(height: 24),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.article, color: AppColors.brightGreen),
+              leading: const Icon(Icons.article, color: AppColors.primary),
               title: const Text(
                 'View Original Post',
                 style: TextStyle(color: Colors.white),
               ),
-              trailing: const Icon(Icons.chevron_right, color: AppColors.grey),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
               onTap: () => context.push('/post/${widget.postId}'),
             ),
           ),
@@ -385,7 +385,7 @@ class _AnalysisSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            const Divider(color: AppColors.grey, height: 1),
+            const Divider(color: AppColors.onSurfaceVariant, height: 1),
             const SizedBox(height: 12),
             SelectableText(
               content,

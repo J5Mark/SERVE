@@ -69,7 +69,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Joined community!'),
-            backgroundColor: AppColors.brightGreen,
+            backgroundColor: AppColors.primary,
           ),
         );
         _loadCommunity();
@@ -106,7 +106,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: AppColors.surface,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) => Padding(
           padding: EdgeInsets.only(
@@ -202,7 +202,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brightGreen,
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: isLoading
@@ -269,9 +269,9 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
               style: ButtonStyle(
                 backgroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return AppColors.brightGreen;
+                    return AppColors.primary;
                   }
-                  return AppColors.darkGreen;
+                  return AppColors.surfaceContainer;
                 }),
               ),
             ),
@@ -285,7 +285,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
   void _showModeratorMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -298,7 +298,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.grey,
+                color: AppColors.onSurfaceVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -314,7 +314,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.edit, color: AppColors.brightGreen),
+              leading: const Icon(Icons.edit, color: AppColors.primary),
               title: const Text(
                 'Edit Community',
                 style: TextStyle(color: Colors.white),
@@ -327,7 +327,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
             ListTile(
               leading: const Icon(
                 Icons.person_add,
-                color: AppColors.brightGreen,
+                color: AppColors.primary,
               ),
               title: const Text(
                 'Manage Moderators',
@@ -397,11 +397,11 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkGreen,
+        backgroundColor: AppColors.surfaceContainer,
         title: const Text('Delete Post', style: TextStyle(color: Colors.white)),
         content: const Text(
           'Are you sure you want to delete this post? This action cannot be undone.',
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
         actions: [
           TextButton(
@@ -425,7 +425,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Post deleted'),
-            backgroundColor: AppColors.brightGreen,
+            backgroundColor: AppColors.primary,
           ),
         );
         _loadPosts();
@@ -499,7 +499,7 @@ class _PostCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 post['contents'] ?? '',
-                style: const TextStyle(color: AppColors.grey, fontSize: 14),
+                style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -521,18 +521,18 @@ class _PostCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   if (voteCount > 0) ...[
-                    Icon(Icons.how_to_vote, size: 14, color: AppColors.grey),
+                    Icon(Icons.how_to_vote, size: 14, color: AppColors.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Text(
                       '$voteCount',
-                      style: TextStyle(color: AppColors.grey, fontSize: 13),
+                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
                     ),
                   ],
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(
                       Icons.how_to_vote,
-                      color: AppColors.brightGreen,
+                      color: AppColors.primary,
                       size: 20,
                     ),
                     onPressed: onVote,

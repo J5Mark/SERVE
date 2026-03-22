@@ -36,9 +36,9 @@ class DottedGridBackground extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppColors.darkGreen.withValues(alpha: 0.5),
-                          AppColors.primaryBlack.withValues(alpha: 0.7),
-                          AppColors.darkGreen.withValues(alpha: 0.4),
+                          AppColors.surfaceContainer.withValues(alpha: 0.5),
+                          AppColors.surface.withValues(alpha: 0.7),
+                          AppColors.surfaceContainer.withValues(alpha: 0.4),
                         ],
                         stops: const [0.0, 0.5, 1.0],
                       ),
@@ -48,9 +48,7 @@ class DottedGridBackground extends StatelessWidget {
         Positioned.fill(
           child: CustomPaint(
             painter: _DottedGridPainter(
-              dotColor: (dotColor ?? AppColors.yellowAccent).withValues(
-                alpha: 0.15,
-              ),
+              dotColor: (dotColor ?? AppColors.primary).withValues(alpha: 0.08),
               dotSpacing: dotSpacing,
               dotRadius: dotRadius,
             ),
@@ -102,6 +100,58 @@ class AppColors {
   static const Color lightYellow = Color(0xFFF0F3BD);
   static const Color grey = Color(0xFF6C757D);
   static const Color lightGrey = Color(0xFFE9ECEF);
+
+  static const Color inverseOnSurface = Color(0xFF235c68);
+  static const Color secondary = Color(0xFF00dcfd);
+  static const Color primary = Color(0xFF6feffb);
+  static const Color primaryDim = Color(0xFF5fe1ed);
+  static const Color surfaceContainer = Color(0xFF001d23);
+  static const Color inverseSurface = Color(0xFFf0fbff);
+  static const Color onSecondaryContainer = Color(0xFFebfaff);
+  static const Color secondaryFixedDim = Color(0xFF00d6f6);
+  static const Color surfaceDim = Color(0xFF001115);
+  static const Color surfaceContainerHigh = Color(0xFF00242a);
+  static const Color outline = Color(0xFF477d8a);
+  static const Color onTertiaryFixedVariant = Color(0xFF003b68);
+  static const Color tertiaryFixed = Color(0xFF74b4ff);
+  static const Color inversePrimary = Color(0xFF006a71);
+  static const Color errorDim = Color(0xFFd7383b);
+  static const Color onTertiaryContainer = Color(0xFF002647);
+  static const Color tertiaryDim = Color(0xFF4ca2f9);
+  static const Color secondaryDim = Color(0xFF00cdec);
+  static const Color onTertiary = Color(0xFF00325a);
+  static const Color onErrorContainer = Color(0xFFffa8a3);
+  static const Color onSecondary = Color(0xFF004955);
+  static const Color tertiaryFixedDim = Color(0xFF52a7ff);
+  static const Color onTertiaryFixed = Color(0xFF001931);
+  static const Color onSurface = Color(0xFFb8eefd);
+  static const Color primaryContainer = Color(0xFF1bb4c0);
+  static const Color primaryFixedDim = Color(0xFF5fe1ed);
+  static const Color onSecondaryFixedVariant = Color(0xFF005967);
+  static const Color surfaceBright = Color(0xFF00313a);
+  static const Color surfaceContainerLow = Color(0xFF00161b);
+  static const Color surface = Color(0xFF001115);
+  static const Color surfaceContainerHighest = Color(0xFF002a32);
+  static const Color secondaryContainer = Color(0xFF006878);
+  static const Color error = Color(0xFFff716c);
+  static const Color outlineVariant = Color(0xFF114f5b);
+  static const Color secondaryFixed = Color(0xFF59e3ff);
+  static const Color surfaceVariant = Color(0xFF002a32);
+  static const Color onPrimaryFixed = Color(0xFF004348);
+  static const Color surfaceTint = Color(0xFF6feffb);
+  static const Color onSecondaryFixed = Color(0xFF003a44);
+  static const Color background = Color(0xFF001115);
+  static const Color errorContainer = Color(0xFF9f0519);
+  static const Color onSurfaceVariant = Color(0xFF7eb3c1);
+  static const Color onError = Color(0xFF490006);
+  static const Color primaryFixed = Color(0xFF6feffb);
+  static const Color surfaceContainerLowest = Color(0xFF000000);
+  static const Color tertiary = Color(0xFF74b4ff);
+  static const Color tertiaryContainer = Color(0xFF52a7ff);
+  static const Color onPrimary = Color(0xFF00575e);
+  static const Color onPrimaryContainer = Color(0xFF002a2e);
+  static const Color onBackground = Color(0xFFb8eefd);
+  static const Color onPrimaryFixedVariant = Color(0xFF006269);
 }
 
 class AppTheme {
@@ -109,68 +159,82 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.brightGreen,
+        seedColor: AppColors.primary,
         brightness: Brightness.dark,
-        primary: AppColors.brightGreen,
-        secondary: AppColors.yellowAccent,
-        surface: AppColors.primaryBlack,
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
+        tertiary: AppColors.tertiary,
+        surface: AppColors.surface,
+        error: AppColors.error,
+        onPrimary: AppColors.onPrimary,
+        onSecondary: AppColors.onSecondary,
+        onSurface: AppColors.onSurface,
+        onError: AppColors.onError,
       ),
-      scaffoldBackgroundColor: AppColors.primaryBlack,
+      scaffoldBackgroundColor: AppColors.surface,
       cardTheme: CardThemeData(
-        color: AppColors.darkGreen,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        color: AppColors.surfaceContainer,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.lightGrey.withValues(alpha: 0.2),
-        labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        backgroundColor: AppColors.surfaceContainerHighest.withValues(
+          alpha: 0.5,
+        ),
+        labelStyle: const TextStyle(color: AppColors.onSurface, fontSize: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.brightGreen,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.darkGreen,
+        fillColor: AppColors.surfaceContainerHighest,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.grey.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: AppColors.yellowAccent),
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-        labelStyle: const TextStyle(color: AppColors.grey),
-        hintStyle: const TextStyle(color: AppColors.grey),
+        labelStyle: const TextStyle(color: AppColors.onSurfaceVariant),
+        hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primaryBlack,
-        foregroundColor: Colors.white,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.surface.withValues(alpha: 0.8),
+        foregroundColor: AppColors.onSurface,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.darkGreen,
-        selectedItemColor: AppColors.yellowAccent,
-        unselectedItemColor: AppColors.grey,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surfaceContainer,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.brightGreen,
-        foregroundColor: Colors.white,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -188,15 +252,15 @@ class RoleChip extends StatelessWidget {
   Color _getRoleColor() {
     switch (role.toLowerCase()) {
       case 'entrepreneur':
-        return AppColors.yellowAccent;
+        return AppColors.secondary;
       case 'sponsor':
-        return AppColors.brightGreen;
+        return AppColors.primary;
       case 'supplier':
-        return Colors.blue;
+        return AppColors.tertiary;
       case 'community member':
-        return Colors.purple;
+        return AppColors.primaryDim;
       default:
-        return AppColors.grey;
+        return AppColors.onSurfaceVariant;
     }
   }
 
@@ -239,14 +303,14 @@ class MultiRoleBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.yellowAccent, AppColors.brightGreen],
+          colors: [AppColors.secondary, AppColors.primary],
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         'Multi-Role ($businessRoleCount)',
         style: const TextStyle(
-          color: AppColors.primaryBlack,
+          color: AppColors.onPrimary,
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
@@ -269,18 +333,18 @@ class TrustStatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.visibility, size: 16, color: AppColors.grey),
+        Icon(Icons.visibility, size: 16, color: AppColors.onSurfaceVariant),
         const SizedBox(width: 4),
         Text(
           'Seen: $seenCount',
-          style: TextStyle(color: AppColors.grey, fontSize: 12),
+          style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
         ),
         const SizedBox(width: 16),
-        Icon(Icons.check_circle, size: 16, color: AppColors.brightGreen),
+        Icon(Icons.check_circle, size: 16, color: AppColors.primary),
         const SizedBox(width: 4),
         Text(
           'Used: $usedCount',
-          style: TextStyle(color: AppColors.brightGreen, fontSize: 12),
+          style: TextStyle(color: AppColors.primary, fontSize: 12),
         ),
       ],
     );
@@ -308,23 +372,21 @@ class PaymentStatsRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.lightYellow.withValues(alpha: 0.1),
+        color: AppColors.secondary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.yellowAccent.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.attach_money, size: 16, color: AppColors.yellowAccent),
+              Icon(Icons.attach_money, size: 16, color: AppColors.secondary),
               const SizedBox(width: 4),
               Text(
                 'Willingness to Pay',
                 style: TextStyle(
-                  color: AppColors.yellowAccent,
+                  color: AppColors.secondary,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -347,11 +409,18 @@ class PaymentStatsRow extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.how_to_vote, size: 14, color: AppColors.grey),
+              Icon(
+                Icons.how_to_vote,
+                size: 14,
+                color: AppColors.onSurfaceVariant,
+              ),
               const SizedBox(width: 4),
               Text(
                 '$voteCount votes',
-                style: TextStyle(color: AppColors.grey, fontSize: 12),
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -374,12 +443,15 @@ class _StatItem extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 14,
           ),
         ),
-        Text(label, style: TextStyle(color: AppColors.grey, fontSize: 11)),
+        Text(
+          label,
+          style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
+        ),
       ],
     );
   }
@@ -396,7 +468,7 @@ class PostMini extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey.withValues(alpha: 0.1),
+        color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -404,7 +476,7 @@ class PostMini extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: const TextStyle(color: AppColors.onSurface, fontSize: 14),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -412,11 +484,11 @@ class PostMini extends StatelessWidget {
           const SizedBox(width: 8),
           Row(
             children: [
-              Icon(Icons.arrow_upward, size: 14, color: AppColors.yellowAccent),
+              Icon(Icons.arrow_upward, size: 14, color: AppColors.secondary),
               const SizedBox(width: 2),
               Text(
                 '$voteCount',
-                style: TextStyle(color: AppColors.yellowAccent, fontSize: 13),
+                style: TextStyle(color: AppColors.secondary, fontSize: 13),
               ),
             ],
           ),
@@ -458,11 +530,11 @@ class ProfileWidget extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: AppColors.brightGreen,
+                  backgroundColor: AppColors.primary,
                   child: Text(
                     '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -480,19 +552,26 @@ class ProfileWidget extends StatelessWidget {
                               '${firstName.isNotEmpty ? firstName : ''} ${lastName.isNotEmpty ? lastName : ''}'
                                   .trim(),
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.onSurface,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                               ),
                             ),
                           ),
                           if (editable)
-                            Icon(Icons.edit, size: 16, color: AppColors.grey),
+                            Icon(
+                              Icons.edit,
+                              size: 16,
+                              color: AppColors.onSurfaceVariant,
+                            ),
                         ],
                       ),
                       Text(
                         '@$username',
-                        style: TextStyle(color: AppColors.grey, fontSize: 14),
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -524,11 +603,18 @@ class ProfileWidget extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 14, color: AppColors.grey),
+                Icon(
+                  Icons.calendar_today,
+                  size: 14,
+                  color: AppColors.onSurfaceVariant,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Member since $memberSince',
-                  style: TextStyle(color: AppColors.grey, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -537,7 +623,7 @@ class ProfileWidget extends StatelessWidget {
               Text(
                 'Posts (${posts.length})',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onSurface,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -584,9 +670,10 @@ class ProfileWidgetLight extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.yellowAccent.withValues(alpha: 0.5),
+          color: AppColors.secondary.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
@@ -597,11 +684,11 @@ class ProfileWidgetLight extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppColors.brightGreen,
+                backgroundColor: AppColors.primary,
                 child: Text(
                   '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.onPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -619,24 +706,24 @@ class ProfileWidgetLight extends StatelessWidget {
                             '${firstName.isNotEmpty ? firstName : ''} ${lastName.isNotEmpty ? lastName : ''}'
                                 .trim(),
                             style: const TextStyle(
-                              color: Colors.black,
+                              color: AppColors.onSurface,
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
                             ),
                           ),
                         ),
                         if (editable)
-                          const Icon(
+                          Icon(
                             Icons.edit,
                             size: 16,
-                            color: Colors.black54,
+                            color: AppColors.onSurfaceVariant,
                           ),
                       ],
                     ),
                     Text(
                       '@$username',
-                      style: const TextStyle(
-                        color: Colors.black54,
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
                         fontSize: 14,
                       ),
                     ),
@@ -655,13 +742,13 @@ class ProfileWidgetLight extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.yellowAccent.withValues(alpha: 0.2),
-                    border: Border.all(color: AppColors.yellowAccent),
+                    color: AppColors.secondary.withValues(alpha: 0.2),
+                    border: Border.all(color: AppColors.secondary),
                   ),
                   child: Text(
                     roles.first,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: AppColors.onSurface,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -671,7 +758,10 @@ class ProfileWidgetLight extends StatelessWidget {
               ],
               Text(
                 'Member since $memberSince',
-                style: const TextStyle(color: Colors.black54, fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -720,7 +810,7 @@ class CommunityPreviewWidget extends StatelessWidget {
                     child: Text(
                       name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.onSurface,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -733,14 +823,14 @@ class CommunityPreviewWidget extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.brightGreen.withValues(alpha: 0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: AppColors.brightGreen),
+                        border: Border.all(color: AppColors.primary),
                       ),
                       child: const Text(
                         'Joined',
                         style: TextStyle(
-                          color: AppColors.brightGreen,
+                          color: AppColors.primary,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -751,32 +841,49 @@ class CommunityPreviewWidget extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 description,
-                style: const TextStyle(color: AppColors.grey, fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 13,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.people, size: 16, color: AppColors.grey),
+                  Icon(
+                    Icons.people,
+                    size: 16,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '$participantCount',
-                    style: const TextStyle(color: AppColors.grey, fontSize: 12),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.article, size: 16, color: AppColors.grey),
+                  Icon(
+                    Icons.article,
+                    size: 16,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '$postCount',
-                    style: const TextStyle(color: AppColors.grey, fontSize: 12),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                   const Spacer(),
                   if (!joined && onJoin != null)
                     ElevatedButton(
                       onPressed: onJoin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brightGreen,
+                        backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -838,13 +945,13 @@ class PostWidget extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.darkGreen,
+                    color: AppColors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     communityName!,
                     style: const TextStyle(
-                      color: AppColors.yellowAccent,
+                      color: AppColors.primary,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -855,7 +962,7 @@ class PostWidget extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -863,7 +970,10 @@ class PostWidget extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 content,
-                style: TextStyle(color: AppColors.lightGrey, fontSize: 14),
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 14,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -873,24 +983,31 @@ class PostWidget extends StatelessWidget {
                   Icon(
                     Icons.attach_money,
                     size: 16,
-                    color: AppColors.yellowAccent,
+                    color: AppColors.secondary,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     'Median: ${formatCurrency(median)}',
                     style: TextStyle(
-                      color: AppColors.yellowAccent,
+                      color: AppColors.secondary,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
                   ),
                   const Spacer(),
                   if (voteCount > 0) ...[
-                    Icon(Icons.how_to_vote, size: 14, color: AppColors.grey),
+                    Icon(
+                      Icons.how_to_vote,
+                      size: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$voteCount',
-                      style: TextStyle(color: AppColors.grey, fontSize: 13),
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                   if (onVote != null) ...[
@@ -898,7 +1015,7 @@ class PostWidget extends StatelessWidget {
                     IconButton(
                       icon: const Icon(
                         Icons.how_to_vote,
-                        color: AppColors.brightGreen,
+                        color: AppColors.primary,
                         size: 20,
                       ),
                       onPressed: onVote,
@@ -932,7 +1049,7 @@ class PostWidget extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -940,7 +1057,7 @@ class PostWidget extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               content,
-              style: TextStyle(color: AppColors.lightGrey, fontSize: 14),
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -960,7 +1077,7 @@ class PostWidget extends StatelessWidget {
                   IconButton(
                     icon: const Icon(
                       Icons.how_to_vote,
-                      color: AppColors.brightGreen,
+                      color: AppColors.primary,
                     ),
                     onPressed: onVote,
                     tooltip: 'Vote',
@@ -1009,7 +1126,7 @@ class BusinessWidget extends StatelessWidget {
             Text(
               name,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -1017,7 +1134,7 @@ class BusinessWidget extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               description,
-              style: TextStyle(color: AppColors.lightGrey, fontSize: 14),
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1025,13 +1142,13 @@ class BusinessWidget extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.groups, size: 16, color: AppColors.yellowAccent),
+                  Icon(Icons.groups, size: 16, color: AppColors.secondary),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Service: ${serviceCommunities.join(", ")}',
                       style: TextStyle(
-                        color: AppColors.lightGrey,
+                        color: AppColors.onSurfaceVariant,
                         fontSize: 13,
                       ),
                     ),
@@ -1043,11 +1160,14 @@ class BusinessWidget extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.timer, size: 16, color: AppColors.brightGreen),
+                  Icon(Icons.timer, size: 16, color: AppColors.primary),
                   const SizedBox(width: 6),
                   Text(
                     'Responds within $responseTimeDays days',
-                    style: TextStyle(color: AppColors.lightGrey, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -1060,7 +1180,10 @@ class BusinessWidget extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Wants contact from:',
-                style: TextStyle(color: AppColors.grey, fontSize: 12),
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
               const SizedBox(height: 6),
               Wrap(
@@ -1114,7 +1237,7 @@ class ContactWidget extends StatelessWidget {
                   child: Text(
                     name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onSurface,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -1125,19 +1248,25 @@ class ContactWidget extends StatelessWidget {
             ),
             Text(
               '@$username',
-              style: TextStyle(color: AppColors.grey, fontSize: 14),
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
             ),
             if (businessName != null) ...[
               const SizedBox(height: 12),
               Text(
                 'Business: $businessName',
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 14,
+                ),
               ),
               if (businessBio != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   businessBio!,
-                  style: TextStyle(color: AppColors.lightGrey, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1148,22 +1277,18 @@ class ContactWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.yellowAccent.withValues(alpha: 0.1),
+                  color: AppColors.secondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.interests,
-                      size: 16,
-                      color: AppColors.yellowAccent,
-                    ),
+                    Icon(Icons.interests, size: 16, color: AppColors.secondary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Interested in: $interestedIn',
                         style: TextStyle(
-                          color: AppColors.lightGrey,
+                          color: AppColors.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -1174,16 +1299,19 @@ class ContactWidget extends StatelessWidget {
             ],
             if (phoneNumber != null || responseTimeDays != null) ...[
               const SizedBox(height: 12),
-              const Divider(color: AppColors.grey),
+              Divider(color: AppColors.outlineVariant),
               const SizedBox(height: 12),
               if (phoneNumber != null) ...[
                 Row(
                   children: [
-                    Icon(Icons.phone, size: 16, color: AppColors.brightGreen),
+                    Icon(Icons.phone, size: 16, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
                       phoneNumber!,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(
+                        color: AppColors.onSurface,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -1192,11 +1320,14 @@ class ContactWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.timer, size: 16, color: AppColors.brightGreen),
+                    Icon(Icons.timer, size: 16, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Text(
                       'Responds in $responseTimeDays days',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(
+                        color: AppColors.onSurface,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -1208,8 +1339,8 @@ class ContactWidget extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brightGreen,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Text('Request Contact'),
@@ -1254,13 +1385,13 @@ class NewcomerWidget extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.yellowAccent,
+                    color: AppColors.secondary,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
+                  child: Text(
                     'NEW',
                     style: TextStyle(
-                      color: AppColors.primaryBlack,
+                      color: AppColors.onSecondary,
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
                     ),
@@ -1271,7 +1402,7 @@ class NewcomerWidget extends StatelessWidget {
                   child: Text(
                     name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onSurface,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -1282,7 +1413,7 @@ class NewcomerWidget extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               description,
-              style: TextStyle(color: AppColors.lightGrey, fontSize: 14),
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1296,8 +1427,8 @@ class NewcomerWidget extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onVerify,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brightGreen,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     child: const Text('Verify'),
@@ -1308,6 +1439,230 @@ class NewcomerWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class AppRadius {
+  static const double small = 8.0;
+  static const double medium = 12.0;
+  static const double large = 16.0;
+  static const double xl = 20.0;
+  static const BorderRadius smallRadius = BorderRadius.all(
+    Radius.circular(small),
+  );
+  static const BorderRadius mediumRadius = BorderRadius.all(
+    Radius.circular(medium),
+  );
+  static const BorderRadius largeRadius = BorderRadius.all(
+    Radius.circular(large),
+  );
+  static const BorderRadius xlRadius = BorderRadius.all(Radius.circular(xl));
+}
+
+class GlassContainer extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final double? width;
+  final double? height;
+  final Color? backgroundColor;
+  final double borderRadius;
+
+  const GlassContainer({
+    super.key,
+    required this.child,
+    this.padding,
+    this.margin,
+    this.width,
+    this.height,
+    this.backgroundColor,
+    this.borderRadius = 12.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      margin: margin,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? AppColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.1),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+class PrimaryChip extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final bool selected;
+  final Color? color;
+
+  const PrimaryChip({
+    super.key,
+    required this.label,
+    this.icon,
+    this.onTap,
+    this.selected = false,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? AppColors.primary;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? chipColor.withValues(alpha: 0.2)
+              : AppColors.surfaceContainerHighest,
+          borderRadius: AppRadius.smallRadius,
+          border: selected
+              ? Border.all(color: chipColor.withValues(alpha: 0.5))
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? chipColor : AppColors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: selected ? chipColor : AppColors.onSurfaceVariant,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class GradientButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final bool isLoading;
+  final bool isOutlined;
+  final double? width;
+
+  const GradientButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.icon,
+    this.isLoading = false,
+    this.isOutlined = false,
+    this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: isOutlined
+          ? OutlinedButton(
+              onPressed: isLoading ? null : onPressed,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.smallRadius,
+                ),
+              ),
+              child: _buildChild(AppColors.primary),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryContainer],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: AppRadius.smallRadius,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isLoading ? null : onPressed,
+                  borderRadius: AppRadius.smallRadius,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    child: _buildChild(AppColors.onPrimary),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildChild(Color color) {
+    if (isLoading) {
+      return SizedBox(
+        height: 20,
+        width: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation(color),
+        ),
+      );
+    }
+
+    if (icon != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Text(
+      label,
+      style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 14),
     );
   }
 }

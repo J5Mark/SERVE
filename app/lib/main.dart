@@ -345,40 +345,124 @@ class MainLayout extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.yellowAccent,
-        unselectedItemColor: AppColors.grey,
-        currentIndex: currentIndex,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/me');
-              break;
-            case 2:
-              context.go('/newcomers');
-              break;
-            case 3:
-              context.go('/chats');
-              break;
-            case 4:
-              context.go('/settings');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          BottomNavigationBarItem(icon: Icon(Icons.business), label: "New"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chats"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Settings",
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.surfaceContainer, AppColors.surface],
           ),
-        ],
+          border: Border(
+            top: BorderSide(
+              color: AppColors.outlineVariant.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home,
+                  label: 'Feed',
+                  isSelected: currentIndex == 0,
+                  onTap: () => context.go('/home'),
+                ),
+                _NavItem(
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profile',
+                  isSelected: currentIndex == 1,
+                  onTap: () => context.go('/me'),
+                ),
+                _NavItem(
+                  icon: Icons.business_outlined,
+                  activeIcon: Icons.business,
+                  label: 'New',
+                  isSelected: currentIndex == 2,
+                  onTap: () => context.go('/newcomers'),
+                ),
+                _NavItem(
+                  icon: Icons.chat_bubble_outline,
+                  activeIcon: Icons.chat_bubble,
+                  label: 'Chats',
+                  isSelected: currentIndex == 3,
+                  onTap: () => context.go('/chats'),
+                ),
+                _NavItem(
+                  icon: Icons.settings_outlined,
+                  activeIcon: Icons.settings,
+                  label: 'Settings',
+                  isSelected: currentIndex == 4,
+                  onTap: () => context.go('/settings'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: isSelected
+              ? BoxDecoration(
+                  color: AppColors.surfaceBright.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.onSurfaceVariant,
+                size: 24,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

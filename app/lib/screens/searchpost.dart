@@ -105,9 +105,9 @@ class _SearchPostScreenState extends State<SearchPostScreen>
             Tab(text: 'Posts'),
             Tab(text: 'Communities'),
           ],
-          indicatorColor: AppColors.brightGreen,
-          labelColor: AppColors.brightGreen,
-          unselectedLabelColor: AppColors.grey,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.onSurfaceVariant,
         ),
       ),
       body: Column(
@@ -124,13 +124,13 @@ class _SearchPostScreenState extends State<SearchPostScreen>
                       hintText: _searchCommunities
                           ? 'Search communities...'
                           : 'Search posts...',
-                      hintStyle: const TextStyle(color: AppColors.grey),
+                      hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
                       prefixIcon: const Icon(
                         Icons.search,
-                        color: AppColors.grey,
+                        color: AppColors.onSurfaceVariant,
                       ),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.grey),
+                        icon: const Icon(Icons.clear, color: AppColors.onSurfaceVariant),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {
@@ -156,8 +156,8 @@ class _SearchPostScreenState extends State<SearchPostScreen>
                   icon: Icon(
                     _searchCommunities ? Icons.groups : Icons.article,
                     color: _searchCommunities
-                        ? AppColors.brightGreen
-                        : AppColors.grey,
+                        ? AppColors.primary
+                        : AppColors.onSurfaceVariant,
                   ),
                   tooltip: _searchCommunities
                       ? 'Search Posts'
@@ -199,14 +199,14 @@ class _SearchPostScreenState extends State<SearchPostScreen>
       return const Center(
         child: Text(
           'Enter a search query to find posts',
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
       );
     }
 
     if (_postResults.isEmpty) {
       return const Center(
-        child: Text('No posts found', style: TextStyle(color: AppColors.grey)),
+        child: Text('No posts found', style: TextStyle(color: AppColors.onSurfaceVariant)),
       );
     }
 
@@ -255,7 +255,7 @@ class _SearchPostScreenState extends State<SearchPostScreen>
       return const Center(
         child: Text(
           'Enter a search query to find communities',
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
       );
     }
@@ -264,7 +264,7 @@ class _SearchPostScreenState extends State<SearchPostScreen>
       return const Center(
         child: Text(
           'No communities found',
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
       );
     }
@@ -293,7 +293,7 @@ class _SearchPostScreenState extends State<SearchPostScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Joined community!'),
-                            backgroundColor: AppColors.brightGreen,
+                            backgroundColor: AppColors.primary,
                           ),
                         );
                         _search();

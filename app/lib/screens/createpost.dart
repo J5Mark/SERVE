@@ -118,7 +118,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             children: [
                               Text(
                                 'You need to join a community first',
-                                style: TextStyle(color: AppColors.grey),
+                                style: TextStyle(color: AppColors.onSurfaceVariant),
                               ),
                               const SizedBox(height: 12),
                               ElevatedButton(
@@ -182,7 +182,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ElevatedButton(
                         onPressed: _isLoading ? null : _createPost,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.brightGreen,
+                          backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: _isLoading

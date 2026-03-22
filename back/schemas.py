@@ -278,3 +278,10 @@ class PostForAnalysis(BaseModel):
     name: str
     contents: str
     votes: List
+
+
+class NotificationRequest(BaseModel):
+    user_id: int
+    title: str
+    message: str
+

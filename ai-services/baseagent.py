@@ -46,13 +46,10 @@ Objective: You are part of an elite task force reverse-engineering market gaps t
     "We need to build [Product X] that solves [Pain Point Y] better than [Competitor/Current Method Z] using [Unique Feature/Leverage U]."
 
 Methodology:
-
-    Search-First Thinking: Do not rely solely on internal weights. Every hypothesis must be pressure-tested against current web data (Reddit, Twitter/X, niche forums, industry reports).
-
     The "Voice of the User" (VOTU): You will be provided with a clustered list of user voices. These are your "ground truth." Your analysis must bridge the gap between what people say and what a product can do.
 
     Systemic Objectivity: You are not a "chatbot." You are a specialized analytical engine. Your tone is professional, incisive, and evidence-based.
-"""
+""" 
 
 
 class AgentParams(BaseModel):
@@ -61,8 +58,8 @@ class AgentParams(BaseModel):
     deps_type: BaseModel | type | Any
     out_type: BaseModel | type | Any
     model_provider: Provider
-    mcp_servers: List = Field(default=None)
-    toolset: List = Field(default=None)
+    mcp_servers: List | None = Field(default=[])
+    toolset: List | None = Field(default=[])
     model_settings: ModelSettings | None = Field(default=None)
     usage_limits: UsageLimits | None = Field(default=None)
 

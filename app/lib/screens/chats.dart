@@ -75,7 +75,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
         child: Text(
           'No conversations yet.\nConnect with someone to start chatting!',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
       );
     }
@@ -95,7 +95,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: AppColors.brightGreen,
+                backgroundColor: AppColors.primary,
                 child: Text(
                   (otherUser?['username'] as String? ?? 'U')[0].toUpperCase(),
                   style: const TextStyle(
@@ -110,11 +110,11 @@ class _ChatsScreenState extends State<ChatsScreen> {
               ),
               subtitle: Text(
                 lastMessage?['content'] ?? '',
-                style: const TextStyle(color: AppColors.grey),
+                style: const TextStyle(color: AppColors.onSurfaceVariant),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: const Icon(Icons.chevron_right, color: AppColors.grey),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
               onTap: () => context.push('/chat/${conversation['id']}'),
             ),
           );

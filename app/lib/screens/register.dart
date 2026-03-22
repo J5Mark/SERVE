@@ -37,19 +37,20 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome'),
+        backgroundColor: AppColors.surface,
+        title: Text('Welcome', style: TextStyle(color: AppColors.onSurface)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Column(
             children: [
               Container(
-                color: AppColors.primaryBlack,
+                color: AppColors.surface,
                 child: TabBar(
                   controller: _tabController,
-                  indicatorColor: AppColors.brightGreen,
+                  indicatorColor: AppColors.primary,
                   indicatorWeight: 3,
-                  labelColor: AppColors.brightGreen,
-                  unselectedLabelColor: AppColors.grey,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.onSurfaceVariant,
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -62,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
               Container(
                 height: 1,
-                color: AppColors.grey.withValues(alpha: 0.3),
+                color: AppColors.outlineVariant.withValues(alpha: 0.3),
               ),
             ],
           ),
@@ -148,29 +149,32 @@ class _LoginFormState extends State<_LoginForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
-            const Icon(Icons.person, size: 80, color: AppColors.brightGreen),
+            Icon(Icons.person, size: 80, color: AppColors.primary),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Welcome Back',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Sign in to continue',
-              style: TextStyle(color: AppColors.grey),
+              style: TextStyle(color: AppColors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             TextFormField(
               controller: _identifierController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Email, Phone, or Username',
-                prefixIcon: Icon(Icons.person_outline),
+                prefixIcon: Icon(
+                  Icons.person_outline,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
               textInputAction: TextInputAction.next,
               validator: (v) => v == null || v.isEmpty ? 'Required' : null,
@@ -180,11 +184,11 @@ class _LoginFormState extends State<_LoginForm> {
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock),
+                prefixIcon: Icon(Icons.lock, color: AppColors.onSurfaceVariant),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: AppColors.grey,
+                    color: AppColors.onSurfaceVariant,
                   ),
                   onPressed: () {
                     setState(() {
@@ -203,22 +207,20 @@ class _LoginFormState extends State<_LoginForm> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 20,
-                    ),
+                    Icon(Icons.error_outline, color: AppColors.error, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _error!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                        style: TextStyle(color: AppColors.error, fontSize: 13),
                       ),
                     ),
                   ],
@@ -229,16 +231,17 @@ class _LoginFormState extends State<_LoginForm> {
             ElevatedButton(
               onPressed: _isLoading ? null : _login,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brightGreen,
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                       ),
                     )
                   : const Text('Login'),
@@ -338,44 +341,59 @@ class _RegisterFormState extends State<_RegisterForm> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _usernameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Username',
-                prefixIcon: Icon(Icons.alternate_email),
+                prefixIcon: Icon(
+                  Icons.alternate_email,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
               validator: (v) => v == null || v.isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _firstNameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'First Name',
-                prefixIcon: Icon(Icons.person),
+                prefixIcon: Icon(
+                  Icons.person,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
               validator: (v) => v == null || v.isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _lastNameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Last Name',
-                prefixIcon: Icon(Icons.person_outline),
+                prefixIcon: Icon(
+                  Icons.person_outline,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Email (optional)',
-                prefixIcon: Icon(Icons.email),
+                prefixIcon: Icon(
+                  Icons.email,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Phone (optional)',
-                prefixIcon: Icon(Icons.phone),
+                prefixIcon: Icon(
+                  Icons.phone,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
               keyboardType: TextInputType.phone,
             ),
@@ -384,11 +402,11 @@ class _RegisterFormState extends State<_RegisterForm> {
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock),
+                prefixIcon: Icon(Icons.lock, color: AppColors.onSurfaceVariant),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: AppColors.grey,
+                    color: AppColors.onSurfaceVariant,
                   ),
                   onPressed: () {
                     setState(() {
@@ -402,11 +420,17 @@ class _RegisterFormState extends State<_RegisterForm> {
             ),
             const SizedBox(height: 16),
             SwitchListTile(
-              title: const Text('Register as Entrepreneur'),
-              subtitle: const Text('Allow creating businesses'),
+              title: Text(
+                'Register as Entrepreneur',
+                style: TextStyle(color: AppColors.onSurface),
+              ),
+              subtitle: Text(
+                'Allow creating businesses',
+                style: TextStyle(color: AppColors.onSurfaceVariant),
+              ),
               value: _isEntrepreneur,
               onChanged: (v) => setState(() => _isEntrepreneur = v),
-              activeColor: AppColors.brightGreen,
+              activeColor: AppColors.primary,
               contentPadding: EdgeInsets.zero,
             ),
             const SizedBox(height: 16),
@@ -414,22 +438,20 @@ class _RegisterFormState extends State<_RegisterForm> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 20,
-                    ),
+                    Icon(Icons.error_outline, color: AppColors.error, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _error!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                        style: TextStyle(color: AppColors.error, fontSize: 13),
                       ),
                     ),
                   ],
@@ -440,16 +462,17 @@ class _RegisterFormState extends State<_RegisterForm> {
             ElevatedButton(
               onPressed: _isLoading ? null : _register,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brightGreen,
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                       ),
                     )
                   : const Text('Register'),

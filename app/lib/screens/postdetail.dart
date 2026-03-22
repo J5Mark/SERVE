@@ -118,7 +118,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ? 'Full analysis requested'
                   : 'Quick analysis requested',
             ),
-            backgroundColor: AppColors.brightGreen,
+            backgroundColor: AppColors.primary,
           ),
         );
       }
@@ -130,7 +130,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to request analysis: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -140,7 +140,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void _showAnalysisTypeSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.primaryBlack,
+      backgroundColor: AppColors.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -153,48 +153,45 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.grey,
+                color: AppColors.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Request Analysis',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.bolt, color: AppColors.yellowAccent),
-              title: const Text(
+              leading: Icon(Icons.bolt, color: AppColors.secondary),
+              title: Text(
                 'Quick Analysis',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.onSurface),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Clustered votes only (faster)',
-                style: TextStyle(color: AppColors.grey),
+                style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               onTap: () {
                 Navigator.pop(context);
                 _requestAnalysis(false);
               },
             ),
-            const Divider(color: AppColors.grey),
+            Divider(color: AppColors.outlineVariant),
             ListTile(
-              leading: const Icon(
-                Icons.analytics,
-                color: AppColors.brightGreen,
-              ),
-              title: const Text(
+              leading: Icon(Icons.analytics, color: AppColors.primary),
+              title: Text(
                 'Full Analysis',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.onSurface),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Y/Z/U extraction with AI (slower)',
-                style: TextStyle(color: AppColors.grey),
+                style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -297,9 +294,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Contact added! Starting chat...'),
-            backgroundColor: AppColors.brightGreen,
+          SnackBar(
+            content: const Text('Contact added! Starting chat...'),
+            backgroundColor: AppColors.primary,
           ),
         );
         Navigator.pop(context);
@@ -312,7 +309,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to add contact: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -323,30 +320,38 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Post'),
+        backgroundColor: AppColors.surface,
+        title: Text('Post', style: TextStyle(color: AppColors.onSurface)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: AppColors.onSurface),
           onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share),
+            icon: Icon(Icons.share, color: AppColors.onSurfaceVariant),
             onPressed: () => _sharePost(),
             tooltip: 'Share Post',
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : _error != null
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Error: $_error'),
+                  Text(
+                    'Error: $_error',
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadPost,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                    ),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -362,8 +367,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               child: FloatingActionButton.small(
                 heroTag: 'analysis_status',
                 onPressed: null,
-                backgroundColor: AppColors.yellowAccent,
-                child: const Icon(Icons.hourglass_empty, color: Colors.black),
+                backgroundColor: AppColors.secondary,
+                child: Icon(
+                  Icons.hourglass_empty,
+                  color: AppColors.onSecondary,
+                ),
               ),
             ),
           if (_isAnalyzing)
@@ -372,13 +380,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               child: FloatingActionButton.small(
                 heroTag: 'analyzing',
                 onPressed: null,
-                backgroundColor: AppColors.yellowAccent,
-                child: const SizedBox(
+                backgroundColor: AppColors.secondary,
+                child: SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.black,
+                    color: AppColors.onSecondary,
                   ),
                 ),
               ),
@@ -386,7 +394,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           FloatingActionButton.extended(
             heroTag: 'contacts',
             onPressed: _showContactsSheet,
-            backgroundColor: AppColors.brightGreen,
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
             icon: const Icon(Icons.people),
             label: const Text('Get Contacts'),
           ),
@@ -394,8 +403,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           FloatingActionButton(
             heroTag: 'analyze',
             onPressed: _isAnalyzing ? null : _showAnalysisTypeSheet,
-            backgroundColor: AppColors.yellowAccent,
-            child: const Icon(Icons.analytics, color: Colors.black),
+            backgroundColor: AppColors.secondary,
+            child: Icon(Icons.analytics, color: AppColors.onSecondary),
           ),
         ],
       ),
@@ -404,8 +413,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Widget _buildContent() {
     if (_post == null) {
-      return const Center(
-        child: Text('Post not found', style: TextStyle(color: AppColors.grey)),
+      return Center(
+        child: Text(
+          'Post not found',
+          style: TextStyle(color: AppColors.onSurfaceVariant),
+        ),
       );
     }
 
@@ -414,6 +426,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadPost,
+      color: AppColors.primary,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -425,8 +438,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 children: [
                   SelectableText(
                     post['name'] ?? '',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.onSurface,
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
                     ),
@@ -434,8 +447,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   const SizedBox(height: 12),
                   SelectableText(
                     post['contents'] ?? '',
-                    style: const TextStyle(
-                      color: AppColors.lightGrey,
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
                       fontSize: 15,
                     ),
                   ),
@@ -457,10 +470,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
           if (_votes.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Competition Analysis',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -588,11 +601,11 @@ class _ContactCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.brightGreen,
+                  backgroundColor: AppColors.primary,
                   child: Text(
                     (contact['username'] as String? ?? 'U')[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -604,16 +617,16 @@ class _ContactCard extends StatelessWidget {
                     children: [
                       Text(
                         contact['business_name'] ?? '',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                       Text(
                         '@${contact['username'] ?? ''}',
-                        style: const TextStyle(
-                          color: AppColors.grey,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -625,19 +638,19 @@ class _ContactCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               contact['business_bio'] ?? '',
-              style: const TextStyle(color: AppColors.lightGrey, fontSize: 14),
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.timer, size: 14, color: AppColors.brightGreen),
+                Icon(Icons.timer, size: 14, color: AppColors.primary),
                 const SizedBox(width: 4),
                 Text(
                   'Responds in ${contact['reaction_time'] ?? '?'} days',
-                  style: const TextStyle(
-                    color: AppColors.lightGrey,
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -651,22 +664,18 @@ class _ContactCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.yellowAccent.withValues(alpha: 0.1),
+                  color: AppColors.secondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.handshake,
-                      size: 14,
-                      color: AppColors.yellowAccent,
-                    ),
+                    Icon(Icons.handshake, size: 14, color: AppColors.secondary),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Goal: ${contact['cont_goal']}',
-                        style: const TextStyle(
-                          color: AppColors.lightGrey,
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
@@ -681,8 +690,8 @@ class _ContactCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onConnect,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brightGreen,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
                 ),
                 child: const Text('Connect'),
               ),

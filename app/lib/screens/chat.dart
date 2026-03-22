@@ -112,7 +112,7 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Text(
           'No messages yet.\nSay hi!',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
       );
     }
@@ -133,7 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isMe ? AppColors.brightGreen : AppColors.darkGreen,
+                color: isMe ? AppColors.primary : AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
               ),
               constraints: BoxConstraints(
@@ -177,9 +177,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkGreen,
+        color: AppColors.surfaceContainer,
         border: Border(
-          top: BorderSide(color: AppColors.grey.withValues(alpha: 0.3)),
+          top: BorderSide(color: AppColors.onSurfaceVariant.withValues(alpha: 0.3)),
         ),
       ),
       child: Row(
@@ -190,9 +190,9 @@ class _ChatScreenState extends State<ChatScreen> {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Type a message...',
-                hintStyle: const TextStyle(color: AppColors.grey),
+                hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
                 filled: true,
-                fillColor: AppColors.primaryBlack,
+                fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -209,7 +209,7 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             onPressed: _sendMessage,
             icon: const Icon(Icons.send),
-            color: AppColors.brightGreen,
+            color: AppColors.primary,
           ),
         ],
       ),

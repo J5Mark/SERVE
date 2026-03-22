@@ -192,7 +192,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.darkGreen,
+                  color: AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -205,7 +205,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
                     const SizedBox(height: 8),
                     Text(
                       _getErrorHint(),
-                      style: TextStyle(color: AppColors.grey, fontSize: 12),
+                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -220,7 +220,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('Go Back'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.grey,
+                      foregroundColor: AppColors.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -229,7 +229,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brightGreen,
+                      backgroundColor: AppColors.primary,
                     ),
                   ),
                 ],
@@ -245,7 +245,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.analytics, size: 64, color: AppColors.grey),
+            Icon(Icons.analytics, size: 64, color: AppColors.onSurfaceVariant),
             const SizedBox(height: 16),
             const Text(
               'No analyses yet',
@@ -254,7 +254,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
             const SizedBox(height: 8),
             Text(
               'Request an analysis from a post page',
-              style: TextStyle(color: AppColors.grey),
+              style: TextStyle(color: AppColors.onSurfaceVariant),
             ),
           ],
         ),
@@ -323,7 +323,7 @@ class _AnalysisCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.article,
-                    color: AppColors.brightGreen,
+                    color: AppColors.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -339,17 +339,17 @@ class _AnalysisCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.grey),
+                  const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: AppColors.grey),
+                  Icon(Icons.calendar_today, size: 14, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Text(
                     dateStr,
-                    style: TextStyle(color: AppColors.grey, fontSize: 12),
+                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
                   ),
                 ],
               ),
@@ -357,7 +357,7 @@ class _AnalysisCard extends StatelessWidget {
                   analysis['Z'] != null ||
                   analysis['U'] != null) ...[
                 const SizedBox(height: 12),
-                const Divider(color: AppColors.grey, height: 1),
+                const Divider(color: AppColors.onSurfaceVariant, height: 1),
                 const SizedBox(height: 12),
                 Row(
                   children: [

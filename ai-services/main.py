@@ -42,7 +42,7 @@ async def fetch_post_for_task(task_id: int, token: str) -> dict:
             return await resp.json()
 
 
-async def submit_analysis_result(task_id: int, result: dict, token: str):
+async def submit_analysis_result(result: dict, token: str):
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{CORE_BASE_URL}/api/aiservice/submit_analysis",
@@ -91,7 +91,7 @@ async def post_analysis():
 
                 result = await get_post_analysis(post_data)
 
-                await submit_analysis_result(task_id, result, token)
+                await submit_analysis_result(result, token)
                 logging.info(f"Submitted analysis for task {task_id}")
 
             except Exception as e:

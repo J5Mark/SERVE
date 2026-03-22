@@ -125,7 +125,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                             children: [
                               Text(
                                 'You need to join a community first',
-                                style: TextStyle(color: AppColors.grey),
+                                style: TextStyle(color: AppColors.onSurfaceVariant),
                               ),
                               const SizedBox(height: 12),
                               ElevatedButton(
@@ -177,7 +177,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                           ),
                           subtitle: Text(
                             c['description'] ?? '',
-                            style: TextStyle(color: AppColors.grey),
+                            style: TextStyle(color: AppColors.onSurfaceVariant),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -191,7 +191,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                               }
                             });
                           },
-                          activeColor: AppColors.brightGreen,
+                          activeColor: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -220,17 +220,17 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                           labelText: 'Response Time',
                           prefixIcon: Icon(Icons.timer),
                         ),
-                        dropdownColor: AppColors.darkGreen,
+                        dropdownColor: AppColors.surfaceContainer,
                         hint: const Text(
                           'How quickly can you respond?',
-                          style: TextStyle(color: AppColors.grey),
+                          style: TextStyle(color: AppColors.onSurfaceVariant),
                         ),
                         items: [
                           const DropdownMenuItem<int>(
                             value: null,
                             child: Text(
                               'Not specified',
-                              style: TextStyle(color: AppColors.grey),
+                              style: TextStyle(color: AppColors.onSurfaceVariant),
                             ),
                           ),
                           ...List.generate(14, (i) => i + 1).map(
@@ -254,7 +254,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                       ElevatedButton(
                         onPressed: _isLoading ? null : _createBusiness,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.brightGreen,
+                          backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: _isLoading

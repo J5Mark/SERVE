@@ -43,14 +43,14 @@ class _NewcomersScreenState extends State<NewcomersScreen> {
     final choice = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkGreen,
+        backgroundColor: AppColors.surfaceContainer,
         title: const Text(
           'Verify Business',
           style: TextStyle(color: Colors.white),
         ),
         content: const Text(
           'How do you know this business?',
-          style: TextStyle(color: AppColors.grey),
+          style: TextStyle(color: AppColors.onSurfaceVariant),
         ),
         actions: [
           TextButton(
