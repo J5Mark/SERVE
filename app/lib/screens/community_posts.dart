@@ -83,6 +83,55 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
     }
   }
 
+  Future<void> _leaveCommunity() async {
+    try {
+      await Api.leaveCommunity(widget.communityId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Left community'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        _loadCommunity();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Widget _buildJoinButton(bool isMember, bool isModerator) {
+    if (isModerator) {
+      return const SizedBox.shrink();
+    }
+    if (isMember) {
+      return OutlinedButton.icon(
+        onPressed: _leaveCommunity,
+        icon: const Icon(Icons.check, size: 16),
+        label: const Text('Joined'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: BorderSide(color: AppColors.primary),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+        ),
+      );
+    }
+    return ElevatedButton.icon(
+      onPressed: _joinCommunity,
+      icon: const Icon(Icons.add, size: 16),
+      label: const Text('Join'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.primaryBlack,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+      ),
+    );
+  }
+
   String _getSubredditName(String redditLink) {
     // Handle various reddit link formats: reddit.com/r/name, r/name, reddit.com/r/name/
     if (redditLink.contains('reddit.com/r/')) {
@@ -219,15 +268,18 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
   @override
   Widget build(BuildContext context) {
     final isModerator = _community?['is_moderator'] ?? false;
+    final isMember = _community?['is_member'] ?? false;
     final communityName = _community?['name'] ?? 'Community';
+    final description = _community?['description'] ?? '';
+    final participants = _community?['participants'] ?? 0;
     final redditLink = _community?['reddit_link'] as String?;
-    final title = redditLink != null && redditLink.isNotEmpty
-        ? '$communityName (r/${_getSubredditName(redditLink)})'
-        : communityName;
+    final redditName = redditLink != null && redditLink.isNotEmpty
+        ? _getSubredditName(redditLink)
+        : null;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(communityName),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -240,23 +292,124 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
               tooltip: 'Moderator Menu',
             ),
           IconButton(
-            icon: const Icon(Icons.group_add),
-            onPressed: _joinCommunity,
-            tooltip: 'Join Community',
-          ),
-          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/create-post'),
+            tooltip: 'Create Post',
           ),
         ],
       ),
       body: Column(
         children: [
-          Padding(
+          Container(
+            color: AppColors.surfaceContainer,
             padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.groups,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            communityName,
+                            style: TextStyle(
+                              color: AppColors.onSurface,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 14,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$participants',
+                                style: TextStyle(
+                                  color: AppColors.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              if (redditName != null) ...[
+                                const SizedBox(width: 12),
+                                Icon(
+                                  Icons.forum,
+                                  size: 14,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'r/$redditName',
+                                  style: TextStyle(
+                                    color: AppColors.onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildJoinButton(isMember, isModerator),
+                  ],
+                ),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+                if (isModerator) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'You moderate this community',
+                      style: TextStyle(color: AppColors.primary, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'popular', label: Text('!!')),
+                ButtonSegment(value: 'popular', label: Text('Popular')),
                 ButtonSegment(value: 'new', label: Text('New')),
                 ButtonSegment(value: 'med_asc', label: Text('Med ↑')),
                 ButtonSegment(value: 'med_desc', label: Text('Med ↓')),
@@ -325,10 +478,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(
-                Icons.person_add,
-                color: AppColors.primary,
-              ),
+              leading: const Icon(Icons.person_add, color: AppColors.primary),
               title: const Text(
                 'Manage Moderators',
                 style: TextStyle(color: Colors.white),
@@ -499,7 +649,10 @@ class _PostCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 post['contents'] ?? '',
-                style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 14,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -521,11 +674,18 @@ class _PostCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   if (voteCount > 0) ...[
-                    Icon(Icons.how_to_vote, size: 14, color: AppColors.onSurfaceVariant),
+                    Icon(
+                      Icons.how_to_vote,
+                      size: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$voteCount',
-                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                   const SizedBox(width: 8),

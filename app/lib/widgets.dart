@@ -155,39 +155,63 @@ class AppColors {
 }
 
 class AppTheme {
+  static ThemeMode _themeMode = ThemeMode.dark;
+  static bool _isDarker = false;
+  static final _listeners = ChangeNotifier();
+
+  static ThemeMode get themeMode => _themeMode;
+  static bool get isDarker => _isDarker;
+  static ChangeNotifier get listener => _listeners;
+
+  static void setDarkerMode(bool isDarker) {
+    _isDarker = isDarker;
+    _themeMode = ThemeMode.dark;
+    _listeners.notifyListeners();
+  }
+
   static ThemeData get theme {
+    return _buildTheme(_isDarker);
+  }
+
+  static ThemeData _buildTheme(bool isDarker) {
+    final surface = isDarker ? AppColors.primaryBlack : AppColors.surface;
+    final surfaceContainer = isDarker
+        ? const Color(0xFF0A0A10)
+        : AppColors.surfaceContainer;
+    final surfaceContainerHigh = isDarker
+        ? const Color(0xFF121218)
+        : AppColors.surfaceContainerHigh;
+    final surfaceContainerHighest = isDarker
+        ? const Color(0xFF1A1A24)
+        : AppColors.surfaceContainerHighest;
+    final onSurface = isDarker ? const Color(0xFFE0F7FA) : AppColors.onSurface;
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.dark,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
-        tertiary: AppColors.tertiary,
-        surface: AppColors.surface,
+        surface: surface,
+        onSurface: onSurface,
+        surfaceContainerHighest: surfaceContainerHighest,
         error: AppColors.error,
-        onPrimary: AppColors.onPrimary,
-        onSecondary: AppColors.onSecondary,
-        onSurface: AppColors.onSurface,
-        onError: AppColors.onError,
       ),
-      scaffoldBackgroundColor: AppColors.surface,
+      scaffoldBackgroundColor: surface,
       cardTheme: CardThemeData(
-        color: AppColors.surfaceContainer,
+        color: surfaceContainer,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceContainerHighest.withValues(
-          alpha: 0.5,
-        ),
-        labelStyle: const TextStyle(color: AppColors.onSurface, fontSize: 12),
+        backgroundColor: surfaceContainerHighest.withValues(alpha: 0.5),
+        labelStyle: TextStyle(color: onSurface, fontSize: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.onPrimary,
+          foregroundColor: AppColors.primaryBlack,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -195,7 +219,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceContainerHighest,
+        fillColor: surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
@@ -208,23 +232,23 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
-        labelStyle: const TextStyle(color: AppColors.onSurfaceVariant),
-        hintStyle: const TextStyle(color: AppColors.onSurfaceVariant),
+        labelStyle: TextStyle(color: AppColors.onSurfaceVariant),
+        hintStyle: TextStyle(color: AppColors.onSurfaceVariant),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.surface.withValues(alpha: 0.8),
-        foregroundColor: AppColors.onSurface,
+        backgroundColor: surface.withValues(alpha: 0.8),
+        foregroundColor: onSurface,
         elevation: 0,
         centerTitle: false,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surfaceContainer,
+        backgroundColor: surfaceContainer,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
@@ -232,7 +256,7 @@ class AppTheme {
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
+        foregroundColor: AppColors.primaryBlack,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

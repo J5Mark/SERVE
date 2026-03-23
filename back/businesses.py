@@ -102,10 +102,24 @@ async def get_newcomers_ep(
     # something's wrong here
     if not communities_ids:
         newcomers = await get_newcomers_overall(int(n), db)
-        return newcomers
-
-    newcomers = await get_newcomers(int(n), communities_ids, db)
-    return newcomers
+    else:
+        newcomers = await get_newcomers(int(n), communities_ids, db)
+    
+    result = []
+    for b in newcomers:
+        verifications_count = {}
+        for v in b.verifications:
+            verifications_count[v.type] = verifications_count.get(v.type, 0) + 1
+        result.append({
+            'id': b.id,
+            'name': b.name,
+            'bio': b.bio,
+            'verifications': verifications_count,
+            'user_id': b.user_id,
+            'reaction_time': b.reaction_time,
+            'cont_goal': b.cont_goal,
+        })
+    return result
 
 
 @router.post("/verify")

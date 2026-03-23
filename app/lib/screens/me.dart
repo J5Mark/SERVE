@@ -393,200 +393,138 @@ class _MeScreenState extends State<MeScreen> {
                 onTap: () => _linkGoogleAccount(),
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Your Communities',
-              style: TextStyle(
-                color: AppColors.onSurface,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (communities.isEmpty)
-              Card(
+            const SizedBox(height: 16),
+            Card(
+              child: InkWell(
+                onTap: () {
+                  _loadDiscoverCommunities();
+                  _showDiscoverCommunitiesSheet(context);
+                },
+                borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
                     children: [
+                      Icon(Icons.explore, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 12),
                       Text(
-                        'No communities yet',
-                        style: TextStyle(color: AppColors.onSurfaceVariant),
+                        'Discover Communities',
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 14,
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => context.push('/create-community'),
-                        child: const Text('Create Community'),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: AppColors.onSurfaceVariant,
+                        size: 14,
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              ...communities.map(
-                (c) => Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: Icon(Icons.groups, color: AppColors.primary),
-                    title: Text(
-                      c['name'] ?? '',
-                      style: TextStyle(color: AppColors.onSurface),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    onTap: () => context.push('/community/${c['id']}'),
-                  ),
-                ),
               ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Discover Communities',
-                  style: TextStyle(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    _loadDiscoverCommunities();
-                    _showDiscoverCommunitiesSheet(context);
-                  },
-                  child: Text(
-                    'See All',
-                    style: TextStyle(color: AppColors.primary),
-                  ),
-                ),
-              ],
             ),
             const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(
-                      'Find new communities',
-                      style: TextStyle(color: AppColors.onSurfaceVariant),
+            Row(
+              children: [
+                Expanded(
+                  child: _CreateChip(
+                    icon: Icons.article,
+                    label: 'Post',
+                    onTap: () => context.push('/create-post'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _CreateChip(
+                    icon: Icons.groups,
+                    label: 'Community',
+                    onTap: () => context.push('/create-community'),
+                  ),
+                ),
+                if (entrep) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _CreateChip(
+                      icon: Icons.business,
+                      label: 'Business',
+                      onTap: () => context.push('/create-business'),
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        _loadDiscoverCommunities();
-                        _showDiscoverCommunitiesSheet(context);
-                      },
-                      child: const Text('Discover'),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (communities.isNotEmpty ||
+                businesses.isNotEmpty ||
+                posts.isNotEmpty)
+              SizedBox(
+                height: 200,
+                child: GridView.count(
+                  crossAxisCount: MediaQuery.of(context).size.width > 600
+                      ? 4
+                      : 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.6,
+                  children: [
+                    ...communities.map(
+                      (c) => _CompactCard(
+                        icon: Icons.groups,
+                        title: c['name'] ?? '',
+                        subtitle: 'Community',
+                        color: const Color(0xFF00BCD4),
+                        onTap: () => context.push('/community/${c['id']}'),
+                      ),
+                    ),
+                    ...businesses.map(
+                      (b) => _CompactCard(
+                        icon: Icons.business,
+                        title: b['name'] ?? '',
+                        subtitle: b['bio'] ?? '',
+                        color: const Color(0xFF4CAF50),
+                        onTap: () => context.push('/business/${b['id']}'),
+                      ),
+                    ),
+                    ...posts.map(
+                      (p) => _CompactCard(
+                        icon: Icons.article,
+                        title: p['name'] ?? '',
+                        subtitle: 'Post',
+                        color: const Color(0xFF9C27B0),
+                        onTap: () => context.push('/post/${p['id']}'),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Your Businesses',
-              style: TextStyle(
-                color: AppColors.onSurface,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (businesses.isEmpty)
+            if (communities.isEmpty && businesses.isEmpty && posts.isEmpty)
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      Text(
-                        'No businesses yet',
-                        style: TextStyle(color: AppColors.onSurfaceVariant),
+                      Icon(
+                        Icons.add_circle_outline,
+                        color: AppColors.onSurfaceVariant,
+                        size: 40,
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => context.push('/create-business'),
-                        child: const Text('Create Business'),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Nothing here yet',
+                        style: TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              ...businesses.map(
-                (b) => Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: Icon(Icons.business, color: AppColors.primary),
-                    title: Text(
-                      b['name'] ?? '',
-                      style: TextStyle(color: AppColors.onSurface),
-                    ),
-                    subtitle: Text(
-                      b['bio'] ?? '',
-                      style: TextStyle(color: AppColors.onSurfaceVariant),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    onTap: () => context.push('/business/${b['id']}'),
-                  ),
-                ),
               ),
-            const SizedBox(height: 24),
-            Text(
-              'Your Posts',
-              style: TextStyle(
-                color: AppColors.onSurface,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (posts.isEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(
-                        'No posts yet',
-                        style: TextStyle(color: AppColors.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => context.push('/create-post'),
-                        child: const Text('Create Post'),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              ...posts.map(
-                (p) => Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: Icon(Icons.article, color: AppColors.primary),
-                    title: Text(
-                      p['name'] ?? '',
-                      style: TextStyle(color: AppColors.onSurface),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    onTap: () => context.push('/post/${p['id']}'),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Card(
               child: ListTile(
                 leading: Icon(Icons.analytics, color: AppColors.secondary),
@@ -594,10 +532,8 @@ class _MeScreenState extends State<MeScreen> {
                   'My Analyses',
                   style: TextStyle(color: AppColors.onSurface),
                 ),
-                subtitle: Text(
-                  'View your post analyses',
-                  style: TextStyle(color: AppColors.onSurfaceVariant),
-                ),
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 trailing: Icon(
                   Icons.chevron_right,
                   color: AppColors.onSurfaceVariant,
@@ -971,5 +907,111 @@ class _MeScreenState extends State<MeScreen> {
     if (mounted) {
       context.go('/init');
     }
+  }
+}
+
+class _CreateChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _CreateChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 40, maxHeight: 40),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.outlineVariant),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(color: AppColors.onSurface, fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CompactCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: color, width: 3)),
+        ),
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: AppColors.onSurface,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

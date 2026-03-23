@@ -4,7 +4,7 @@ import secrets
 import string
 
 logging.basicConfig(level=logging.DEBUG)
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, HTTPException, APIRouter, UploadFile, File
 from auth import auth, create_user_tokens, get_user_id_from_token, get_anonymous_id_from_token, hash_password
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -186,8 +186,8 @@ async def update_user(
         user.last_name = req.last_name
     if req.phone_number is not None:
         user.phone_number = req.phone_number
-    if req.entrep is not None:
-        user.entrep = req.entrep
+    # if req.entrep is not None:
+    #     user.entrep = req.entrep
     
     await db.commit()
     await db.refresh(user)
@@ -224,3 +224,15 @@ async def delete_user_ep(
     await db.commit()
 
     return {'user': 'deleted'}
+
+
+@router.post('/add_avatar')
+async def add_avatar_ep(
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    await upload_avatar(image, db, user_id)
+    await db.commit()
+
+    return {'avatar': 'added'}

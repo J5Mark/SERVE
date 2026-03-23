@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:app/auth_provider.dart';
 import 'package:app/screens/posts.dart';
 import 'package:app/screens/me.dart';
@@ -24,6 +26,10 @@ AuthStateNotifier? authState;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  final isDarker = prefs.getBool('darker_theme') ?? false;
+  AppTheme.setDarkerMode(isDarker);
 
   print('MAIN: Starting app...');
   print('MAIN: Current URL = ${Uri.base}');
@@ -85,8 +91,29 @@ Future<void> saveOAuthTokens(
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    AppTheme.listener.addListener(_handleThemeChange);
+  }
+
+  void _handleThemeChange() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    AppTheme.listener.removeListener(_handleThemeChange);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
