@@ -133,7 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isMe ? AppColors.primary : AppColors.surfaceContainer,
+                color: isMe ? AppColors.primaryDim : AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
               ),
               constraints: BoxConstraints(
@@ -144,13 +144,17 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   Text(
                     message['content'] ?? '',
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: isMe ? AppColors.primaryBlack : Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(message['created_at']),
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: isMe
+                          ? AppColors.primaryBlack.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.6),
                       fontSize: 10,
                     ),
                   ),
@@ -179,7 +183,9 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
         border: Border(
-          top: BorderSide(color: AppColors.onSurfaceVariant.withValues(alpha: 0.3)),
+          top: BorderSide(
+            color: AppColors.onSurfaceVariant.withValues(alpha: 0.3),
+          ),
         ),
       ),
       child: Row(

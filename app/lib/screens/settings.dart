@@ -4,18 +4,105 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isDarker = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTheme();
+    AppTheme.listener.addListener(_onThemeChange);
+  }
+
+  void _onThemeChange() {
+    if (mounted) {
+      setState(() {
+        _isDarker = AppTheme.isDarker;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    AppTheme.listener.removeListener(_onThemeChange);
+    super.dispose();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarker = prefs.getBool('darker_theme') ?? false;
+    });
+  }
+
+  Future<void> _toggleTheme(bool value) async {
+    setState(() {
+      _isDarker = value;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('darker_theme', value);
+    AppTheme.setDarkerMode(value);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: Text('Settings', style: TextStyle(color: AppColors.onSurface)),
+        backgroundColor: AppColors.surface,
+      ),
       body: ListView(
         children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Appearance',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          SwitchListTile(
+            secondary: Icon(
+              _isDarker ? Icons.nightlight_round : Icons.light_mode,
+              color: AppColors.onSurfaceVariant,
+            ),
+            title: Text(
+              'Darker Theme',
+              style: TextStyle(color: AppColors.onSurface),
+            ),
+            subtitle: Text(
+              _isDarker ? 'Pure black background' : 'Dark theme with contrast',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
+            value: _isDarker,
+            onChanged: _toggleTheme,
+            activeColor: AppColors.primary,
+          ),
+          const Divider(),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Account',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
           ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
+            leading: Icon(Icons.logout, color: AppColors.onSurfaceVariant),
+            title: Text('Logout', style: TextStyle(color: AppColors.onSurface)),
             onTap: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.remove('auth_token');

@@ -284,18 +284,19 @@ async def refresh(
 
 
 @router.get("/google/start")
-async def google_start(request: Request):
-
-    redirect_uri = request.url_for("google_callback")
+async def google_start(request: Request, entrep: bool = False):
 
     anonymous_id = request.query_params.get("anonymous_id", "")
-    logging.warning(f"Google OAuth start - anonymous_id from query: {anonymous_id}")
+    logging.warning(f"Google OAuth start - anonymous_id from query: {anonymous_id}, entrep: {entrep}")
     
-    state = anonymous_id if anonymous_id else None
+    state = f"{anonymous_id}|entrep={entrep}" if anonymous_id else f"entrep={entrep}"
+    
+    redirect_uri = "https://serveyourcommunity.ftp.sh/api/auth/google/callback"
+    logging.warning(f"Google OAuth redirect_uri: {redirect_uri}")
 
     return await oauth.google.authorize_redirect(
         request,
-        redirect_uri = "https://serveyourcommunity.ftp.sh/api/auth/google/callback",
+        redirect_uri = redirect_uri,
         state = state
     )
 
@@ -310,12 +311,19 @@ async def google_callback(
         
         all_query = dict(request.query_params)
         state_param = all_query.get('state', '')
-        anonymous_id_param = all_query.get('anonymous_id', '')
         
-        anonymous_id = state_param or anonymous_id_param
+        anonymous_id = None
+        entrep = False
+        if state_param:
+            parts = state_param.split('|')
+            for part in parts:
+                if part.startswith('entrep='):
+                    entrep = part.split('=')[1].lower() == 'true'
+                else:
+                    anonymous_id = part
         
         logging.warning(f"Full query: {all_query}")
-        logging.warning(f"State param: '{state_param}', Anonymous ID from query: '{anonymous_id_param}'")
+        logging.warning(f"State param: '{state_param}', Anonymous ID: '{anonymous_id}', entrep: {entrep}")
         
         token = await oauth.google.authorize_access_token(request)
         google_access_token = token["access_token"]
@@ -398,6 +406,9 @@ async def google_callback(
                 if not other_user_with_email:
                     existing_user.email = email
                     needs_update = True
+            if entrep and not existing_user.entrep:
+                existing_user.entrep = True
+                needs_update = True
             if needs_update:
                 await db.commit()
         elif existing_auth_by_anon and existing_auth_by_anon.user_id:
@@ -448,6 +459,7 @@ async def google_callback(
                 username=username_from_email or f"user_{email[:8]}" if email else "new_user",
                 first_name=given_name if given_name else "User",
                 last_name=family_name,
+                entrep=entrep,
             )
             db.add(new_user)
             await db.flush()

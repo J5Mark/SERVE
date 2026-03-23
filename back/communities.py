@@ -53,6 +53,7 @@ async def delete_community_ep(
 async def get_community_ep(
     community_id: int,
     db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
 ):
     result = await db.execute(
         select(Community)
@@ -69,6 +70,10 @@ async def get_community_ep(
         raise HTTPException(status_code=404, detail=f"Community not found")
 
     mod_ids = [mod.user_id for mod in community.mods]
+    participant_ids = [p.id for p in community.participants]
+    
+    is_moderator = user_id in mod_ids
+    is_member = user_id in participant_ids
 
     resp = CommunityResponse(
         community_id=community_id,
@@ -76,7 +81,8 @@ async def get_community_ep(
         name=community.name,
         description=community.description,
         reddit_link=community.reddit_link,
-        is_moderator=False,
+        is_moderator=is_moderator,
+        is_member=is_member,
         mods=mod_ids,
     )
 
@@ -147,3 +153,15 @@ async def join_community_ep(
     await db.commit()
 
     return {'community': 'joined'}
+
+
+@router.post('/leave')
+async def leave_community_ep(
+    req: LeaveCommunityRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    await leave_community(req, db, user_id)
+    await db.commit()
+
+    return {'community': 'out'}

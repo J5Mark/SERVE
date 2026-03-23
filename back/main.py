@@ -15,6 +15,7 @@ from schemas import *
 
 # from utils import *
 from auth import router as auth_router, auth as auth_, security
+from auth import get_user_id_from_token
 from users import router as users_router
 from communities import router as communities_router
 from businesses import router as business_router
@@ -99,6 +100,18 @@ auth_.handle_errors(app)
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.post('/api/feedback')
+async def feedback_ep(
+    req: FeedbackRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    await add_feedback(req, db, user_id)
+    await db.commit()
+
+    return {'feedback': 'saved'}
 
 
 ### STARTUP AND SHUTDOWN EVENTS

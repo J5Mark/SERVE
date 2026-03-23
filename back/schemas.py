@@ -27,6 +27,10 @@ class RegisterRequest(BaseModel):
     admin: bool = False
 
 
+class LeaveCommunityRequest(BaseModel):
+    community_id: int
+
+
 class RegisterRequest(BaseModel):
     username: str | None = None
     first_name: str | None = None
@@ -41,7 +45,7 @@ class UpdateUserRequest(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     phone_number: PhoneNumber | None = None
-    entrep: bool | None = None    
+    # entrep: bool | None = None    
 
 
 class Profile(BaseModel):
@@ -144,6 +148,7 @@ class CommunityResponse(BaseModel):
     description: str
     reddit_link: Optional[str]
     is_moderator: bool = False
+    is_member: bool = False
     mods: List[int] = []
 
 
@@ -285,3 +290,6 @@ class NotificationRequest(BaseModel):
     title: str
     message: str
 
+
+class FeedbackRequest(BaseModel):
+    contents: str

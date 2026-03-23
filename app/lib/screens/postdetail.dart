@@ -23,6 +23,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   bool _isLoadingContacts = false;
   bool _isAnalyzing = false;
   String _analysisStatus = 'not_requested';
+  bool _hasVoted = false;
 
   @override
   void initState() {
@@ -51,6 +52,160 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         });
       }
     }
+  }
+
+  void _showVoteSheet() {
+    final wouldPayController = TextEditingController();
+    final competitionController = TextEditingController();
+    final problemsController = TextEditingController();
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceContainer,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Vote on this post',
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: wouldPayController,
+                decoration: InputDecoration(
+                  labelText: 'How much would you pay?',
+                  prefixIcon: Icon(
+                    Icons.attach_money,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  suffixIcon: Icon(
+                    Icons.monetization_on,
+                    color: AppColors.secondary,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: AppColors.onSurface),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: competitionController,
+                decoration: InputDecoration(
+                  labelText: 'Competition (optional)',
+                  prefixIcon: Icon(
+                    Icons.group,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                style: TextStyle(color: AppColors.onSurface),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: problemsController,
+                decoration: InputDecoration(
+                  labelText: 'Problems (optional)',
+                  prefixIcon: Icon(
+                    Icons.warning,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                style: TextStyle(color: AppColors.onSurface),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final wouldPay = double.tryParse(
+                          wouldPayController.text,
+                        );
+                        if (wouldPay == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Please enter a valid amount',
+                              ),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                          return;
+                        }
+                        setSheetState(() => isLoading = true);
+                        try {
+                          await Api.voteOnPost(
+                            postId: widget.postId,
+                            wouldPay: wouldPay,
+                            competition: competitionController.text.isEmpty
+                                ? null
+                                : competitionController.text,
+                            problems: problemsController.text.isEmpty
+                                ? null
+                                : problemsController.text,
+                          );
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: const Text('Vote submitted!')),
+                            );
+                            _loadPost();
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        } finally {
+                          if (context.mounted) {
+                            setSheetState(() => isLoading = false);
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isLoading
+                    ? CircularProgressIndicator(color: AppColors.onPrimary)
+                    : const Text('Submit Vote'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _sharePost() async {
@@ -327,6 +482,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.how_to_vote, color: AppColors.primary),
+            onPressed: _showVoteSheet,
+            tooltip: 'Vote',
+          ),
           IconButton(
             icon: Icon(Icons.share, color: AppColors.onSurfaceVariant),
             onPressed: () => _sharePost(),

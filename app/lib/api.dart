@@ -217,6 +217,22 @@ class Api {
     return data;
   }
 
+  static Future<Map<String, dynamic>> leaveCommunity(int communityId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/comm/leave'),
+      body: jsonEncode({'community_id': communityId}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    final data = jsonDecode(res.body);
+    return data;
+  }
+
   static Future<Map<String, dynamic>> createCommunity({
     required String name,
     required String description,
@@ -496,6 +512,69 @@ class Api {
 
   static Future<String> getAnonymousId() async {
     return AnonymousIdManager.getAnonymousId();
+  }
+
+  static Future<bool> _isTokenExpired(String token) async {
+    try {
+      return JwtDecoder.isExpired(token);
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static Future<void> _ensureValidToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final refreshToken = prefs.getString('refresh_token');
+
+    if (token == null || refreshToken == null) {
+      throw Exception('No tokens available');
+    }
+
+    final isExpired = await _isTokenExpired(token);
+    if (isExpired) {
+      print('API: Token expired, refreshing...');
+      final result = await _performTokenRefresh(refreshToken);
+      if (result.containsKey('error')) {
+        throw Exception('Token refresh failed: ${result['error']}');
+      }
+      print('API: Token refreshed successfully');
+    }
+  }
+
+  static Future<Map<String, dynamic>> _performTokenRefresh(
+    String refreshToken,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final res = await http.post(
+        Uri.parse('$apiBase/auth/refresh'),
+        body: jsonEncode({'refresh_token': refreshToken}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        await prefs.setString('auth_token', data['access_token']);
+        if (data.containsKey('refresh_token')) {
+          await prefs.setString('refresh_token', data['refresh_token']);
+        }
+        return data;
+      } else {
+        await prefs.remove('auth_token');
+        await prefs.remove('refresh_token');
+        return {'error': 'Refresh failed', 'statusCode': res.statusCode};
+      }
+    } catch (e) {
+      return {'error': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> _getAuthHeaders() async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return {"Authorization": "Bearer $token"};
   }
 
   static Future<Map<String, dynamic>> refreshToken() async {
@@ -810,5 +889,21 @@ class Api {
     final response = jsonDecode(res.body);
     if (response is List) return response;
     return [];
+  }
+
+  static Future<Map<String, dynamic>> submitFeedback(String contents) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/feedback'),
+      body: jsonEncode({'contents': contents}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    return _handleResponse(res);
   }
 }

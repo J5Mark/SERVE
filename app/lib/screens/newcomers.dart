@@ -130,11 +130,10 @@ class _NewcomersScreenState extends State<NewcomersScreen> {
           final business = _businesses[index];
           final verifications =
               business['verifications'] as Map<String, dynamic>? ?? {};
-          final seenCount = verifications.length * 3;
-          final usedCount = verifications.values.fold<int>(
-            0,
-            (a, b) => a + (b as int),
-          );
+          final seenCount = (verifications['seen'] as num?)?.toInt() ?? 0;
+          final usedCount =
+              ((verifications['use'] as num?)?.toInt() ?? 0) +
+              ((verifications['coop'] as num?)?.toInt() ?? 0);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),

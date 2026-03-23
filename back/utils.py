@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, delete
 from sqlalchemy import select, func, update, desc, asc
@@ -269,12 +269,16 @@ async def get_newcomers_overall(n: int, db: AsyncSession):
             select(Business)
             .options(
                 selectinload(Business.communities),
-                defer(Business.embedding),
+                selectinload(Business.verifications),
             )
             .order_by(desc(Business.created_at))
             .limit(n)
         )
-        businesses = result.scalars().all()        
+        businesses = result.scalars().all()
+        
+        for b in businesses:
+            b.embedding = None
+            
         return businesses
         
     except HTTPException:
@@ -296,12 +300,16 @@ async def get_newcomers(n: int, communities_ids: List[int], db: AsyncSession):
             .where(Business.id.in_(business_ids))
             .options(
                 selectinload(Business.communities),
-                defer(Business.embedding),
+                selectinload(Business.verifications),
             )
             .order_by(desc(Business.created_at))
             .limit(n)
         )
         businesses = result.scalars().all()
+        
+        for b in businesses:
+            b.embedding = None
+            
         return businesses
         
     except HTTPException:
@@ -1463,3 +1471,50 @@ async def list_analyses(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Could not list analyses: {e}')
+
+
+async def add_feedback(
+    req: FeedbackRequest,
+    db: AsyncSession,
+    user_id: int, 
+):
+    try:
+        fb = Feedback(
+            user_id  = user_id,
+            contents = req.contents,
+        )
+        db.add(fb)
+    
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        logging.error(f'Error saving feedback: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not leave feedback: {e}')
+
+
+async def leave_community(
+    req: LeaveCommunityRequest,
+    db: AsyncSession,
+    user_id: int
+):
+    try:
+        pass # TODO : finish leaving community
+
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not leave community: {e}')
+
+
+async def upload_avatar(
+    image: UploadFile,
+    db: AsyncSession,
+    user_id: int
+):
+    try:
+        # TODO : return to this after deploying the s3 storage
+
+    except HTTPException as e:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not upload avatar: {e}')

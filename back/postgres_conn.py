@@ -130,6 +130,7 @@ class User(SQLModel, table=True):
     phone_number: Optional[str] = Field(index=True, unique=True)
     email: Optional[str] = Field(index=True, unique=True)
     admin: bool = Field(default=False)
+    avatar: str | None = Field(sa_column=Column(String))
     balance: int = Field(default = 0)
 
     businesses: list["Business"] = Relationship(
@@ -180,6 +181,7 @@ class Community(SQLModel, table=True):
     
     name: str = Field(index=True)
     description: str = Field()
+    avatar: str | None = Field(sa_column=Column(String))
     reddit_link: Optional[str] = Field(default=None, index=True)
     creator_id: int = Field(
         sa_column=Column(
@@ -265,6 +267,7 @@ class Post(SQLModel, table=True):
 
     name: str = Field()
     contents: str = Field()
+    image: str | None = Field(sa_column=Column(String))
 
     votes: List[Vote] = Relationship(back_populates='post')
     created_at: datetime = Field(
@@ -348,6 +351,7 @@ class Business(SQLModel, table=True):
     bio: str = Field()
     cont_goal: str | None
     reaction_time: int | None
+    avatar: str | None = Field(sa_column=Column(String))
 
     communities: List[Community] = Relationship(
         back_populates='businesses',
@@ -564,7 +568,28 @@ class PostAnalysis(SQLModel, table=True):
             nullable=False
         )
     )
-    
+
+
+class Feedback(SQLModel, table=True):
+    __tablename__ = 'feedbacks'
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE')
+        )
+    )
+    contents: str = Field(sa_column=Column(String))
+
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=func.now(),
+            nullable=False
+        )
+    )    
 
 # class RefreshToken(SQLModel, table=True):
 #     __tablename__ = 'refresh_tokens'
