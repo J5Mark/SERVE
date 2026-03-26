@@ -15,13 +15,54 @@ class _ChatsScreenState extends State<ChatsScreen> {
   bool _isLoading = true;
   String? _error;
 
+  int _offset = 0;
+  bool _isLoadingMore = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _loadConversations();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore) {
+        _loadMore();
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final more = await Api.getConversations(20, _offset + 20);
+      if (mounted) {
+        setState(() {
+          _conversations.addAll(more);
+          _offset += 20;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+      }
+    }
   }
 
   Future<void> _loadConversations() async {
+    _offset = 0;
     setState(() => _isLoading = true);
     try {
       final conversations = await Api.getConversations(20, 0);
@@ -83,9 +124,18 @@ class _ChatsScreenState extends State<ChatsScreen> {
     return RefreshIndicator(
       onRefresh: _loadConversations,
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        itemCount: _conversations.length,
+        itemCount: _conversations.length + (_isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= _conversations.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
           final conversation = _conversations[index];
           final otherUser = conversation['other_user'] as Map<String, dynamic>?;
           final lastMessage =
@@ -114,7 +164,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: AppColors.onSurfaceVariant,
+              ),
               onTap: () => context.push('/chat/${conversation['id']}'),
             ),
           );

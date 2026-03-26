@@ -1,8 +1,9 @@
 import os
 import logging
+from fastapi import Depends, HTTPException, APIRouter, UploadFile, File
+from fastapi.responses import StreamingResponse
 
 logging.basicConfig(level=logging.DEBUG)
-from fastapi import Depends, HTTPException, APIRouter
 from auth import auth, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +19,10 @@ from uuid import uuid4
 from utils import *
 from vecutils import *
 from ranking import fetch_useful_businessmen
-from postgres_conn import User, UserAuth, get_db, Community, Post
+from postgres_conn import User, UserAuth, get_db, Community, Post, Business
+from minio_conn import (
+    upload_business_avatar, fetch_business_avatar, delete_business_avatar,
+)
 
 router = APIRouter(prefix="/api/business", tags=["businesses"])
 
@@ -36,9 +40,10 @@ async def create_business_ep(
             
         await moderate(db, req.name, req.bio, req.cont_goal)
         
-        await create_business(req, user_id, db)
+        business = await create_business(req, user_id, db)
         await db.commit()
-        return {"business": "created"}
+        await db.refresh(business)
+        return {"business": "created", "business_id": business.id}
     else:
         raise HTTPException(status_code=401, detail="Forbidden")
 
@@ -160,3 +165,50 @@ async def connect_ep(
     await db.commit()
 
     return {'connections': 'created'}
+
+
+@router.post('/avatar')
+async def upload_business_avatar_ep(
+    business_id: int,
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    result = await db.execute(select(Business).where(Business.id == business_id))
+    business = result.scalars().first()
+    if not business or business.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot upload avatar for this business")
+    
+    image_bytes = await image.read()
+    await upload_business_avatar(business_id, image_bytes)
+    
+    business.image = True
+    await db.commit()
+    
+    return {"status": "uploaded", "business_id": business_id}
+
+
+@router.get('/avatar/{business_id}')
+async def get_business_avatar_ep(business_id: int):
+    try:
+        return await fetch_business_avatar(business_id)
+    except Exception as e:
+        logging.error(f"Error fetching business avatar: {e}")
+        raise HTTPException(status_code=404, detail="Avatar not found")
+
+
+@router.delete('/avatar/{business_id}')
+async def delete_business_avatar_ep(
+    business_id: int,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    result = await db.execute(select(Business).where(Business.id == business_id))
+    business = result.scalars().first()
+    if not business or business.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot delete avatar for this business")
+    
+    await delete_business_avatar(business_id)
+    business.image = False
+    await db.commit()
+    return {"status": "deleted"}

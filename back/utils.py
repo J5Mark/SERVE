@@ -1,20 +1,35 @@
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, delete
+from sqlalchemy import and_, delete, event
 from sqlalchemy import select, func, update, desc, asc
-from sqlalchemy.orm import selectinload, defer
+from sqlalchemy.orm import selectinload, defer, Session
 from typing import List
 from langdetect import detect
 import numpy as np
 import traceback
 
 import logging
+import os
+import re
+
+from fastapi import HTTPException, UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import and_, delete, event
+from sqlalchemy import select, func, update, desc, asc
+from sqlalchemy.orm import selectinload, defer, Session
+from typing import List
+from langdetect import detect
+import numpy as np
+import traceback
+
 from schemas import *
 from postgres_conn import *
+from minio_conn import *
 from vecutils import sentiment_check, get_embeddings
 from auth import hash_password
 from red_flags import RED_FLAGS
-import re
+
+API_BASE = os.getenv('API_BASE', 'https://serveyourcommunity.ftp.sh/api')
 
 
 LANG_MAP = {
@@ -102,6 +117,8 @@ async def create_community(req: CreateCommunityRequest, user_id: int, db: AsyncS
         await db.flush()
 
         mod.moderates = community
+
+        return community
 
     except HTTPException:
         raise
@@ -378,6 +395,8 @@ async def create_post(req: CreatePostRequest, user_id: int, db: AsyncSession):
 
         db.add(vote)
 
+        return post
+
     except HTTPException:
         raise
     except Exception as e:
@@ -422,7 +441,18 @@ async def get_post(post_id: int, db: AsyncSession):
             if vote_dict:
                 votes_data.append(vote_dict)
 
-        return {'post': post, 'stats': stats, 'votes': votes_data}
+        return {
+            'post': {
+                'id': post.id,
+                'name': post.name,
+                'contents': post.contents,
+                'created_at': post.created_at,
+                'community_id': post.community_id,
+                'image_url': f"{API_BASE}/post/image/{post.id}" if post.image else None,
+            },
+            'stats': stats,
+            'votes': votes_data
+        }
 
     except HTTPException:
         raise
@@ -554,6 +584,7 @@ async def fetch_popular_posts(n: int, offset: int, db: AsyncSession) -> List[Pos
                 created_at     = post.created_at     ,
                 community_name = post.community.name ,
                 community_id   = post.community_id   ,
+                image_url = f"{API_BASE}/post/image/{post.id}" if getattr(post, 'image', False) else None,
             )
             previews.append(preview)
         
@@ -566,7 +597,6 @@ async def fetch_popular_posts(n: int, offset: int, db: AsyncSession) -> List[Pos
 
 async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSession) -> List[PostPreview]:
     try:
-        votes_count = select(func.count(Vote.id)).where(Vote.post_id == Post.id).scalar_subquery()
         result = await db.execute(
             select(Post)
             .join(ParticipantsLink, ParticipantsLink.community_id == Post.community_id)
@@ -577,34 +607,48 @@ async def fetch_n_posts_for_user(user_id: int, n: int, offset: int, db: AsyncSes
                 defer(Post.embedding),
             )
             .where(ParticipantsLink.user_id == user_id)
-            .order_by(votes_count.desc())
             .offset(offset)
-            .limit(n)
+            .limit(n * 3)
         )
         
         posts = result.scalars().all()
         
-        previews = []
+        posts_data = []
         for post in posts:
             votes = [v.would_pay for v in post.votes if v.would_pay is not None]
+            posts_data.append({
+                'post': post,
+                'vote_count': len(votes),
+                'votes': votes
+            })
+        
+        posts_data.sort(key=lambda x: x['vote_count'], reverse=True)
+        posts_data = posts_data[:n]
+        
+        previews = []
+        for data in posts_data:
+            post = data['post']
+            votes = data['votes']
             med = float(np.median(votes)) if votes else 0.0
             preview = PostPreview(
                 post_id        = post.id             ,
                 name           = post.name           ,
                 contents       = post.contents[:50]  ,
-                n_votes        = len(votes)          ,
+                n_votes        = data['vote_count']          ,
                 median         = med                 ,
                 created_at     = post.created_at     ,
                 community_name = post.community.name ,
                 community_id   = post.community_id   ,
+                image_url = f"{API_BASE}/post/image/{post.id}" if getattr(post, 'image', False) else None,
             )
             previews.append(preview)
 
         return previews
-        
+
     except HTTPException:
         raise
     except Exception as e:
+        logging.error(f"Error fetching posts for user {user_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f'Could not fetch posts for user: {e}')
 
 
@@ -788,7 +832,7 @@ async def change_moderators(req: ChangeModeratorsRequest, db: AsyncSession, user
         raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
 
 
-async def list_new_communities(n: int, offset: int, db: AsyncSession):
+async def list_new_communities(n: int, offset: int, db: AsyncSession, user_id: int | None = None):
     try:
         result = await db.execute(
             select(Community)
@@ -798,15 +842,46 @@ async def list_new_communities(n: int, offset: int, db: AsyncSession):
         )
         communities = result.scalars().all()
 
-        return communities
+        result_list = []
+        for c in communities:
+            is_joined = False
+            if user_id:
+                participant_result = await db.execute(
+                    select(ParticipantsLink).where(
+                        ParticipantsLink.community_id == c.id,
+                        ParticipantsLink.user_id == user_id
+                    )
+                )
+                is_joined = participant_result.scalars().first() is not None
+            
+            participant_count_result = await db.execute(
+                select(func.count(ParticipantsLink.user_id)).where(ParticipantsLink.community_id == c.id)
+            )
+            participant_count = participant_count_result.scalar() or 0
+            
+            post_count_result = await db.execute(
+                select(func.count(Post.id)).where(Post.community_id == c.id)
+            )
+            post_count = post_count_result.scalar() or 0
+            
+            result_list.append({
+                'id': c.id,
+                'name': c.name,
+                'description': c.description,
+                'participant_count': participant_count,
+                'post_count': post_count,
+                'joined': is_joined,
+            })
+
+        return result_list
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not list new communities: {e}')
     
 
-async def list_popular_communities(n: int, offset: int, db: AsyncSession):
+async def list_popular_communities(n: int, offset: int, db: AsyncSession, user_id: int | None = None):
     try:
         subq = select(
             ParticipantsLink.community_id,
@@ -825,12 +900,43 @@ async def list_popular_communities(n: int, offset: int, db: AsyncSession):
         )
         communities = result.scalars().all()
 
-        return communities
+        result_list = []
+        for c in communities:
+            is_joined = False
+            if user_id:
+                participant_result = await db.execute(
+                    select(ParticipantsLink).where(
+                        ParticipantsLink.community_id == c.id,
+                        ParticipantsLink.user_id == user_id
+                    )
+                )
+                is_joined = participant_result.scalars().first() is not None
+            
+            participant_count_result = await db.execute(
+                select(func.count(ParticipantsLink.user_id)).where(ParticipantsLink.community_id == c.id)
+            )
+            participant_count = participant_count_result.scalar() or 0
+            
+            post_count_result = await db.execute(
+                select(func.count(Post.id)).where(Post.community_id == c.id)
+            )
+            post_count = post_count_result.scalar() or 0
+            
+            result_list.append({
+                'id': c.id,
+                'name': c.name,
+                'description': c.description,
+                'participant_count': participant_count,
+                'post_count': post_count,
+                'joined': is_joined,
+            })
+
+        return result_list
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Could not edit community: {e}')
+        raise HTTPException(status_code=500, detail=f'Could not list popular communities: {e}')
 
 
 async def search_communities(query: str, n: int, db: AsyncSession, user_id: int | None = None) -> List[CommunityPreview]:
@@ -1498,7 +1604,18 @@ async def leave_community(
     user_id: int
 ):
     try:
-        pass # TODO : finish leaving community
+        result = await db.execute(
+            select(ParticipantsLink).where(
+                ParticipantsLink.community_id == req.community_id,
+                ParticipantsLink.user_id == user_id
+            )
+        )
+        link = result.scalars().first()
+        
+        if not link:
+            raise HTTPException(status_code=404, detail="Not a member of this community")
+        
+        await db.delete(link)
 
     except HTTPException as e:
         raise
@@ -1506,15 +1623,23 @@ async def leave_community(
         raise HTTPException(status_code=500, detail=f'Could not leave community: {e}')
 
 
-async def upload_avatar(
-    image: UploadFile,
-    db: AsyncSession,
-    user_id: int
-):
-    try:
-        # TODO : return to this after deploying the s3 storage
+@event.listens_for(Post, 'after_delete')
+def post_after_delete(mapper, connection, target):
+    asyncio.run(delete_post_image(target.id))
 
-    except HTTPException as e:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f'Could not upload avatar: {e}')
+
+@event.listens_for(Community, 'after_delete')
+def community_after_delete(mapper, connection, target):
+    asyncio.run(delete_community_avatar(target.id))
+
+        
+@event.listens_for(Business, 'after_delete')
+def business_after_delete(mapper, connection, target):
+    asyncio.run(delete_business_avatar(target.id))
+        
+@event.listens_for(User, 'after_delete')
+def user_after_delete(mapper, connection, target):
+    asyncio.run(delete_user_avatar(target.id))
+
+
+

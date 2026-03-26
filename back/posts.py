@@ -1,9 +1,9 @@
 import os
 import logging
+from fastapi import Depends, HTTPException, APIRouter, UploadFile, File
+from fastapi.responses import StreamingResponse, HTMLResponse
 
 logging.basicConfig(level=logging.DEBUG)
-from fastapi import Depends, HTTPException, APIRouter
-from fastapi.responses import HTMLResponse
 from auth import auth, get_user_id_from_token
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,9 @@ from typing import Optional
 from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db, Community, Post, PostAnalysis, PostAnalysisRequest
+from minio_conn import (
+    upload_post_image, fetch_post_image, delete_post_image,
+)
 
 router = APIRouter(prefix='/api/post', tags=['posts'])
 
@@ -25,10 +28,11 @@ async def create_post_ep(
 ):
     await moderate(db, req.contents, req.name)
     
-    await create_post(req, user_id, db)
+    post = await create_post(req, user_id, db)
     await db.commit()
+    await db.refresh(post)
 
-    return {'post': 'created'}
+    return {'id': post.id}
 
 
 @router.get('/g/{post_id}')
@@ -243,3 +247,52 @@ async def list_analyses_ep(
 ):
     analyses = await list_analyses(n, offset, user_id, db) # TODO
     return analyses
+
+
+@router.post('/image/{post_id}')
+async def upload_post_image_ep(
+    post_id: int,
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    result = await db.execute(select(Post).where(Post.id == post_id))
+    post = result.scalars().first()
+    if not post or post.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot upload image for this post")
+    
+    image_bytes = await image.read()
+    await upload_post_image(post_id, image_bytes)
+    
+    logging.info(f"Setting image=True for post {post_id}")
+    post.image = True
+    await db.commit()
+    logging.info(f"Successfully uploaded image for post {post_id}")
+    
+    return {"status": "uploaded", "post_id": post_id}
+
+
+@router.get('/image/{post_id}')
+async def get_post_image_ep(post_id: int):
+    try:
+        return await fetch_post_image(post_id)
+    except Exception as e:
+        logging.error(f"Error fetching post image: {e}")
+        raise HTTPException(status_code=404, detail="Image not found")
+
+
+@router.delete('/image/{post_id}')
+async def delete_post_image_ep(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    result = await db.execute(select(Post).where(Post.id == post_id))
+    post = result.scalars().first()
+    if not post or post.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot delete image for this post")
+    
+    await delete_post_image(post_id)
+    post.image = False
+    await db.commit()
+    return {"status": "deleted"}

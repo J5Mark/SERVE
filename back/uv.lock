@@ -96,6 +96,18 @@ wheels = [
 ]
 
 [[package]]
+name = "aiohttp-retry"
+version = "2.9.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/61/ebda4d8e3d8cfa1fd3db0fb428db2dd7461d5742cea35178277ad180b033/aiohttp_retry-2.9.1.tar.gz", hash = "sha256:8eb75e904ed4ee5c2ec242fefe85bf04240f685391c4879d8f541d6028ff01f1", size = 13608, upload-time = "2024-11-06T10:44:54.574Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/99/84ba7273339d0f3dfa57901b846489d2e5c2cd731470167757f1935fffbd/aiohttp_retry-2.9.1-py3-none-any.whl", hash = "sha256:66d2759d1921838256a05a3f80ad7e724936f083e35be5abb5e16eed6be6dc54", size = 9981, upload-time = "2024-11-06T10:44:52.917Z" },
+]
+
+[[package]]
 name = "aiosignal"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -154,14 +166,14 @@ wheels = [
 
 [[package]]
 name = "argon2-cffi"
-version = "25.1.0"
+version = "23.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argon2-cffi-bindings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0e/89/ce5af8a7d472a67cc819d5d998aa8c82c5d860608c4db9f46f1162d7dab9/argon2_cffi-25.1.0.tar.gz", hash = "sha256:694ae5cc8a42f4c4e2bf2ca0e64e51e23a040c6a517a85074683d3959e1346c1", size = 45706, upload-time = "2025-06-03T06:55:32.073Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/fa/57ec2c6d16ecd2ba0cf15f3c7d1c3c2e7b5fcb83555ff56d7ab10888ec8f/argon2_cffi-23.1.0.tar.gz", hash = "sha256:879c3e79a2729ce768ebb7d36d4609e3a78a4ca2ec3a9f12286ca057e3d0db08", size = 42798, upload-time = "2023-08-15T14:13:12.711Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297cd6e3e3b0155c7e25db170edf1c74783d6a31a2490b8d9/argon2_cffi-25.1.0-py3-none-any.whl", hash = "sha256:fdc8b074db390fccb6eb4a3604ae7231f219aa669a2652e0f20e16ba513d5741", size = 14657, upload-time = "2025-06-03T06:55:30.804Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/6a/e8a041599e78b6b3752da48000b14c8d1e8a04ded09c88c714ba047f34f5/argon2_cffi-23.1.0-py3-none-any.whl", hash = "sha256:c670642b78ba29641818ab2e68bd4e6a78ba53b7eff7b4c3815ae16abf91c7ea", size = 15124, upload-time = "2023-08-15T14:13:10.752Z" },
 ]
 
 [[package]]
@@ -266,8 +278,10 @@ dependencies = [
     { name = "fluent-logger" },
     { name = "httpx" },
     { name = "langdetect" },
+    { name = "mailersend" },
     { name = "minio" },
     { name = "minio-async" },
+    { name = "miniopy-async" },
     { name = "numpy" },
     { name = "pgvector" },
     { name = "phonenumbers" },
@@ -296,8 +310,10 @@ requires-dist = [
     { name = "fluent-logger", specifier = ">=0.11.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "langdetect", specifier = ">=1.0.9" },
+    { name = "mailersend", specifier = ">=2.0.0" },
     { name = "minio", specifier = ">=7.2.20" },
     { name = "minio-async", specifier = ">=1.0.1" },
+    { name = "miniopy-async", specifier = ">=1.23.4" },
     { name = "numpy", specifier = ">=2.4.2" },
     { name = "pgvector", specifier = ">=0.4.2" },
     { name = "phonenumbers", specifier = ">=9.0.24" },
@@ -894,6 +910,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0e/72/a3add0e4eec4eb9e2569554f7c70f4a3c27712f40e3284d483e88094cc0e/langdetect-1.0.9.tar.gz", hash = "sha256:cbc1fef89f8d062739774bd51eda3da3274006b3661d199c2655f6b3f6d605a0", size = 981474, upload-time = "2021-05-07T07:54:13.562Z" }
 
 [[package]]
+name = "mailersend"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic", extra = ["email"] },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/76/0e/3d93829741e2dfd51872874042bfd933596204fbab923e6d93797baecaf5/mailersend-2.0.0.tar.gz", hash = "sha256:9f121909eb55716197c0c64d92760091ea4c4a965eebb3245f6634d8bcce0607", size = 58922, upload-time = "2025-08-01T11:00:18.652Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/80/8ae2cd3681c953c940888e2c9dff13da9a8c076f0d6296b2eee90ee958eb/mailersend-2.0.0-py3-none-any.whl", hash = "sha256:a5280db088c7af11dacf6eab68da4c7d597c30e8fa6a54b20a739aa7df2acc4b", size = 101926, upload-time = "2025-08-01T11:00:17.67Z" },
+]
+
+[[package]]
 name = "mako"
 version = "1.3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -1006,6 +1035,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e8/eb/168206e8b1c45092d3b5ca583ebff97def9115ad7c9bdfe67a9d6bc3ee64/minio-async-1.0.1.tar.gz", hash = "sha256:68257ffa618b56b64b9a3c55d33a68ce58bd28ac78dd010d0499c1f8d7da57e3", size = 93331, upload-time = "2023-09-10T12:07:04.532Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fa/6e/6fbb79dfb01ee9e2aef981c46c1511d8e58ca391ed52fa4700e0e5009d02/minio_async-1.0.1-py3-none-any.whl", hash = "sha256:a5def2c74d1939ee432d3eebf34061b191730bd78441a5d8cd6e2c844c9f04b7", size = 76703, upload-time = "2023-09-10T12:07:01.911Z" },
+]
+
+[[package]]
+name = "miniopy-async"
+version = "1.23.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "aiohttp-retry" },
+    { name = "argon2-cffi" },
+    { name = "certifi" },
+    { name = "pycryptodome" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a7/88/ddb821b4070d7cd528dbcd20d17d533a181073e3b00d257abc8dbe73d171/miniopy_async-1.23.4.tar.gz", hash = "sha256:6812500247a27b1e03b26521f56d6e5536e405e875e1c88c64426608f5a0c1ac", size = 79681, upload-time = "2025-09-17T12:27:49.123Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/2e/26ae250a0bee97dc7098a18343c54128e812ae56aeaa940d3f0444a86a99/miniopy_async-1.23.4-py3-none-any.whl", hash = "sha256:7aaf3332d8b82d97ace787cadbb837b454ac9beb7ba2017c3ae132e1443902be", size = 99374, upload-time = "2025-09-17T12:27:48.075Z" },
 ]
 
 [[package]]

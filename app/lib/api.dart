@@ -17,8 +17,19 @@ class ApiException implements Exception {
   String toString() => 'ApiException: $message (status: $statusCode)';
 
   String get displayMessage {
-    if (detail != null && detail is Map && detail.containsKey('detail')) {
-      return detail['detail'].toString();
+    if (detail != null) {
+      if (detail is Map) {
+        if (detail.containsKey('detail')) {
+          return detail['detail'].toString();
+        }
+        return detail.toString();
+      }
+      if (detail is String && detail.isNotEmpty) {
+        return detail;
+      }
+    }
+    if (statusCode != null) {
+      return '$message (status: $statusCode)';
     }
     return message;
   }
@@ -904,6 +915,160 @@ class Api {
       },
     );
 
+    return _handleResponse(res);
+  }
+
+  static String getUserAvatarUrl(int userId) {
+    return '$apiBase/users/avatar/$userId';
+  }
+
+  static String getCommunityAvatarUrl(int communityId) {
+    return '$apiBase/comm/avatar/$communityId';
+  }
+
+  static String getBusinessAvatarUrl(int businessId) {
+    return '$apiBase/business/avatar/$businessId';
+  }
+
+  static String getPostImageUrl(int postId) {
+    return '$apiBase/post/image/$postId';
+  }
+
+  static Future<Map<String, dynamic>> uploadUserAvatar(
+    int userId,
+    List<int> imageBytes,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$apiBase/users/add_avatar'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(
+      http.MultipartFile.fromBytes('image', imageBytes, filename: 'avatar.jpg'),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> uploadCommunityAvatar(
+    int communityId,
+    List<int> imageBytes,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$apiBase/comm/avatar'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['community_id'] = communityId.toString();
+    request.files.add(
+      http.MultipartFile.fromBytes('image', imageBytes, filename: 'avatar.jpg'),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> uploadBusinessAvatar(
+    int businessId,
+    List<int> imageBytes,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$apiBase/business/avatar'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['business_id'] = businessId.toString();
+    request.files.add(
+      http.MultipartFile.fromBytes('image', imageBytes, filename: 'avatar.jpg'),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> uploadPostImage(
+    int postId,
+    List<int> imageBytes,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$apiBase/post/image/$postId'),
+    );
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(
+      http.MultipartFile.fromBytes('image', imageBytes, filename: 'image.jpg'),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> deleteUserAvatar(int userId) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.delete(
+      Uri.parse('$apiBase/users/avatar/$userId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> deleteCommunityAvatar(
+    int communityId,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.delete(
+      Uri.parse('$apiBase/comm/avatar/$communityId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> deleteBusinessAvatar(
+    int businessId,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.delete(
+      Uri.parse('$apiBase/business/avatar/$businessId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> deletePostImage(int postId) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.delete(
+      Uri.parse('$apiBase/post/image/$postId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
     return _handleResponse(res);
   }
 }

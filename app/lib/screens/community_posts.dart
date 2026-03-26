@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
+import 'package:share_plus/share_plus.dart';
 
 class CommunityPostsScreen extends StatefulWidget {
   final int communityId;
@@ -19,11 +20,57 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
   String? _error;
   String _sorting = 'popular';
 
+  int _offset = 0;
+  bool _isLoadingMore = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _loadCommunity();
     _loadPosts();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore) {
+        _loadMore();
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final morePosts = await Api.getCommunityPosts(
+        communityId: widget.communityId,
+        n: 20,
+        offset: _offset + 20,
+        sorting: _sorting,
+      );
+
+      if (mounted) {
+        setState(() {
+          _posts.addAll(morePosts);
+          _offset += 20;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+      }
+    }
   }
 
   Future<void> _loadCommunity() async {
@@ -38,6 +85,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
   }
 
   Future<void> _loadPosts() async {
+    _offset = 0;
     setState(() => _isLoading = true);
     try {
       final posts = await Api.getCommunityPosts(
@@ -60,6 +108,17 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
         });
       }
     }
+  }
+
+  Future<void> _shareCommunity() async {
+    final communityName = _community?['name'] ?? 'this community';
+    final webUrl =
+        'https://serveyourcommunity.ftp.sh/#/community/${widget.communityId}';
+
+    await Share.share(
+      'Join the $communityName community on SERVE!\n\n$webUrl',
+      subject: communityName,
+    );
   }
 
   Future<void> _joinCommunity() async {
@@ -276,6 +335,9 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
     final redditName = redditLink != null && redditLink.isNotEmpty
         ? _getSubredditName(redditLink)
         : null;
+    final redditSubscribers = _community?['reddit_subscribers'] as int?;
+    final redditDescription = _community?['reddit_description'] as String?;
+    final communityAvatarUrl = Api.getCommunityAvatarUrl(widget.communityId);
 
     return Scaffold(
       appBar: AppBar(
@@ -285,6 +347,11 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () => _shareCommunity(),
+            tooltip: 'Share Community',
+          ),
           if (isModerator)
             IconButton(
               icon: const Icon(Icons.shield),
@@ -316,10 +383,17 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
                         color: AppColors.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        Icons.groups,
-                        color: AppColors.primary,
-                        size: 28,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          communityAvatarUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.groups,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -360,7 +434,7 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'r/$redditName',
+                                  'r/$redditName${redditSubscribers != null ? ' ($redditSubscribers)' : ''}',
                                   style: TextStyle(
                                     color: AppColors.onSurfaceVariant,
                                     fontSize: 12,
@@ -383,6 +457,20 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
                       color: AppColors.onSurfaceVariant,
                       fontSize: 13,
                     ),
+                  ),
+                ],
+                if (redditDescription != null &&
+                    redditDescription.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    redditDescription,
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
                 if (isModerator) ...[
@@ -519,9 +607,18 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
       onRefresh: _loadPosts,
       displacement: 50,
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        itemCount: _posts.length,
+        itemCount: _posts.length + (_isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= _posts.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
           final post = _posts[index];
           final postId = post['post_id'];
           final median = (post['median'] ?? 0).toDouble();

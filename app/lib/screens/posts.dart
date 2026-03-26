@@ -19,17 +19,57 @@ class _PostsScreenState extends State<PostsScreen>
   String? _error;
   int _communityCount = 0;
 
+  int _forYouOffset = 0;
+  int _popularOffset = 0;
+  bool _isLoadingMore = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadPosts();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore) {
+        _loadMore();
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final moreForYou = await Api.getPosts(20, _forYouOffset + 20);
+      final morePopular = await Api.getPopularPosts(20, _popularOffset + 20);
+
+      if (mounted) {
+        setState(() {
+          _forYouPosts.addAll(moreForYou);
+          _popularPosts.addAll(morePopular);
+          _forYouOffset += 20;
+          _popularOffset += 20;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+      }
+    }
   }
 
   Future<void> _loadPosts() async {
@@ -170,9 +210,18 @@ class _PostsScreenState extends State<PostsScreen>
       displacement: 50,
       color: AppColors.primary,
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        itemCount: posts.length,
+        itemCount: posts.length + 1,
         itemBuilder: (context, index) {
+          if (index == posts.length) {
+            return _isLoadingMore
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : const SizedBox.shrink();
+          }
           final post = posts[index];
           final postId = post['post_id'] ?? post['id'];
           if (postId == null) return const SizedBox.shrink();
@@ -190,14 +239,38 @@ class _PostsScreenState extends State<PostsScreen>
               ),
               child: InkWell(
                 onTap: () => context.push('/post/$postId'),
-                child: PostWidget(
-                  title: post['name'] ?? '',
-                  content: post['contents'] ?? '',
-                  median: median,
-                  voteCount: voteCount,
-                  communityName: post['community_name'],
-                  onVote: () => _showVoteSheet(postId),
-                  compact: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PostWidget(
+                      title: post['name'] ?? '',
+                      content: post['contents'] ?? '',
+                      median: median,
+                      voteCount: voteCount,
+                      communityName: post['community_name'],
+                      onVote: () => _showVoteSheet(postId),
+                      compact: true,
+                    ),
+                    if (post['image_url'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: 8,
+                          left: 12,
+                          right: 12,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            post['image_url'],
+                            height: 100,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

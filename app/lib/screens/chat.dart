@@ -19,19 +19,59 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   Map<String, dynamic>? _otherUser;
 
+  int _offset = 0;
+  bool _isLoadingMore = false;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _loadChat();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels <= 200) {
+      if (!_isLoadingMore && _messages.isNotEmpty) {
+        _loadMore();
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final more = await Api.getChat(widget.conversationId);
+      if (mounted && more is List) {
+        final newMessages = more
+            .where(
+              (m) => !_messages.any((existing) => existing['id'] == m['id']),
+            )
+            .toList();
+        setState(() {
+          _messages.addAll(newMessages);
+          _offset += 20;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+      }
+    }
+  }
+
   Future<void> _loadChat() async {
+    _offset = 0;
     setState(() => _isLoading = true);
     try {
       final data = await Api.getChat(widget.conversationId);
@@ -120,10 +160,19 @@ class _ChatScreenState extends State<ChatScreen> {
     return RefreshIndicator(
       onRefresh: _loadChat,
       child: ListView.builder(
+        controller: _scrollController,
         reverse: true,
         padding: const EdgeInsets.all(16),
-        itemCount: _messages.length,
+        itemCount: _messages.length + (_isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= _messages.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
           final message = _messages[_messages.length - 1 - index];
           final isMe = message['is_me'] ?? false;
 

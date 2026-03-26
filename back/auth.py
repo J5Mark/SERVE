@@ -1,5 +1,6 @@
 import os
 import logging
+import secrets
 from fastapi import Depends, HTTPException, APIRouter, Request 
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -13,6 +14,7 @@ from uuid import uuid4
 from datetime import datetime, timezone
 from schemas import *
 from postgres_conn import User, UserAuth, get_db, Integration
+from valkey_conn import valkey_client
 from authlib.integrations.starlette_client import OAuth
 import httpx
 # from utils import *
@@ -614,11 +616,40 @@ async def oauth_callback(
     
     return html
 
-@router.post('/send_codes')
-async def send_2fa_codes():
-    pass
+def generate_code() -> str:
+    ALPHABET = "QWERTYUOP23456789ASDFGHJKL"
+    code = "".join(secrets.choice(ALPHABET) for _ in range(6))
+    return code
+
+
+@router.post('/send_codes/email')
+async def send_2fa_codes_em(
+    req: SendCodesEmailRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail=f'User not found')
+    code = generate_code()
+    message = f"Hello, {user.username}, your email verfication code is:\n{code}\nIt expires in 10 minutes. Please do not expose it to anyone"
+    await valkey_client.save_code_with_timeout(user_id, code)
+    await send_email(user.email, message)
+
+
+@router.post('/send_codes/phone')
+async def send_2fa_codes_ph(
+    req: SendCodesPhoneRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
+    code = generate_code()
 
 
 @router.post('/check_codes')
-async def check_2fa_codes():
+async def check_2fa_codes(
+    req: CheckCodeRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token)
+):
     pass

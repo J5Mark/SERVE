@@ -677,6 +677,7 @@ class ProfileWidgetLight extends StatelessWidget {
   final List<String> roles;
   final String memberSince;
   final bool editable;
+  final String? avatarUrl;
 
   const ProfileWidgetLight({
     super.key,
@@ -686,6 +687,7 @@ class ProfileWidgetLight extends StatelessWidget {
     required this.roles,
     required this.memberSince,
     this.editable = false,
+    this.avatarUrl,
   });
 
   @override
@@ -709,14 +711,19 @@ class ProfileWidgetLight extends StatelessWidget {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppColors.primary,
-                child: Text(
-                  '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
-                  style: const TextStyle(
-                    color: AppColors.onPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl!)
+                    : null,
+                child: avatarUrl == null
+                    ? Text(
+                        '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}',
+                        style: const TextStyle(
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(

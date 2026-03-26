@@ -86,6 +86,16 @@ class ValkeyClient:
             await asyncio.sleep(0.01)
         return tasks
 
+    async def save_code_with_timeout(self, user_id: int, code: str, timeout: float = 10*60):
+        await self.redis.setex(f'code:{user_id}', timeout, code)
+
+    async def get_code_for_user(self, user_id: int) -> Optional[str]:
+        code = await self.redis.get(f'code:{user_id}')
+        if code:
+            await self.redis.delete(f'code:{user_id}')
+            return code
+        return None        
+
 
 valkey_client = ValkeyClient()
 

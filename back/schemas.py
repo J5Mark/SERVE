@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 
 
@@ -147,6 +147,8 @@ class CommunityResponse(BaseModel):
     name: str
     description: str
     reddit_link: Optional[str]
+    reddit_subscribers: Optional[int] = None
+    reddit_description: Optional[str] = None
     is_moderator: bool = False
     is_member: bool = False
     mods: List[int] = []
@@ -224,6 +226,7 @@ class PostPreview(BaseModel):
     created_at: datetime
     community_name: str
     community_id: int
+    image_url: Optional[str] = None
     
     model_config = {"from_attributes": True}
 
@@ -293,3 +296,17 @@ class NotificationRequest(BaseModel):
 
 class FeedbackRequest(BaseModel):
     contents: str
+
+
+class SendCodesEmailRequest(BaseModel):
+    email: EmailStr
+
+
+class SendCodesPhoneRequest(BaseModel):
+    phone: PhoneNumber
+    email: EmailStr
+
+
+class CheckCodeRequest(BaseModel):
+    code: str
+    type: Literal['email', 'phone'] 
