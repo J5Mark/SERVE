@@ -126,6 +126,8 @@ async def startup_event():
     try:
         logging.info("Starting up: connecting to valkey...")
         await init_valkey()
+        logging.info("Starting up: initializing file storage...")
+        await init_minio()
         logging.info("Starting up: launching embedding worker...")
         asyncio.create_task(run_embedding_worker())
         await init_db()

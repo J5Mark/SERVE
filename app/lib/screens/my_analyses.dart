@@ -18,6 +18,30 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
   bool _hasMore = true;
   int? _statusCode;
 
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAnalyses();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (_hasMore && !_isLoading) {
+        _loadAnalyses();
+      }
+    }
+  }
+
   Future<void> _loadAnalyses() async {
     if (_isLoading && _offset > 0) return;
 
@@ -205,7 +229,10 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
                     const SizedBox(height: 8),
                     Text(
                       _getErrorHint(),
-                      style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                      style: TextStyle(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -264,6 +291,7 @@ class _MyAnalysesScreenState extends State<MyAnalysesScreen> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
         itemCount: _analyses.length + (_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
@@ -321,11 +349,7 @@ class _AnalysisCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.article,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
+                  const Icon(Icons.article, color: AppColors.primary, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -339,17 +363,27 @@ class _AnalysisCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.onSurfaceVariant),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: AppColors.onSurfaceVariant),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     dateStr,
-                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -19,6 +21,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   bool _isLoading = false;
   bool _isLoadingCommunities = true;
   String? _error;
+  XFile? _selectedImage;
 
   @override
   void initState() {
@@ -65,6 +68,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return e is ApiException ? e.displayMessage : e.toString();
   }
 
+  Future<void> _pickImage() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Image upload is not available on web'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _selectedImage = image);
+    }
+  }
+
   Future<void> _createPost() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCommunityId == null) {
@@ -78,11 +98,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     });
 
     try {
-      await Api.createPost(
+      final result = await Api.createPost(
         name: _titleController.text.trim(),
         contents: _contentsController.text.trim(),
         communityId: _selectedCommunityId!,
       );
+
+      if (_selectedImage != null && result != null) {
+        final postId = result['id'] ?? result['post_id'];
+        if (postId != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          await Api.uploadPostImage(postId, bytes);
+        }
+      }
 
       if (mounted) {
         context.pop();
@@ -118,7 +146,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             children: [
                               Text(
                                 'You need to join a community first',
-                                style: TextStyle(color: AppColors.onSurfaceVariant),
+                                style: TextStyle(
+                                  color: AppColors.onSurfaceVariant,
+                                ),
                               ),
                               const SizedBox(height: 12),
                               ElevatedButton(
@@ -169,6 +199,28 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         maxLines: 5,
                         validator: (v) =>
                             v == null || v.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _pickImage,
+                            icon: const Icon(Icons.image),
+                            label: Text(
+                              _selectedImage != null
+                                  ? 'Image selected'
+                                  : 'Add Image',
+                            ),
+                          ),
+                          if (_selectedImage != null) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () =>
+                                  setState(() => _selectedImage = null),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 24),
                       if (_error != null) ...[

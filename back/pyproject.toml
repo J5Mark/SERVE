@@ -36,4 +36,6 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "minio>=7.2.20",
     "minio-async>=1.0.1",
+    "miniopy-async>=1.23.4",
+    "mailersend>=2.0.0",
 ]

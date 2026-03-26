@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CreateCommunityScreen extends StatefulWidget {
   const CreateCommunityScreen({super.key});
@@ -17,6 +19,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
   final _redditLinkController = TextEditingController();
   bool _isLoading = false;
   String? _error;
+  XFile? _selectedImage;
 
   @override
   void dispose() {
@@ -28,6 +31,23 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
 
   String _generateSlug(String name) {
     return name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '-');
+  }
+
+  Future<void> _pickImage() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Image upload is not available on web'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _selectedImage = image);
+    }
   }
 
   Future<void> _createCommunity() async {
@@ -56,6 +76,12 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
           _isLoading = false;
         });
         return;
+      }
+
+      final communityId = resp['community_id'];
+      if (_selectedImage != null && communityId != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        await Api.uploadCommunityAvatar(communityId, bytes);
       }
 
       if (mounted) {
@@ -141,7 +167,10 @@ Looking forward to seeing you there!
             const SizedBox(height: 16),
             Row(
               children: [
-                const Text('Reddit: ', style: TextStyle(color: AppColors.onSurfaceVariant)),
+                const Text(
+                  'Reddit: ',
+                  style: TextStyle(color: AppColors.onSurfaceVariant),
+                ),
                 Text(
                   redditLink,
                   style: const TextStyle(
@@ -159,16 +188,17 @@ Looking forward to seeing you there!
               Navigator.of(context).pop();
               context.pop();
             },
-            child: const Text('Skip', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            child: const Text(
+              'Skip',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.pop();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('Done'),
           ),
         ],
@@ -226,6 +256,25 @@ Looking forward to seeing you there!
                   prefixIcon: Icon(Icons.link),
                   hintText: 'e.g., r/entrepreneur',
                 ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image),
+                    label: Text(
+                      _selectedImage != null ? 'Image selected' : 'Add Image',
+                    ),
+                  ),
+                  if (_selectedImage != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() => _selectedImage = null),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 24),
               if (_error != null) ...[

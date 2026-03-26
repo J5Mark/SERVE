@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CreateBusinessScreen extends StatefulWidget {
   const CreateBusinessScreen({super.key});
@@ -21,6 +23,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
   bool _isLoading = false;
   bool _isLoadingCommunities = true;
   String? _error;
+  XFile? _selectedImage;
 
   @override
   void initState() {
@@ -68,6 +71,23 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
     return e is ApiException ? e.displayMessage : e.toString();
   }
 
+  Future<void> _pickImage() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Image upload is not available on web'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _selectedImage = image);
+    }
+  }
+
   Future<void> _createBusiness() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCommunityIds.isEmpty) {
@@ -81,7 +101,7 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
     });
 
     try {
-      await Api.createBusiness(
+      final result = await Api.createBusiness(
         name: _nameController.text.trim(),
         bio: _bioController.text.trim(),
         communityIds: _selectedCommunityIds,
@@ -90,6 +110,14 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
             : _contGoalController.text.trim(),
         reactionTimeDays: _reactionTimeDays,
       );
+
+      if (_selectedImage != null) {
+        final businessId = result['business_id'];
+        if (businessId != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          await Api.uploadBusinessAvatar(businessId, bytes);
+        }
+      }
 
       if (mounted) {
         context.pop();
@@ -125,7 +153,9 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                             children: [
                               Text(
                                 'You need to join a community first',
-                                style: TextStyle(color: AppColors.onSurfaceVariant),
+                                style: TextStyle(
+                                  color: AppColors.onSurfaceVariant,
+                                ),
                               ),
                               const SizedBox(height: 12),
                               ElevatedButton(
@@ -230,7 +260,9 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                             value: null,
                             child: Text(
                               'Not specified',
-                              style: TextStyle(color: AppColors.onSurfaceVariant),
+                              style: TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           ...List.generate(14, (i) => i + 1).map(
@@ -241,6 +273,28 @@ class _CreateBusinessScreenState extends State<CreateBusinessScreen> {
                           ),
                         ],
                         onChanged: (v) => setState(() => _reactionTimeDays = v),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _pickImage,
+                            icon: const Icon(Icons.image),
+                            label: Text(
+                              _selectedImage != null
+                                  ? 'Image selected'
+                                  : 'Add Image',
+                            ),
+                          ),
+                          if (_selectedImage != null) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () =>
+                                  setState(() => _selectedImage = null),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 24),
                       if (_error != null) ...[

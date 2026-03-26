@@ -1,5 +1,8 @@
 import os
 import logging
+import aiohttp
+from fastapi import Depends, HTTPException, APIRouter, UploadFile, File
+from fastapi.responses import StreamingResponse
 
 logging.basicConfig(level=logging.DEBUG)
 from fastapi import Depends, HTTPException, APIRouter
@@ -13,8 +16,14 @@ from typing import Optional
 from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db, Community
+from minio_conn import (
+    upload_community_avatar, fetch_community_avatar, delete_community_avatar,
+)
 
 router = APIRouter(prefix="/api/comm", tags=["communities"])
+
+
+INTEGRATIONS_BASE = os.getenv('INTEGRATIONS_BASE', 'http://integrations:3000')
 
 
 @router.post("/create")
@@ -25,10 +34,11 @@ async def create_community_ep(
 ):
     await moderate(db, req.description, req.name)
 
-    await create_community(req, user_id, db)
+    community = await create_community(req, user_id, db)
     await db.commit()
+    await db.refresh(community)
 
-    return {"community created": f"{req.name}"}
+    return {"community created": f"{req.name}", "community_id": community.id}
 
 
 @router.delete("/del/{community_id}")
@@ -75,12 +85,33 @@ async def get_community_ep(
     is_moderator = user_id in mod_ids
     is_member = user_id in participant_ids
 
+    reddit_subscribers = None
+    reddit_description = None
+    
+    if community.reddit_link:
+        reddit_name = community.reddit_link.replace('reddit.com/', '').replace('/r/', '').replace('r/', '').strip()
+        if reddit_name:
+            try:
+                async with aiohttp.ClientSession(base_url=INTEGRATIONS_BASE) as client:
+                    async with client.get(f'/get-subreddit-participants/{reddit_name}') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            reddit_subscribers = int(data.get('subscribers', 0))
+                    async with client.get(f'/reddit/get-description/{reddit_name}') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            reddit_description = data.get('description')
+            except Exception as e:
+                logging.warning(f"Failed to fetch reddit data for {reddit_name}: {e}")
+
     resp = CommunityResponse(
         community_id=community_id,
         participants=len(community.participants),
         name=community.name,
         description=community.description,
         reddit_link=community.reddit_link,
+        reddit_subscribers=reddit_subscribers,
+        reddit_description=reddit_description,
         is_moderator=is_moderator,
         is_member=is_member,
         mods=mod_ids,
@@ -117,14 +148,15 @@ async def change_moderators_ep(
 async def list_communities_ep(
     req: ListCommunitiesRequest,
     db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
 ):
     match req.sorting:
         case 'popular':
-            communities = await list_popular_communities(req.n, req.offset, db)
+            communities = await list_popular_communities(req.n, req.offset, db, user_id)
             return communities
 
         case 'new':
-            communities = await list_new_communities(req.n, req.offset, db)
+            communities = await list_new_communities(req.n, req.offset, db, user_id)
             return communities
 
         case 'relevant':
@@ -165,3 +197,58 @@ async def leave_community_ep(
     await db.commit()
 
     return {'community': 'out'}
+
+
+@router.post('/avatar')
+async def upload_community_avatar_ep(
+    community_id: int,
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    result = await db.execute(select(Community).where(Community.id == community_id))
+    community = result.scalars().first()
+    if not community:
+        raise HTTPException(status_code=404, detail="Community not found")
+    
+    mod_ids = [mod.user_id for mod in community.mods]
+    if user_id not in mod_ids:
+        raise HTTPException(status_code=403, detail="Only moderators can upload avatar")
+    
+    image_bytes = await image.read()
+    await upload_community_avatar(community_id, image_bytes)
+    
+    community.image = True
+    await db.commit()
+    
+    return {"status": "uploaded", "community_id": community_id}
+
+
+@router.get('/avatar/{community_id}')
+async def get_community_avatar_ep(community_id: int):
+    try:
+        return await fetch_community_avatar(community_id)
+    except Exception as e:
+        logging.error(f"Error fetching community avatar: {e}")
+        raise HTTPException(status_code=404, detail="Avatar not found")
+
+
+@router.delete('/avatar/{community_id}')
+async def delete_community_avatar_ep(
+    community_id: int,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_user_id_from_token),
+):
+    result = await db.execute(select(Community).where(Community.id == community_id))
+    community = result.scalars().first()
+    if not community:
+        raise HTTPException(status_code=404, detail="Community not found")
+    
+    mod_ids = [mod.user_id for mod in community.mods]
+    if user_id not in mod_ids:
+        raise HTTPException(status_code=403, detail="Only moderators can delete avatar")
+    
+    await delete_community_avatar(community_id)
+    community.image = False
+    await db.commit()
+    return {"status": "deleted"}

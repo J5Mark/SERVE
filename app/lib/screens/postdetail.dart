@@ -612,6 +612,18 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       fontSize: 15,
                     ),
                   ),
+                  if (post['image_url'] != null) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        post['image_url'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox.shrink(),
+                      ),
+                    ),
+                  ],
                   if (stats != null) ...[
                     const SizedBox(height: 20),
                     PaymentStatsRow(

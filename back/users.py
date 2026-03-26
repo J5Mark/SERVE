@@ -2,9 +2,10 @@ import os
 import logging
 import secrets
 import string
+from fastapi import Depends, HTTPException, APIRouter, UploadFile, File
+from fastapi.responses import StreamingResponse
 
 logging.basicConfig(level=logging.DEBUG)
-from fastapi import Depends, HTTPException, APIRouter, UploadFile, File
 from auth import auth, create_user_tokens, get_user_id_from_token, get_anonymous_id_from_token, hash_password
 from authx import TokenPayload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,9 @@ from typing import Optional
 from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db
+from minio_conn import (
+    upload_user_avatar, fetch_user_avatar, delete_user_avatar,
+)
 
 router = APIRouter(prefix='/api/users', tags=['users'])
 
@@ -131,7 +135,7 @@ async def get_current_user(
         created_at=user.created_at,
         communities=[{'id': c.id, 'name': c.name} for c in user.communities],
         businesses=[{'id': b.id, 'name': b.name} for b in user.businesses],
-        posts=[{'id': p.id, 'name': p.name} for p in user.posts],
+        posts=[{'id': p.id, 'name': p.name, 'image_url': f"{API_BASE}/post/image/{p.id}"} for p in user.posts],
     )
 
 
@@ -232,7 +236,42 @@ async def add_avatar_ep(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token),
 ):
-    await upload_avatar(image, db, user_id)
-    await db.commit()
+    image_bytes = await image.read()
+    await upload_user_avatar(user_id, image_bytes)
+    
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if user:
+        user.image = True
+        await db.commit()
 
     return {'avatar': 'added'}
+
+
+@router.get('/avatar/{user_id}')
+async def get_user_avatar_ep(user_id: int):
+    try:
+        return await fetch_user_avatar(user_id)
+    except Exception as e:
+        logging.error(f"Error fetching user avatar: {e}")
+        raise HTTPException(status_code=404, detail="Avatar not found")
+
+
+@router.delete('/avatar/{user_id}')
+async def delete_user_avatar_ep(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_user_id_from_token),
+):
+    if current_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot delete another user's avatar")
+    
+    await delete_user_avatar(user_id)
+    
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if user:
+        user.image = False
+        await db.commit()
+    
+    return {"status": "deleted"}

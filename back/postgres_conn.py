@@ -130,8 +130,8 @@ class User(SQLModel, table=True):
     phone_number: Optional[str] = Field(index=True, unique=True)
     email: Optional[str] = Field(index=True, unique=True)
     admin: bool = Field(default=False)
-    avatar: str | None = Field(sa_column=Column(String))
     balance: int = Field(default = 0)
+    image: bool = Field(default=False)
 
     businesses: list["Business"] = Relationship(
         back_populates="user",
@@ -181,8 +181,8 @@ class Community(SQLModel, table=True):
     
     name: str = Field(index=True)
     description: str = Field()
-    avatar: str | None = Field(sa_column=Column(String))
     reddit_link: Optional[str] = Field(default=None, index=True)
+    image: bool = Field(default=False)
     creator_id: int = Field(
         sa_column=Column(
             BigInteger,
@@ -267,7 +267,7 @@ class Post(SQLModel, table=True):
 
     name: str = Field()
     contents: str = Field()
-    image: str | None = Field(sa_column=Column(String))
+    image: bool = Field(default=False)
 
     votes: List[Vote] = Relationship(back_populates='post')
     created_at: datetime = Field(
@@ -351,7 +351,7 @@ class Business(SQLModel, table=True):
     bio: str = Field()
     cont_goal: str | None
     reaction_time: int | None
-    avatar: str | None = Field(sa_column=Column(String))
+    image: bool = Field(default=False)
 
     communities: List[Community] = Relationship(
         back_populates='businesses',

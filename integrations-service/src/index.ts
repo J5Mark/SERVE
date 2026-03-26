@@ -56,6 +56,84 @@ app.get('/check-subreddit/:name', async (req, res) => {
 });
 
 
+app.get('/get-subreddit-participants/:name', async (req, res) => {
+  const subName = req.params.name.trim().toLowerCase().replace(/^r\//, '')
+
+  if (!subName || subName.length < 3) {
+    return res.status(400).json({ error: 'Invalid subreddit name'});
+  }
+
+  try {
+    const response = await fetch(`https://www.reddit.com/r/${subName}/about.json`, {
+      headers: {
+        'User-Agent': 'MyRedditChecker/1.0 (by /u/Mina-olen-Mina)'
+      }
+    });
+
+    let subscribers = 0;
+    let message = '';
+
+    if (response.ok) {
+      const data = await response.json();
+
+      subscribers = !!data?.data?.subscribers;
+    } else if (response.status === 404) {
+      message = `Subreddit does not exist (404)`;
+    } else {
+      message = `Reddit returned ${response.status}`;
+    }
+
+    return res.json({
+      subreddit: subName,
+      subscribers,
+      message
+    });
+  } catch (error) {
+    console.error('Fetch error for', subName, ':', error);
+    return res.status(500).json({ error: 'Could not get subreddit participants amount' });
+  }
+});
+
+
+app.get('/get-subreddit-description/:name', async (req, res) => {
+  const subName = req.params.name.trim().toLowerCase().replace(/^r\//, '');
+
+  if (!subName || subName.length < 3) {
+    return res.status(400).json({ error: 'Invalid subreddit name' });
+  }
+
+  try {
+    const response = await fetch(`https://www.reddit.com/r/${subName}/about.json`, {
+      headers: {
+        'User-Agent': 'MyRedditChecker/1.0 (by /u/Mina-olen-Mina)'
+      }
+    });
+
+    let description = '';
+    let message = '';
+
+    if (response.ok) {
+      const data = await response.json();
+
+      description = !!data?.data?.public_description;
+    } else if (response.status === 404) {
+      message = `Subreddit does not exist`;
+    } else {
+      message = `Reddit returned ${response.status}`;
+    }
+
+    return res.json({
+      subreddit: subName,
+      description,
+      message
+    });
+  } catch(error) {
+    console.error('Fetch error for', subName, ':', error);
+    return res.status(500).json({ error: 'Could not get subreddit description' });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

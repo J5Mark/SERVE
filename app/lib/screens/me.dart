@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 
 class MeScreen extends StatefulWidget {
@@ -54,7 +56,6 @@ class _MeScreenState extends State<MeScreen> {
       final url = Uri.parse(
         'https://serveyourcommunity.ftp.sh/api/auth/google/start?anonymous_id=$anonymousId',
       );
-      // Use in-app webview for better UX, falls back to external browser
       final result = await launchUrl(url, mode: LaunchMode.platformDefault);
       if (!result && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -65,9 +66,44 @@ class _MeScreenState extends State<MeScreen> {
         );
       }
     } catch (e) {
+      print('Error linking Google account: $e');
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar(int userId) async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Avatar upload is not available on web'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    final picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      await Api.uploadUserAvatar(userId, bytes);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: const Text('Avatar updated!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        _loadUser();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -366,6 +402,7 @@ class _MeScreenState extends State<MeScreen> {
                 roles: roles,
                 memberSince: memberSince,
                 editable: true,
+                avatarUrl: Api.getUserAvatarUrl(userId),
               ),
             ),
             const SizedBox(height: 24),
@@ -456,50 +493,104 @@ class _MeScreenState extends State<MeScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            Card(
+              child: InkWell(
+                onTap: () => context.push('/my-analyses'),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.analytics,
+                        color: AppColors.secondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'My Analyses',
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: AppColors.onSurfaceVariant,
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             if (communities.isNotEmpty ||
                 businesses.isNotEmpty ||
                 posts.isNotEmpty)
-              SizedBox(
-                height: 200,
-                child: GridView.count(
-                  crossAxisCount: MediaQuery.of(context).size.width > 600
-                      ? 4
-                      : 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.6,
-                  children: [
-                    ...communities.map(
-                      (c) => _CompactCard(
-                        icon: Icons.groups,
-                        title: c['name'] ?? '',
-                        subtitle: 'Community',
-                        color: const Color(0xFF00BCD4),
-                        onTap: () => context.push('/community/${c['id']}'),
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Communities, Businesses & Posts',
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
-                    ...businesses.map(
-                      (b) => _CompactCard(
-                        icon: Icons.business,
-                        title: b['name'] ?? '',
-                        subtitle: b['bio'] ?? '',
-                        color: const Color(0xFF4CAF50),
-                        onTap: () => context.push('/business/${b['id']}'),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 180,
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width > 600
+                            ? 4
+                            : 2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 1.6,
                       ),
+                      itemCount:
+                          communities.length + businesses.length + posts.length,
+                      itemBuilder: (context, index) {
+                        if (index < communities.length) {
+                          final c = communities[index];
+                          return _CompactCard(
+                            icon: Icons.groups,
+                            title: c['name'] ?? '',
+                            subtitle: 'Community',
+                            color: const Color(0xFF00BCD4),
+                            onTap: () => context.push('/community/${c['id']}'),
+                          );
+                        } else if (index <
+                            communities.length + businesses.length) {
+                          final b = businesses[index - communities.length];
+                          return _CompactCard(
+                            icon: Icons.business,
+                            title: b['name'] ?? '',
+                            subtitle: b['bio'] ?? '',
+                            color: const Color(0xFF4CAF50),
+                            onTap: () => context.push('/business/${b['id']}'),
+                          );
+                        } else {
+                          final p =
+                              posts[index -
+                                  communities.length -
+                                  businesses.length];
+                          return _CompactCard(
+                            icon: Icons.article,
+                            title: p['name'] ?? '',
+                            subtitle: 'Post',
+                            color: const Color(0xFF9C27B0),
+                            onTap: () => context.push('/post/${p['id']}'),
+                          );
+                        }
+                      },
                     ),
-                    ...posts.map(
-                      (p) => _CompactCard(
-                        icon: Icons.article,
-                        title: p['name'] ?? '',
-                        subtitle: 'Post',
-                        color: const Color(0xFF9C27B0),
-                        onTap: () => context.push('/post/${p['id']}'),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             if (communities.isEmpty && businesses.isEmpty && posts.isEmpty)
               Card(
@@ -525,22 +616,38 @@ class _MeScreenState extends State<MeScreen> {
                 ),
               ),
             const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: Icon(Icons.analytics, color: AppColors.secondary),
-                title: Text(
-                  'My Analyses',
-                  style: TextStyle(color: AppColors.onSurface),
-                ),
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                onTap: () => context.push('/my-analyses'),
-              ),
-            ),
+            // Card(
+            //   child: InkWell(
+            //     onTap: () => context.push('/my-analyses'),
+            //     borderRadius: BorderRadius.circular(12),
+            //     child: Padding(
+            //       padding: const EdgeInsets.all(12),
+            //       child: Row(
+            //         children: [
+            //           Icon(
+            //             Icons.analytics,
+            //             color: AppColors.secondary,
+            //             size: 20,
+            //           ),
+            //           const SizedBox(width: 12),
+            //           Text(
+            //             'My Analyses',
+            //             style: TextStyle(
+            //               color: AppColors.onSurface,
+            //               fontSize: 14,
+            //             ),
+            //           ),
+            //           const Spacer(),
+            //           Icon(
+            //             Icons.arrow_forward_ios,
+            //             color: AppColors.onSurfaceVariant,
+            //             size: 14,
+            //           ),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -690,6 +797,7 @@ class _MeScreenState extends State<MeScreen> {
                       itemCount: _discoverCommunities.length,
                       itemBuilder: (context, index) {
                         final community = _discoverCommunities[index];
+                        final isJoined = community['joined'] == true;
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
@@ -709,16 +817,27 @@ class _MeScreenState extends State<MeScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            trailing: ElevatedButton(
-                              onPressed: () {
-                                _joinCommunity(community['id']);
-                                Navigator.pop(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                              ),
-                              child: const Text('Join'),
-                            ),
+                            trailing: isJoined
+                                ? OutlinedButton(
+                                    onPressed: null,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.primary,
+                                      side: BorderSide(
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    child: const Text('Joined'),
+                                  )
+                                : ElevatedButton(
+                                    onPressed: () {
+                                      _joinCommunity(community['id']);
+                                      Navigator.pop(context);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                    ),
+                                    child: const Text('Join'),
+                                  ),
                             onTap: () {
                               Navigator.pop(context);
                               context.push('/community/${community['id']}');
@@ -784,6 +903,56 @@ class _MeScreenState extends State<MeScreen> {
                         color: AppColors.onSurfaceVariant,
                       ),
                       onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: AppColors.primary,
+                          child: ClipOval(
+                            child: Image.network(
+                              Api.getUserAvatarUrl(userId),
+                              fit: BoxFit.cover,
+                              width: 80,
+                              height: 80,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Text(
+                                    '${_user!['first_name'] ?? ''}',
+                                    style: const TextStyle(
+                                      color: AppColors.onPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () => _pickAndUploadAvatar(userId),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: AppColors.onPrimary,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
