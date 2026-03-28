@@ -84,97 +84,149 @@ class Api {
     return _handleResponse(res);
   }
 
+  static Future<void> sendEmailVerificationCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    await http.post(
+      Uri.parse("$apiBase/auth/send_codes/email"),
+      body: jsonEncode({}),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
+  static Future<void> sendPhoneVerificationCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    await http.post(
+      Uri.parse("$apiBase/auth/send_codes/phone"),
+      body: jsonEncode({}),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+  }
+
+  static Future<Map<String, dynamic>> verifyEmailCode(String code) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse("$apiBase/auth/check_codes"),
+      body: jsonEncode({'code': code, 'type': 'email'}),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> verifyPhoneCode(String code) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse("$apiBase/auth/check_codes"),
+      body: jsonEncode({'code': code, 'type': 'phone'}),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return _handleResponse(res);
+  }
+
   static Future<Map<String, dynamic>> login({
     String? username,
     String? email,
     String? phone,
     required String password,
   }) async {
+    final body = <String, dynamic>{
+      'password': password,
+      'username': username,
+      'email': email,
+      'phone': phone,
+    };
+
     final res = await http.post(
       Uri.parse("$apiBase/auth/login"),
-      body: jsonEncode({
-        'username': username,
-        'email': email,
-        'phone': phone,
-        'password': password,
-      }),
+      body: jsonEncode(body),
       headers: {'Content-Type': 'application/json'},
     );
-
     return _handleResponse(res);
   }
 
-  static Future<Map<String, dynamic>> registerSimple({
-    String? username,
-    String? firstName,
-    String? lastName,
-    String? email,
-    String? password,
+  static Future<Map<String, dynamic>> sendVerificationEmail(
+    String email,
+  ) async {
+    final res = await http.post(
+      Uri.parse("$apiBase/auth/send_verify_email"),
+      body: jsonEncode({'email': email}),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> verifyEmail(
+    String email,
+    String code,
+  ) async {
+    final res = await http.post(
+      Uri.parse("$apiBase/auth/verify_email"),
+      body: jsonEncode({'email': email, 'code': code}),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> sendVerificationPhone(
+    String phone,
+  ) async {
+    final res = await http.post(
+      Uri.parse("$apiBase/auth/send_verify_phone"),
+      body: jsonEncode({'phone': phone}),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> verifyPhone(
+    String phone,
+    String code,
+  ) async {
+    final res = await http.post(
+      Uri.parse("$apiBase/auth/verify_phone"),
+      body: jsonEncode({'phone': phone, 'code': code}),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> updateCommunity({
+    required int communityId,
+    required String name,
+    required String description,
+    String? redditLink,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    if (token == null) {
-      throw Exception('Not authenticated: no token found');
-    }
     final res = await http.post(
-      Uri.parse('$apiBase/users/register'),
+      Uri.parse("$apiBase/comm/edit"),
       body: jsonEncode({
-        'username': username,
-        'first_name': firstName,
-        'last_name': lastName,
-        'email': email,
-        'password': password,
+        'community_id': communityId,
+        'name': name,
+        'description': description,
+        'reddit_link': redditLink,
       }),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        "Authorization": "Bearer $token",
       },
     );
-
     return _handleResponse(res);
-  }
-
-  static Future<Map<String, dynamic>> getUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    print('API.getUser: token=${token != null ? 'found' : 'null'}');
-
-    if (token == null) {
-      throw Exception('Not authenticated: no token found');
-    }
-
-    try {
-      final decoded = JwtDecoder.decode(token);
-      print('API.getUser: token sub=${decoded['sub']}');
-    } catch (e) {
-      print('API.getUser: Error decoding token: $e');
-    }
-
-    final res = await http.get(
-      Uri.parse('$apiBase/users/me'),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    print('API.getUser: Response status=${res.statusCode}');
-
-    if (res.statusCode != 200) {
-      throw Exception('Failed to get user: ${res.statusCode} - ${res.body}');
-    }
-
-    final response = jsonDecode(res.body);
-    return response;
-  }
-
-  static Future<Map<String, dynamic>> getCommunity(int communityId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    final res = await http.get(
-      Uri.parse('$apiBase/comm/$communityId'),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    final response = jsonDecode(res.body);
-    return response;
   }
 
   static Future<List<dynamic>> getCommunities() async {
@@ -242,6 +294,33 @@ class Api {
 
     final data = jsonDecode(res.body);
     return data;
+  }
+
+  static Future<Map<String, dynamic>> getCommunity(int communityId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.get(
+      Uri.parse('$apiBase/comm/$communityId'),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (res.body.isEmpty) return {};
+      return jsonDecode(res.body);
+    }
+    throw Exception('Failed to load community (status: ${res.statusCode})');
+  }
+
+  static Future<Map<String, dynamic>> getCommunityUnauth(
+    int communityId,
+  ) async {
+    final res = await http.get(Uri.parse('$apiBase/comm/unauth/$communityId'));
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (res.body.isEmpty) return {};
+      return jsonDecode(res.body);
+    }
+    throw Exception('Failed to load community (status: ${res.statusCode})');
   }
 
   static Future<Map<String, dynamic>> createCommunity({
@@ -523,6 +602,23 @@ class Api {
 
   static Future<String> getAnonymousId() async {
     return AnonymousIdManager.getAnonymousId();
+  }
+
+  static Future<Map<String, dynamic>> getUser() async {
+    final userId = await getCurrentUserId();
+    if (userId == null) {
+      throw Exception('Not authenticated');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final response = await http.get(
+      Uri.parse('$apiBase/users/$userId'),
+      headers: token != null ? {"Authorization": "Bearer $token"} : {},
+    );
+    if (response.statusCode != 200) {
+      throw ApiException('Failed to get user', statusCode: response.statusCode);
+    }
+    return json.decode(response.body);
   }
 
   static Future<bool> _isTokenExpired(String token) async {

@@ -94,7 +94,99 @@ class ValkeyClient:
         if code:
             await self.redis.delete(f'code:{user_id}')
             return code
-        return None        
+        return None
+
+    async def save_email_code_with_timeout(self, user_id: int, code: str, timeout: float = 10*60):
+        await self.redis.setex(f'2fa:email_code:{user_id}', timeout, code)
+
+    async def save_phone_code_with_timeout(self, user_id: int, code: str, timeout: float = 10*60):
+        await self.redis.setex(f'2fa:phone_code:{user_id}', timeout, code)
+
+    async def get_email_code_for_user(self, user_id: int) -> Optional[str]:
+        return await self.redis.get(f'2fa:email_code:{user_id}')
+
+    async def get_phone_code_for_user(self, user_id: int) -> Optional[str]:
+        return await self.redis.get(f'2fa:phone_code:{user_id}')
+
+    async def delete_email_code_for_user(self, user_id: int):
+        await self.redis.delete(f'2fa:email_code:{user_id}')
+
+    async def delete_phone_code_for_user(self, user_id: int):
+        await self.redis.delete(f'2fa:phone_code:{user_id}')
+
+    async def increment_email_code_attempts(self, user_id: int, max_attempts: int = 5, lockout_seconds: int = 15*60) -> int:
+        key = f'2fa:email_code_attempts:{user_id}'
+        attempts = await self.redis.incr(key)
+        if attempts == 1:
+            await self.redis.expire(key, lockout_seconds)
+        return attempts
+
+    async def increment_phone_code_attempts(self, user_id: int, max_attempts: int = 5, lockout_seconds: int = 15*60) -> int:
+        key = f'2fa:phone_code_attempts:{user_id}'
+        attempts = await self.redis.incr(key)
+        if attempts == 1:
+            await self.redis.expire(key, lockout_seconds)
+        return attempts
+
+    async def get_email_code_attempts(self, user_id: int) -> int:
+        attempts = await self.redis.get(f'2fa:email_code_attempts:{user_id}')
+        return int(attempts) if attempts else 0
+
+    async def get_phone_code_attempts(self, user_id: int) -> int:
+        attempts = await self.redis.get(f'2fa:phone_code_attempts:{user_id}')
+        return int(attempts) if attempts else 0
+
+    async def reset_email_code_attempts(self, user_id: int):
+        await self.redis.delete(f'2fa:email_code_attempts:{user_id}')
+
+    async def reset_phone_code_attempts(self, user_id: int):
+        await self.redis.delete(f'2fa:phone_code_attempts:{user_id}')
+
+    async def save_pending_email_verification(self, email: str, code: str, timeout: float = 10*60):
+        await self.redis.setex(f'verify:email:{email}', timeout, code)
+
+    async def get_pending_email_verification(self, email: str) -> Optional[str]:
+        return await self.redis.get(f'verify:email:{email}')
+
+    async def delete_pending_email_verification(self, email: str):
+        await self.redis.delete(f'verify:email:{email}')
+
+    async def increment_pending_email_attempts(self, email: str, max_attempts: int = 5, lockout_seconds: int = 15*60) -> int:
+        key = f'verify:email_attempts:{email}'
+        attempts = await self.redis.incr(key)
+        if attempts == 1:
+            await self.redis.expire(key, lockout_seconds)
+        return attempts
+
+    async def get_pending_email_attempts(self, email: str) -> int:
+        attempts = await self.redis.get(f'verify:email_attempts:{email}')
+        return int(attempts) if attempts else 0
+
+    async def reset_pending_email_attempts(self, email: str):
+        await self.redis.delete(f'verify:email_attempts:{email}')
+
+    async def save_pending_phone_verification(self, phone: str, code: str, timeout: float = 10*60):
+        await self.redis.setex(f'verify:phone:{phone}', timeout, code)
+
+    async def get_pending_phone_verification(self, phone: str) -> Optional[str]:
+        return await self.redis.get(f'verify:phone:{phone}')
+
+    async def delete_pending_phone_verification(self, phone: str):
+        await self.redis.delete(f'verify:phone:{phone}')
+
+    async def increment_pending_phone_attempts(self, phone: str, max_attempts: int = 5, lockout_seconds: int = 15*60) -> int:
+        key = f'verify:phone_attempts:{phone}'
+        attempts = await self.redis.incr(key)
+        if attempts == 1:
+            await self.redis.expire(key, lockout_seconds)
+        return attempts
+
+    async def get_pending_phone_attempts(self, phone: str) -> int:
+        attempts = await self.redis.get(f'verify:phone_attempts:{phone}')
+        return int(attempts) if attempts else 0
+
+    async def reset_pending_phone_attempts(self, phone: str):
+        await self.redis.delete(f'verify:phone_attempts:{phone}')        
 
 
 valkey_client = ValkeyClient()

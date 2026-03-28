@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
@@ -6,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CreateCommunityScreen extends StatefulWidget {
-  const CreateCommunityScreen({super.key});
+  final int? communityId;
+
+  const CreateCommunityScreen({super.key, this.communityId});
 
   @override
   State<CreateCommunityScreen> createState() => _CreateCommunityScreenState();
@@ -20,6 +23,39 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
   bool _isLoading = false;
   String? _error;
   XFile? _selectedImage;
+
+  bool get isEditing => widget.communityId != null;
+  Map<String, dynamic>? _community;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditing) {
+      _loadCommunity();
+    }
+  }
+
+  Future<void> _loadCommunity() async {
+    try {
+      final community = await Api.getCommunity(widget.communityId!);
+      if (mounted && community != null) {
+        setState(() {
+          _community = community;
+          _nameController.text = community['name'] ?? '';
+          _descriptionController.text = community['description'] ?? '';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load community: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -50,7 +86,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     }
   }
 
-  Future<void> _createCommunity() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -59,6 +95,33 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     });
 
     try {
+      if (isEditing) {
+        await Api.updateCommunity(
+          communityId: widget.communityId!,
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          redditLink: _redditLinkController.text.trim().isEmpty
+              ? null
+              : _redditLinkController.text.trim(),
+        );
+
+        if (_selectedImage != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          await Api.uploadCommunityAvatar(widget.communityId!, bytes);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Community updated successfully!'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+          context.pop();
+        }
+        return;
+      }
+
       final resp = await Api.createCommunity(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -86,7 +149,7 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
 
       if (mounted) {
         if (_redditLinkController.text.trim().isNotEmpty) {
-          _showRedditTemplateDialog();
+          _showRedditTemplateDialog(communityId);
         } else {
           context.pop();
         }
@@ -101,14 +164,17 @@ class _CreateCommunityScreenState extends State<CreateCommunityScreen> {
     }
   }
 
-  void _showRedditTemplateDialog() {
+  void _showRedditTemplateDialog(int communityId) {
     final redditLink = _redditLinkController.text.trim();
+    final communityLink =
+        'https://serveyourcommunity.ftp.sh/#/community/$communityId';
 
-    final templatePost = '''Hey $redditLink! 👋
+    final templatePost =
+        '''Hey $redditLink! 👋
 
 I've created a mirror community for us on Serve - a platform where we can connect, share opportunities, and grow together!
 
-Check it out here: {community_link}
+Check it out here: $communityLink
 
 Why join?
 - Connect with fellow entrepreneurs
@@ -161,6 +227,27 @@ Looking forward to seeing you there!
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.lightGrey,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: templatePost));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Template copied to clipboard!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copy to Clipboard'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
                 ),
               ),
             ),
@@ -286,7 +373,7 @@ Looking forward to seeing you there!
                 const SizedBox(height: 16),
               ],
               ElevatedButton(
-                onPressed: _isLoading ? null : _createCommunity,
+                onPressed: _isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),

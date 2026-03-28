@@ -13,6 +13,8 @@ from typing import Optional
 from uuid import uuid4
 from datetime import datetime, timezone
 from schemas import *
+from phones import *
+from emails import *
 from postgres_conn import User, UserAuth, get_db, Integration
 from valkey_conn import valkey_client
 from authlib.integrations.starlette_client import OAuth
@@ -631,10 +633,12 @@ async def send_2fa_codes_em(
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail=f'User not found')
+    if not user.email:
+        raise HTTPException(status_code=404, detail=f'User email not found')
     code = generate_code()
-    message = f"Hello, {user.username}, your email verfication code is:\n{code}\nIt expires in 10 minutes. Please do not expose it to anyone"
-    await valkey_client.save_code_with_timeout(user_id, code)
-    await send_email(user.email, message)
+    message = f"Hello, {user.username}, your email verification code is:\n{code}\nIt expires in 10 minutes. Please do not expose it to anyone"
+    await valkey_client.save_email_code_with_timeout(user_id, code)
+    await send_email(user.email, 'Serve email verification', message)
 
 
 @router.post('/send_codes/phone')
@@ -643,7 +647,15 @@ async def send_2fa_codes_ph(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail=f'User not found')
+    if not user.phone:
+        raise HTTPException(status_code=404, detail=f"User phone not found")
     code = generate_code()
+    message = f"Hello, {user.username}, your phone verification code is:\n{code}\nIt expires in 10 minutes. Please do not expose it to anyone"
+    await valkey_client.save_phone_code_with_timeout(user_id, code)
+    await send_sms(user.phone, message) 
 
 
 @router.post('/check_codes')
@@ -652,4 +664,134 @@ async def check_2fa_codes(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_user_id_from_token)
 ):
-    pass
+    MAX_ATTEMPTS = 5
+    
+    match req.type:
+        case 'email':
+            attempts = await valkey_client.get_email_code_attempts(user_id)
+            if attempts >= MAX_ATTEMPTS:
+                raise HTTPException(status_code=429, detail=f'Too many failed attempts. Please request a new code')
+            
+            stored_code = await valkey_client.get_email_code_for_user(user_id)
+            if stored_code is None:
+                raise HTTPException(status_code=401, detail=f'Email code expired')
+            
+            if stored_code != req.code:
+                attempts = await valkey_client.increment_email_code_attempts(user_id)
+                remaining = MAX_ATTEMPTS - attempts
+                raise HTTPException(status_code=401, detail=f'Invalid code. {remaining} attempts remaining')
+            
+            await valkey_client.delete_email_code_for_user(user_id)
+            await valkey_client.reset_email_code_attempts(user_id)
+            return {'verified': True, 'type': 'email'}
+
+        case 'phone':
+            attempts = await valkey_client.get_phone_code_attempts(user_id)
+            if attempts >= MAX_ATTEMPTS:
+                raise HTTPException(status_code=429, detail=f'Too many failed attempts. Please request a new code')
+            
+            stored_code = await valkey_client.get_phone_code_for_user(user_id)
+            if stored_code is None:
+                raise HTTPException(status_code=401, detail=f'Phone code expired')
+            
+            if stored_code != req.code:
+                attempts = await valkey_client.increment_phone_code_attempts(user_id)
+                remaining = MAX_ATTEMPTS - attempts
+                raise HTTPException(status_code=401, detail=f'Invalid code. {remaining} attempts remaining')
+            
+            await valkey_client.delete_phone_code_for_user(user_id)
+            await valkey_client.reset_phone_code_attempts(user_id)
+            return {'verified': True, 'type': 'phone'}
+
+        case _:
+            raise HTTPException(status_code=400, detail=f'Wrong request type')
+
+
+class VerifyEmailRequest(BaseModel):
+    email: str
+    code: str
+
+
+class SendVerifyEmailRequest(BaseModel):
+    email: EmailStr
+
+
+@router.post('/send_verify_email')
+async def send_verify_email(
+    req: SendVerifyEmailRequest,
+):
+    email = req.email.lower().strip()
+    
+    code = generate_code()
+    message = f"Your email verification code is:\n{code}\nIt expires in 10 minutes. Please do not share it with anyone"
+    await valkey_client.save_pending_email_verification(email, code)
+    await send_email(email, 'Serve email verification', message)
+    
+    return {'status': 'sent', 'email': email}
+
+
+@router.post('/verify_email')
+async def verify_email(req: VerifyEmailRequest):
+    email = req.email.lower().strip()
+    MAX_ATTEMPTS = 5
+    
+    attempts = await valkey_client.get_pending_email_attempts(email)
+    if attempts >= MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail='Too many failed attempts. Please request a new code')
+    
+    stored_code = await valkey_client.get_pending_email_verification(email)
+    if stored_code is None:
+        raise HTTPException(status_code=401, detail='Verification code expired')
+    
+    if stored_code != req.code:
+        attempts = await valkey_client.increment_pending_email_attempts(email)
+        remaining = MAX_ATTEMPTS - attempts
+        raise HTTPException(status_code=401, detail=f'Invalid code. {remaining} attempts remaining')
+    
+    await valkey_client.delete_pending_email_verification(email)
+    await valkey_client.reset_pending_email_attempts(email)
+    return {'verified': True, 'email': email}
+
+
+class VerifyPhoneRequest(BaseModel):
+    phone: str
+    code: str
+
+
+class SendVerifyPhoneRequest(BaseModel):
+    phone: str
+
+
+@router.post('/send_verify_phone')
+async def send_verify_phone(req: SendVerifyPhoneRequest):
+    phone = req.phone.strip()
+    
+    code = generate_code()
+    message = f"Your phone verification code is:\n{code}\nIt expires in 10 minutes. Please do not share it with anyone"
+    await valkey_client.save_pending_phone_verification(phone, code)
+    await send_sms(phone, message)
+    
+    return {'status': 'sent', 'phone': phone}
+
+
+@router.post('/verify_phone')
+async def verify_phone(req: VerifyPhoneRequest):
+    phone = req.phone.strip()
+    MAX_ATTEMPTS = 5
+    
+    attempts = await valkey_client.get_pending_phone_attempts(phone)
+    if attempts >= MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail='Too many failed attempts. Please request a new code')
+    
+    stored_code = await valkey_client.get_pending_phone_verification(phone)
+    if stored_code is None:
+        raise HTTPException(status_code=401, detail='Verification code expired')
+    
+    if stored_code != req.code:
+        attempts = await valkey_client.increment_pending_phone_attempts(phone)
+        remaining = MAX_ATTEMPTS - attempts
+        raise HTTPException(status_code=401, detail=f'Invalid code. {remaining} attempts remaining')
+    
+    await valkey_client.delete_pending_phone_verification(phone)
+    await valkey_client.reset_pending_phone_attempts(phone)
+    return {'verified': True, 'phone': phone}

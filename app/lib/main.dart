@@ -262,6 +262,13 @@ final GoRouter _router = GoRouter(
         return CommunityPostsScreen(communityId: communityId);
       },
     ),
+    GoRoute(
+      path: '/edit-community/:id',
+      builder: (context, state) {
+        final communityId = int.parse(state.pathParameters['id']!);
+        return CreateCommunityScreen(communityId: communityId);
+      },
+    ),
 
     ShellRoute(
       builder: (context, state, child) {

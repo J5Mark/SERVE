@@ -59,6 +59,52 @@ async def delete_community_ep(
     return {"community": "deleted"}
 
 
+@router.get("/unauth/{community_id}")
+async def get_community_unauth(
+    community_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Community)
+        .where(Community.id == community_id)
+        .options(
+            selectinload(Community.participants),
+            selectinload(Community.mods),
+            defer(Community.embedding),
+        )
+    )
+    community = result.scalars().first()
+
+    if not community:
+        raise HTTPException(status_code=404, detail=f'Community not found')
+
+    if community.reddit_link:
+        reddit_name = community.reddit_link.replace('reddit.com/', '').replace('/r/', '').replace('r/', '').strip()
+        if reddit_name:
+            try:
+                async with aiohttp.ClientSession(base_url=INTEGRATIONS_BASE) as client:
+                    async with client.get(f'/get-subreddit-participants/{reddit_name}') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            reddit_subscribers = int(data.get('subscribers', 0))
+                    async with client.get(f'/reddit/get-description/{reddit_name}') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            reddit_description = data.get('description')
+            except Exception as e:
+                logging.warning(f"Failed to fetch reddit data for {reddit_name}: {e}")
+
+    resp = CommunityResponseUnauth(
+        community_id=community_id,
+        participants=len(community.participants),
+        name=community.name,
+        description=community.description,
+        reddit_link=community.reddit_link,
+        reddit_subscribers=reddit_subscribers,
+        reddit_description=reddit_description,
+    )
+
+
 @router.get("/{community_id}", response_model=CommunityResponse)
 async def get_community_ep(
     community_id: int,
@@ -79,6 +125,7 @@ async def get_community_ep(
     if not community:
         raise HTTPException(status_code=404, detail=f"Community not found")
 
+    
     mod_ids = [mod.user_id for mod in community.mods]
     participant_ids = [p.id for p in community.participants]
     

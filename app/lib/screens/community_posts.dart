@@ -80,7 +80,14 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
         setState(() => _community = community);
       }
     } catch (e) {
-      // Community load error - not critical
+      try {
+        final community = await Api.getCommunityUnauth(widget.communityId);
+        if (mounted) {
+          setState(() => _community = community);
+        }
+      } catch (e2) {
+        // Community load error - not critical
+      }
     }
   }
 
@@ -562,7 +569,10 @@ class _CommunityPostsScreenState extends State<CommunityPostsScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to edit community screen
+                final communityId = _community?['id'];
+                if (communityId != null) {
+                  context.push('/edit-community/$communityId');
+                }
               },
             ),
             ListTile(
