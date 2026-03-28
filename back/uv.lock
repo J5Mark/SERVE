@@ -278,7 +278,6 @@ dependencies = [
     { name = "fluent-logger" },
     { name = "httpx" },
     { name = "langdetect" },
-    { name = "mailersend" },
     { name = "minio" },
     { name = "minio-async" },
     { name = "miniopy-async" },
@@ -310,7 +309,6 @@ requires-dist = [
     { name = "fluent-logger", specifier = ">=0.11.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "langdetect", specifier = ">=1.0.9" },
-    { name = "mailersend", specifier = ">=2.0.0" },
     { name = "minio", specifier = ">=7.2.20" },
     { name = "minio-async", specifier = ">=1.0.1" },
     { name = "miniopy-async", specifier = ">=1.23.4" },
@@ -908,19 +906,6 @@ dependencies = [
     { name = "six" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0e/72/a3add0e4eec4eb9e2569554f7c70f4a3c27712f40e3284d483e88094cc0e/langdetect-1.0.9.tar.gz", hash = "sha256:cbc1fef89f8d062739774bd51eda3da3274006b3661d199c2655f6b3f6d605a0", size = 981474, upload-time = "2021-05-07T07:54:13.562Z" }
-
-[[package]]
-name = "mailersend"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic", extra = ["email"] },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/76/0e/3d93829741e2dfd51872874042bfd933596204fbab923e6d93797baecaf5/mailersend-2.0.0.tar.gz", hash = "sha256:9f121909eb55716197c0c64d92760091ea4c4a965eebb3245f6634d8bcce0607", size = 58922, upload-time = "2025-08-01T11:00:18.652Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/80/8ae2cd3681c953c940888e2c9dff13da9a8c076f0d6296b2eee90ee958eb/mailersend-2.0.0-py3-none-any.whl", hash = "sha256:a5280db088c7af11dacf6eab68da4c7d597c30e8fa6a54b20a739aa7df2acc4b", size = 101926, upload-time = "2025-08-01T11:00:17.67Z" },
-]
 
 [[package]]
 name = "mako"

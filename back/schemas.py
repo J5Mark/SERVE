@@ -35,6 +35,7 @@ class RegisterRequest(BaseModel):
     username: str | None = None
     first_name: str | None = None
     last_name: str | None = None
+    phone_number: str | None = None
     email: EmailStr | None = None
     password: str | None = None
     entrep: bool | None = False
@@ -139,6 +140,16 @@ class BusinessResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CommunityResponseUnauth(BaseModel):
+    community_id: int
+    participants: int
+    name: str
+    description: str
+    reddit_link: Optional[str]
+    reddit_subscribers: Optional[int] = None
+    reddit_description: Optional[str] = None    
 
 
 class CommunityResponse(BaseModel):
@@ -299,12 +310,12 @@ class FeedbackRequest(BaseModel):
 
 
 class SendCodesEmailRequest(BaseModel):
-    email: EmailStr
+    email: Optional[EmailStr] = None
 
 
 class SendCodesPhoneRequest(BaseModel):
-    phone: PhoneNumber
-    email: EmailStr
+    phone: Optional[PhoneNumber] = None
+    email: Optional[EmailStr] = None
 
 
 class CheckCodeRequest(BaseModel):
