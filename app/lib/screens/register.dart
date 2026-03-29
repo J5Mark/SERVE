@@ -646,7 +646,7 @@ class _RegisterFormState extends State<_RegisterForm> {
                       color: AppColors.onSurfaceVariant,
                     ),
                   ),
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.text,
                 ),
               ),
               const SizedBox(width: 8),
