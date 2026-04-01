@@ -1,8 +1,20 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+import 'package:permission_handler/permission_handler.dart';
+
+import 'package:app/firebase_options.dart';
 import 'package:app/auth_provider.dart';
+import 'package:app/api.dart';
+import 'package:app/logger.dart';
 import 'package:app/screens/posts.dart';
 import 'package:app/screens/me.dart';
 import 'package:app/screens/settings.dart';
@@ -21,75 +33,93 @@ import 'package:app/screens/chat.dart';
 import 'package:app/screens/my_analyses.dart';
 import 'package:app/screens/view_analysis.dart';
 import 'package:app/widgets.dart';
+import 'package:app/global_keys.dart';
+import 'package:app/firebase_api.dart';
 
 AuthStateNotifier? authState;
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await AppLogger.log('App starting...');
 
-  final prefs = await SharedPreferences.getInstance();
-  final isDarker = prefs.getBool('darker_theme') ?? false;
-  AppTheme.setDarkerMode(isDarker);
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        AppLogger.log('Flutter error: ${details.exception}\n${details.stack}');
+      };
 
-  print('MAIN: Starting app...');
-  print('MAIN: Current URL = ${Uri.base}');
-  print('MAIN: Current URL query = ${Uri.base.query}');
-  print('MAIN: Current URL fragment = ${Uri.base.fragment}');
-  print('MAIN: Query params = ${Uri.base.queryParameters}');
+      // Инициализация SharedPreferences, темы, OAuth (твой код без изменений)
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final isDarker = prefs.getBool('darker_theme') ?? false;
+        AppTheme.setDarkerMode(isDarker);
+      } catch (e) {
+        AppLogger.log('SharedPreferences init error: $e');
+      }
 
-  // Check for OAuth tokens in the URL BEFORE initializing app
-  final currentUri = Uri.base;
-  final accessToken = currentUri.queryParameters['access_token'];
-  final refreshToken = currentUri.queryParameters['refresh_token'];
-  final userId = currentUri.queryParameters['user_id'];
+      try {
+        final currentUri = Uri.base;
+        final accessToken = currentUri.queryParameters['access_token'];
+        final refreshToken = currentUri.queryParameters['refresh_token'];
+        final userId = currentUri.queryParameters['user_id'];
 
-  print(
-    'MAIN: OAuth tokens in URL? access=${accessToken != null}, refresh=${refreshToken != null}',
+        if (accessToken != null && refreshToken != null) {
+          final authNotifier = AuthStateNotifier();
+          await authNotifier.initialize();
+          authState = authNotifier;
+          await authNotifier.saveTokensFromUrl(
+            accessToken,
+            refreshToken,
+            userId,
+          );
+        } else {
+          final authNotifier = AuthStateNotifier();
+          await authNotifier.initialize();
+          authState = authNotifier;
+        }
+      } catch (e) {
+        AppLogger.log('Auth init error: $e');
+      }
+
+      // Firebase initialization
+      if (!kIsWeb) {
+        try {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+          await AppLogger.log('Firebase initialized');
+        } catch (e) {
+          await AppLogger.log('Firebase init failed: $e');
+          debugPrint('Firebase init failed: $e');
+        }
+
+        try {
+          FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+        } catch (e) {
+          AppLogger.log('Background message registration error: $e');
+        }
+
+        try {
+          await Future.delayed(
+            const Duration(milliseconds: 1000),
+          ); // задержка для Android 12
+          await FirebaseApi().initNotifications();
+        } catch (e) {
+          AppLogger.log('Notifications init error: $e');
+          debugPrint('Notifications init error: $e');
+        }
+      }
+
+      runApp(const MyApp());
+    },
+    (error, stack) {
+      AppLogger.log('Uncaught error: $error\n$stack');
+    },
   );
-
-  if (accessToken != null && refreshToken != null) {
-    print('MAIN: Found OAuth tokens in URL, saving them...');
-    print(
-      'MAIN: access_token (first 50 chars) = ${accessToken.substring(0, 50)}...',
-    );
-    print('MAIN: user_id = $userId');
-    // Initialize auth state
-    final authNotifier = AuthStateNotifier();
-    await authNotifier.initialize();
-    authState = authNotifier;
-
-    // Save the tokens immediately
-    await authNotifier.saveTokensFromUrl(accessToken, refreshToken, userId);
-    print('MAIN: OAuth tokens saved from URL!');
-  } else {
-    print('MAIN: No OAuth tokens found, doing normal init');
-    final authNotifier = AuthStateNotifier();
-    await authNotifier.initialize();
-    authState = authNotifier;
-  }
-
-  runApp(const MyApp());
 }
 
-Future<void> _handleOAuthCallback() async {
-  // This is a simple check - in practice we'd use platform channels
-  // For now, the router redirect will handle tokens
-}
-
-Future<void> saveOAuthTokens(
-  String accessToken,
-  String refreshToken,
-  String? userId,
-) async {
-  print('saveOAuthTokens: START');
-  if (authState != null) {
-    print('saveOAuthTokens: authState exists, calling saveTokensFromUrl');
-    await authState!.saveTokensFromUrl(accessToken, refreshToken, userId);
-    print('saveOAuthTokens: DONE');
-  } else {
-    print('saveOAuthTokens: ABORTED - authState is null!');
-  }
-}
+// ====================== Приложение ======================
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -122,11 +152,13 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       routerConfig: _router,
+      scaffoldMessengerKey: scaffoldMessengerKey,
     );
   }
 }
 
 final GoRouter _router = GoRouter(
+  navigatorKey: navigatorKey,
   initialLocation: '/init',
   initialExtra: null,
 

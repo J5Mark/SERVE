@@ -37,4 +37,5 @@ dependencies = [
     "minio>=7.2.20",
     "minio-async>=1.0.1",
     "miniopy-async>=1.23.4",
+    "firebase-admin>=7.3.0",
 ]

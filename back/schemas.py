@@ -136,7 +136,8 @@ class BusinessResponse(BaseModel):
     community_ids: List[int] = []
     verifications: dict = {}
     cont_goal: str | None = None
-    response_time: int | None = None
+    reaction_time: int | None = None
+    image: bool = False
 
     class Config:
         from_attributes = True
@@ -321,3 +322,7 @@ class SendCodesPhoneRequest(BaseModel):
 class CheckCodeRequest(BaseModel):
     code: str
     type: Literal['email', 'phone'] 
+
+
+class RegisterDeviceNotifications(BaseModel):
+    fcm_token: str

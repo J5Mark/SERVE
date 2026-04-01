@@ -1,11 +1,11 @@
 {
-    "name": "SERVE",
-    "short_name": "SERVE",
+    "name": "app2",
+    "short_name": "app2",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "SERVE - Community platform",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

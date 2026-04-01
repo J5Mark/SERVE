@@ -13,6 +13,7 @@ from typing import Optional
 from uuid import uuid4
 from utils import *
 from postgres_conn import User, UserAuth, get_db, Community, Message
+from notifications import notify_conversation_participants
 
 router = APIRouter(prefix="/api/chats", tags=["chats"])
 
@@ -100,6 +101,14 @@ async def websocket_chat(
                     "created_at": new_msg.created_at.isoformat()
                 }
                 await manager.broadcast(payload, conversation_id)
+                # Send push notification to other participants
+                await notify_conversation_participants(
+                    conversation_id,
+                    user_id,
+                    "New message",
+                    content[:100] + '...' if len(content) > 100 else content,
+                    db,
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(ws, conversation_id)
@@ -127,6 +136,14 @@ async def send_message_ep(
     new_msg = await save_message(conversation_id, req.content, db, user_id)
     await db.commit()
     await db.refresh(new_msg)
+    # Send push notification to other participants
+    await notify_conversation_participants(
+        conversation_id,
+        user_id,
+        "New message",
+        req.content[:100] + '...' if len(req.content) > 100 else req.content,
+        db,
+    )
     
     return {
         "id": new_msg.id,

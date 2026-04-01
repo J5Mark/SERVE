@@ -76,7 +76,7 @@ async def upload_community_avatar(community_id: int, av: bytes):
         raise HTTPException(status_code=500, detail=f'Could not upload community avatar: {e}')
 
 
-async def upload_business_avatar(business_id: int, av: bytes):
+async def upload_business_avatar(business_id: int, av: bytes, content_type: str = None):
     try:
         async with MinioClient() as client:
             result = await client.put_object(
@@ -84,6 +84,7 @@ async def upload_business_avatar(business_id: int, av: bytes):
                 f'{business_id}',
                 io.BytesIO(av),
                 length=len(av),
+                content_type=content_type,
             )        
             path_to_file = f'/business_avatars/{business_id}'
             return path_to_file
@@ -175,8 +176,10 @@ async def fetch_business_avatar(business_id: int):
                 data = await result.read()
                 if not data:
                     raise HTTPException(status_code=404, detail="Avatar not found")
+                # Get content type from response headers
+                content_type = result.headers.get('Content-Type', 'image/jpeg')
                 return StreamingResponse(
-                    iter([data]), media_type="image/jpeg"
+                    iter([data]), media_type=content_type
                 )
             except Exception as inner_e:
                 if 'Not Found' in str(inner_e) or 'NoSuchKey' in str(inner_e):

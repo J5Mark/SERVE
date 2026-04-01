@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, desc
 from sqlalchemy.orm import selectinload
 import uvicorn
+import firebase_admin
+from firebase_admin import credentials
 
 from schemas import *
 
@@ -36,6 +38,8 @@ load_dotenv()
 
 app = FastAPI()
 
+cred = credentials.Certificate('./serve-2998c-firebase-adminsdk-fbsvc-2272926b9f.json')
+firebase_admin.initialize_app(cred)
 
 # App Links - Android assetlinks.json
 @app.get("/.well-known/assetlinks.json")

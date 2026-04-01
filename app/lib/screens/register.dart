@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
 
@@ -276,6 +278,32 @@ class _RegisterFormState extends State<_RegisterForm> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', result['access_token']);
         await prefs.setString('refresh_token', result['refresh_token']);
+        // Decode user_id from JWT token
+        try {
+          final decoded = JwtDecoder.decode(result['access_token']);
+          final userId = decoded['sub'];
+          if (userId != null) {
+            await prefs.setInt('user_id', int.parse(userId.toString()));
+          }
+        } catch (e) {
+          print('Failed to decode user_id from token: $e');
+        }
+        // Send FCM token to backend if available
+        try {
+          final fcmToken = prefs.getString('fcm_token');
+          if (fcmToken != null && fcmToken.isNotEmpty) {
+            await Api.registerDeviceToken(fcmToken);
+          } else {
+            // If no token stored, get a new one
+            final token = await FirebaseMessaging.instance.getToken();
+            if (token != null) {
+              await prefs.setString('fcm_token', token);
+              await Api.registerDeviceToken(token);
+            }
+          }
+        } catch (e) {
+          print('Failed to register FCM token: $e');
+        }
       }
 
       if (mounted) {
@@ -928,7 +956,34 @@ class _LoginFormState extends State<_LoginForm> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', result['access_token']);
       await prefs.setString('refresh_token', result['refresh_token']);
-      await prefs.setInt('user_id', result['user_id']);
+      // Decode user_id from JWT token
+      try {
+        final decoded = JwtDecoder.decode(result['access_token']);
+        final userId = decoded['sub'];
+        if (userId != null) {
+          await prefs.setInt('user_id', int.parse(userId.toString()));
+        }
+      } catch (e) {
+        // If decoding fails, we can still continue without user_id
+        print('Failed to decode user_id from token: $e');
+      }
+
+      // Send FCM token to backend if available
+      try {
+        final fcmToken = prefs.getString('fcm_token');
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          await Api.registerDeviceToken(fcmToken);
+        } else {
+          // If no token stored, get a new one
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null) {
+            await prefs.setString('fcm_token', token);
+            await Api.registerDeviceToken(token);
+          }
+        }
+      } catch (e) {
+        print('Failed to register FCM token: $e');
+      }
 
       if (mounted) {
         context.go('/home');

@@ -45,6 +45,13 @@ class AuthStateNotifier extends ChangeNotifier {
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setString('auth_token', accessToken);
     await _prefs!.setString('refresh_token', refreshToken);
+    // Store user_id if provided
+    if (userId != null) {
+      final userIdInt = int.tryParse(userId);
+      if (userIdInt != null) {
+        await _prefs!.setInt('user_id', userIdInt);
+      }
+    }
     // Anonymous ID is managed separately
     await _prefs!.setString('auth_token_source', 'oauth');
     _state = AuthState.authenticated;
@@ -95,6 +102,13 @@ class AuthStateNotifier extends ChangeNotifier {
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setString('auth_token', accessToken);
     await _prefs!.setString('refresh_token', refreshToken);
+    // Store user_id if provided
+    if (userId != null) {
+      final userIdInt = int.tryParse(userId);
+      if (userIdInt != null) {
+        await _prefs!.setInt('user_id', userIdInt);
+      }
+    }
     // Anonymous ID is managed by AnonymousIdManager
     _state = AuthState.authenticated;
     notifyListeners();
@@ -104,6 +118,7 @@ class AuthStateNotifier extends ChangeNotifier {
     _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.remove('auth_token');
     await _prefs!.remove('refresh_token');
+    await _prefs!.remove('user_id');
     _state = AuthState.unauthenticated;
     notifyListeners();
   }

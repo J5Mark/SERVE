@@ -37,7 +37,8 @@ async def create_business_ep(
     user = result.scalars().first()  # Will later have to abstract it to use cache
 
     if user.entrep:
-            
+        logging.warning(req)
+        
         await moderate(db, req.name, req.bio, req.cont_goal)
         
         business = await create_business(req, user_id, db)
@@ -92,7 +93,8 @@ async def get_business_ep(
         community_ids=[c.id for c in business.communities],
         verifications=verifications_count,
         cont_goal=business.cont_goal,
-        reaction_time=business.cont_goal,
+        reaction_time=business.reaction_time,
+        image=business.image,
     )
 
 
@@ -180,7 +182,7 @@ async def upload_business_avatar_ep(
         raise HTTPException(status_code=403, detail="Cannot upload avatar for this business")
     
     image_bytes = await image.read()
-    await upload_business_avatar(business_id, image_bytes)
+    await upload_business_avatar(business_id, image_bytes, content_type=image.content_type)
     
     business.image = True
     await db.commit()

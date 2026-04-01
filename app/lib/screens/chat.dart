@@ -19,7 +19,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   Map<String, dynamic>? _otherUser;
 
-  int _offset = 0;
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
 
@@ -38,7 +37,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels <= 200) {
+    if (_scrollController.position.maxScrollExtent > 0 &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore && _messages.isNotEmpty) {
         _loadMore();
       }
@@ -50,16 +51,14 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoadingMore = true);
 
     try {
-      final more = await Api.getChat(widget.conversationId);
+      final more = await Api.getChat(
+        widget.conversationId,
+        offset: _messages.length,
+        n: 20,
+      );
       if (mounted && more is List) {
-        final newMessages = more
-            .where(
-              (m) => !_messages.any((existing) => existing['id'] == m['id']),
-            )
-            .toList();
         setState(() {
-          _messages.addAll(newMessages);
-          _offset += 20;
+          _messages.addAll(more);
           _isLoadingMore = false;
         });
       }
@@ -71,7 +70,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadChat() async {
-    _offset = 0;
     setState(() => _isLoading = true);
     try {
       final data = await Api.getChat(widget.conversationId);
@@ -161,7 +159,6 @@ class _ChatScreenState extends State<ChatScreen> {
       onRefresh: _loadChat,
       child: ListView.builder(
         controller: _scrollController,
-        reverse: true,
         padding: const EdgeInsets.all(16),
         itemCount: _messages.length + (_isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
@@ -173,7 +170,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             );
           }
-          final message = _messages[_messages.length - 1 - index];
+          final message = _messages[index];
           final isMe = message['is_me'] ?? false;
 
           return Align(

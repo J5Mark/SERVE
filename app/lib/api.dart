@@ -883,11 +883,15 @@ class Api {
     return [];
   }
 
-  static Future<dynamic> getChat(int conversationId) async {
+  static Future<dynamic> getChat(
+    int conversationId, {
+    int n = 20,
+    int offset = 0,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     final res = await http.get(
-      Uri.parse('$apiBase/chats/$conversationId/20/0'),
+      Uri.parse('$apiBase/chats/$conversationId/$n/$offset'),
       headers: {"Authorization": "Bearer $token"},
     );
 
@@ -1011,6 +1015,23 @@ class Api {
       },
     );
 
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> registerDeviceToken(
+    String fcmToken,
+  ) async {
+    await _ensureValidToken();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final res = await http.post(
+      Uri.parse('$apiBase/notifications/register_device'),
+      body: jsonEncode({'fcm_token': fcmToken}),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+      },
+    );
     return _handleResponse(res);
   }
 

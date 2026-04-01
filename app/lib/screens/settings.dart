@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:app/api.dart';
 import 'package:app/widgets.dart';
+import 'package:app/logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,6 +54,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppTheme.setDarkerMode(value);
   }
 
+  Future<void> _checkNotificationStatus() async {
+    // Check permission status
+    var status = await Permission.notification.status;
+    // Get FCM token
+    final token = await FirebaseMessaging.instance.getToken();
+    // Show dialog with info and option to request permission
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surfaceContainer,
+          title: const Text(
+            'Notification Status',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Permission: ${status.isGranted ? "Granted" : "Denied"}',
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'FCM Token: ${token != null ? "${token.substring(0, 20)}..." : "Not available"}',
+                style: const TextStyle(color: Colors.white),
+              ),
+              if (!status.isGranted) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Tap "Request" to enable notifications.',
+                  style: TextStyle(color: AppColors.onSurfaceVariant),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+            if (!status.isGranted)
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await Permission.notification.request();
+                  // Refresh status
+                  _checkNotificationStatus();
+                },
+                child: const Text('Request'),
+              ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _showLogs() async {
+    final logs = await AppLogger.getLogs();
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surfaceContainer,
+          title: const Text('App Logs', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Text(
+              logs,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _clearLogs() async {
+    await AppLogger.clearLogs();
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Logs cleared')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,6 +189,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: _isDarker,
             onChanged: _toggleTheme,
             activeColor: AppColors.primary,
+          ),
+          const Divider(),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Notifications',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.notifications,
+              color: AppColors.onSurfaceVariant,
+            ),
+            title: Text(
+              'Notification Settings',
+              style: TextStyle(color: AppColors.onSurface),
+            ),
+            subtitle: Text(
+              'Check permission and token',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
+            onTap: _checkNotificationStatus,
+          ),
+          ListTile(
+            leading: Icon(Icons.article, color: AppColors.onSurfaceVariant),
+            title: Text(
+              'View Logs',
+              style: TextStyle(color: AppColors.onSurface),
+            ),
+            subtitle: Text(
+              'View app logs for debugging',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
+            onTap: _showLogs,
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.delete_sweep,
+              color: AppColors.onSurfaceVariant,
+            ),
+            title: Text(
+              'Clear Logs',
+              style: TextStyle(color: AppColors.onSurface),
+            ),
+            subtitle: Text(
+              'Clear all logs',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
+            onTap: _clearLogs,
           ),
           const Divider(),
           Container(

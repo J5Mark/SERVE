@@ -591,6 +591,28 @@ class Feedback(SQLModel, table=True):
         )
     )    
 
+
+class DeviceToken(SQLModel, table=True):
+    __tablename__ = "device_tokens"
+
+    id: int = Field(primary_key=True, sa_type=BigInteger)
+
+    user_id: int = Field(
+        sa_column=Column(
+            BigInteger,
+            ForeignKey('users.id', ondelete='CASCADE')
+        )
+    )
+    fcm_token: str = Field(sa_column=Column(String))
+
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=func.now(),
+            nullable=False
+        )
+    )
+
 # class RefreshToken(SQLModel, table=True):
 #     __tablename__ = 'refresh_tokens'
 

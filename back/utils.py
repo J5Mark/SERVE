@@ -11,6 +11,7 @@ import traceback
 import logging
 import os
 import re
+import asyncio
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,6 +79,7 @@ async def moderate(db: AsyncSession, *args):
     except Exception as e:
         logging.error(f'Could not moderate: {e}')
         raise
+
 
 def detect_language(name: str, contents: str) -> str:
     try:
@@ -171,6 +173,7 @@ async def create_business(req: CreateBusinessRequest, user_id: int, db: AsyncSes
         )
 
         db.add(business)
+        return business
         
     except HTTPException:
         raise
@@ -1623,23 +1626,70 @@ async def leave_community(
         raise HTTPException(status_code=500, detail=f'Could not leave community: {e}')
 
 
+async def add_device_token(token: str, user_id: int, db: AsyncSession):
+    try:
+        user = await db.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail='User not found')
+        
+        dev_token = DeviceToken(
+            user_id   = user_id ,
+            fcm_token = token   ,
+        )
+
+        db.add(dev_token)
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Could not add device token: {e}')
+
+
 @event.listens_for(Post, 'after_delete')
 def post_after_delete(mapper, connection, target):
-    asyncio.run(delete_post_image(target.id))
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(delete_post_image(target.id))
+    except RuntimeError:
+        # No running loop, fallback to creating a new one (should not happen)
+        asyncio.run(delete_post_image(target.id))
+    except Exception as e:
+        logging.error(f"Error deleting post image: {e}")
 
 
 @event.listens_for(Community, 'after_delete')
 def community_after_delete(mapper, connection, target):
-    asyncio.run(delete_community_avatar(target.id))
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(delete_community_avatar(target.id))
+    except RuntimeError:
+        # No running loop, fallback to creating a new one (should not happen)
+        asyncio.run(delete_community_avatar(target.id))
+    except Exception as e:
+        logging.error(f"Error deleting community avatar: {e}")
 
         
 @event.listens_for(Business, 'after_delete')
 def business_after_delete(mapper, connection, target):
-    asyncio.run(delete_business_avatar(target.id))
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(delete_business_avatar(target.id))
+    except RuntimeError:
+        # No running loop, fallback to creating a new one (should not happen)
+        asyncio.run(delete_business_avatar(target.id))
+    except Exception as e:
+        logging.error(f"Error deleting business avatar: {e}")
         
 @event.listens_for(User, 'after_delete')
 def user_after_delete(mapper, connection, target):
-    asyncio.run(delete_user_avatar(target.id))
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(delete_user_avatar(target.id))
+    except RuntimeError:
+        # No running loop, fallback to creating a new one (should not happen)
+        asyncio.run(delete_user_avatar(target.id))
+    except Exception as e:
+        logging.error(f"Error deleting user avatar: {e}")
 
 
 
