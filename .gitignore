@@ -2,3 +2,4 @@ google-client-secret.txt
 .env
 /back/.env
 /back/.*firebase.*
+.*firebase.*
